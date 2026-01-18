@@ -32,6 +32,17 @@ pip install -r requirements.txt
 python create_map_poster.py --city <city> --country <country> [options]
 ```
 
+## Web UI
+
+Launch a web UI  with live progress tracking:
+
+```bash
+python app.py
+```
+
+Then open `http://127.0.0.1:5000` in your browser. The UI supports all CLI options
+(city, country, theme, distance) and shows each stage as the poster renders.
+
 ### Options
 
 | Option | Short | Description | Default |

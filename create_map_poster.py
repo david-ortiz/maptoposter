@@ -193,11 +193,13 @@ def get_edge_widths_by_type(G):
     
     return edge_widths
 
-def get_coordinates(city, country):
+def get_coordinates(city, country, progress=None):
     """
     Fetches coordinates for a given city and country using geopy.
     Includes rate limiting to be respectful to the geocoding service.
     """
+    if progress:
+        progress({"stage": "geocode", "percent": 5, "message": "Looking up coordinates"})
     print("Looking up coordinates...")
     geolocator = Nominatim(user_agent="city_map_poster")
     
@@ -209,41 +211,57 @@ def get_coordinates(city, country):
     if location:
         print(f"✓ Found: {location.address}")
         print(f"✓ Coordinates: {location.latitude}, {location.longitude}")
+        if progress:
+            progress({"stage": "geocode", "percent": 12, "message": "Coordinates found"})
         return (location.latitude, location.longitude)
     else:
         raise ValueError(f"Could not find coordinates for {city}, {country}")
 
-def create_poster(city, country, point, dist, output_file):
+def create_poster(city, country, point, dist, output_file, progress=None):
     print(f"\nGenerating map for {city}, {country}...")
     
     # Progress bar for data fetching
     with tqdm(total=3, desc="Fetching map data", unit="step", bar_format='{l_bar}{bar}| {n_fmt}/{total_fmt}') as pbar:
         # 1. Fetch Street Network
         pbar.set_description("Downloading street network")
+        if progress:
+            progress({"stage": "network", "percent": 20, "message": "Downloading street network"})
         G = ox.graph_from_point(point, dist=dist, dist_type='bbox', network_type='all')
         pbar.update(1)
+        if progress:
+            progress({"stage": "network", "percent": 30, "message": "Street network downloaded"})
         time.sleep(0.5)  # Rate limit between requests
         
         # 2. Fetch Water Features
         pbar.set_description("Downloading water features")
+        if progress:
+            progress({"stage": "water", "percent": 38, "message": "Downloading water features"})
         try:
             water = ox.features_from_point(point, tags={'natural': 'water', 'waterway': 'riverbank'}, dist=dist)
         except:
             water = None
         pbar.update(1)
+        if progress:
+            progress({"stage": "water", "percent": 45, "message": "Water features downloaded"})
         time.sleep(0.3)
         
         # 3. Fetch Parks
         pbar.set_description("Downloading parks/green spaces")
+        if progress:
+            progress({"stage": "parks", "percent": 50, "message": "Downloading parks/green spaces"})
         try:
             parks = ox.features_from_point(point, tags={'leisure': 'park', 'landuse': 'grass'}, dist=dist)
         except:
             parks = None
         pbar.update(1)
+        if progress:
+            progress({"stage": "parks", "percent": 60, "message": "Parks downloaded"})
     
     print("✓ All data downloaded successfully!")
     
     # 2. Setup Plot
+    if progress:
+        progress({"stage": "render", "percent": 70, "message": "Rendering map"})
     print("Rendering map...")
     fig, ax = plt.subplots(figsize=(12, 16), facecolor=THEME['bg'])
     ax.set_facecolor(THEME['bg'])
@@ -317,6 +335,8 @@ def create_poster(city, country, point, dist, output_file):
             fontproperties=font_attr, zorder=11)
 
     # 5. Save
+    if progress:
+        progress({"stage": "save", "percent": 90, "message": "Saving poster"})
     print(f"Saving to {output_file}...")
     plt.savefig(output_file, dpi=300, facecolor=THEME['bg'])
     plt.close()
