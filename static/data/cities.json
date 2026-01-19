@@ -1,0 +1,3432 @@
+[
+  {
+    "city": "Tokyo",
+    "country": "Japan"
+  },
+  {
+    "city": "Delhi",
+    "country": "India",
+    "aliases": [
+      "New Delhi"
+    ]
+  },
+  {
+    "city": "Shanghai",
+    "country": "China"
+  },
+  {
+    "city": "Dhaka",
+    "country": "Bangladesh"
+  },
+  {
+    "city": "Cairo",
+    "country": "Egypt"
+  },
+  {
+    "city": "Sao Paulo",
+    "country": "Brazil",
+    "aliases": [
+      "Sao Paulo",
+      "Sao Paolo"
+    ]
+  },
+  {
+    "city": "Mexico City",
+    "country": "Mexico"
+  },
+  {
+    "city": "Beijing",
+    "country": "China"
+  },
+  {
+    "city": "Mumbai",
+    "country": "India"
+  },
+  {
+    "city": "Osaka",
+    "country": "Japan"
+  },
+  {
+    "city": "Kinshasa",
+    "country": "DR Congo"
+  },
+  {
+    "city": "Chongqing",
+    "country": "China"
+  },
+  {
+    "city": "Karachi",
+    "country": "Pakistan"
+  },
+  {
+    "city": "Lagos",
+    "country": "Nigeria"
+  },
+  {
+    "city": "Istanbul",
+    "country": "Turkey"
+  },
+  {
+    "city": "Kolkata",
+    "country": "India"
+  },
+  {
+    "city": "Buenos Aires",
+    "country": "Argentina"
+  },
+  {
+    "city": "Manila",
+    "country": "Philippines"
+  },
+  {
+    "city": "Lahore",
+    "country": "Pakistan"
+  },
+  {
+    "city": "Guangzhou",
+    "country": "China"
+  },
+  {
+    "city": "Tianjin",
+    "country": "China"
+  },
+  {
+    "city": "Bangalore",
+    "country": "India"
+  },
+  {
+    "city": "Rio de Janeiro",
+    "country": "Brazil",
+    "aliases": [
+      "Rio"
+    ]
+  },
+  {
+    "city": "Shenzhen",
+    "country": "China"
+  },
+  {
+    "city": "Moscow",
+    "country": "Russia"
+  },
+  {
+    "city": "Chennai",
+    "country": "India"
+  },
+  {
+    "city": "Bogota",
+    "country": "Colombia"
+  },
+  {
+    "city": "Jakarta",
+    "country": "Indonesia"
+  },
+  {
+    "city": "Lima",
+    "country": "Peru"
+  },
+  {
+    "city": "Hyderabad",
+    "country": "India"
+  },
+  {
+    "city": "Bangkok",
+    "country": "Thailand"
+  },
+  {
+    "city": "Paris",
+    "country": "France"
+  },
+  {
+    "city": "Luanda",
+    "country": "Angola"
+  },
+  {
+    "city": "Nanjing",
+    "country": "China"
+  },
+  {
+    "city": "Chengdu",
+    "country": "China"
+  },
+  {
+    "city": "Ho Chi Minh City",
+    "country": "Vietnam"
+  },
+  {
+    "city": "Seoul",
+    "country": "South Korea"
+  },
+  {
+    "city": "London",
+    "country": "United Kingdom"
+  },
+  {
+    "city": "Tehran",
+    "country": "Iran"
+  },
+  {
+    "city": "Nagoya",
+    "country": "Japan"
+  },
+  {
+    "city": "Xi-an",
+    "country": "China"
+  },
+  {
+    "city": "Ahmedabad",
+    "country": "India"
+  },
+  {
+    "city": "Kuala Lumpur",
+    "country": "Malaysia"
+  },
+  {
+    "city": "Wuhan",
+    "country": "China"
+  },
+  {
+    "city": "Dar es Salaam",
+    "country": "Tanzania"
+  },
+  {
+    "city": "Surat",
+    "country": "India"
+  },
+  {
+    "city": "Suzhou",
+    "country": "China"
+  },
+  {
+    "city": "Hangzhou",
+    "country": "China"
+  },
+  {
+    "city": "Baghdad",
+    "country": "Iraq"
+  },
+  {
+    "city": "New York",
+    "country": "United States"
+  },
+  {
+    "city": "Shenyang",
+    "country": "China"
+  },
+  {
+    "city": "Riyadh",
+    "country": "Saudi Arabia"
+  },
+  {
+    "city": "Foshan",
+    "country": "China"
+  },
+  {
+    "city": "Dongguan",
+    "country": "China"
+  },
+  {
+    "city": "Hong Kong",
+    "country": "Hong Kong"
+  },
+  {
+    "city": "Pune",
+    "country": "India"
+  },
+  {
+    "city": "Haerbin",
+    "country": "China"
+  },
+  {
+    "city": "Santiago",
+    "country": "Chile"
+  },
+  {
+    "city": "Khartoum",
+    "country": "Sudan"
+  },
+  {
+    "city": "Madrid",
+    "country": "Spain"
+  },
+  {
+    "city": "Johannesburg",
+    "country": "South Africa"
+  },
+  {
+    "city": "Toronto",
+    "country": "Canada"
+  },
+  {
+    "city": "Dalian",
+    "country": "China"
+  },
+  {
+    "city": "Belo Horizonte",
+    "country": "Brazil"
+  },
+  {
+    "city": "Qingdao",
+    "country": "China"
+  },
+  {
+    "city": "Zhengzhou",
+    "country": "China"
+  },
+  {
+    "city": "Abidjan",
+    "country": "Ivory Coast"
+  },
+  {
+    "city": "Addis Ababa",
+    "country": "Ethiopia"
+  },
+  {
+    "city": "Singapore",
+    "country": "Singapore"
+  },
+  {
+    "city": "Ji nan Shandong",
+    "country": "China"
+  },
+  {
+    "city": "Nairobi",
+    "country": "Kenya"
+  },
+  {
+    "city": "Alexandria",
+    "country": "Egypt"
+  },
+  {
+    "city": "Yangon",
+    "country": "Myanmar"
+  },
+  {
+    "city": "Chittagong",
+    "country": "Bangladesh"
+  },
+  {
+    "city": "Hanoi",
+    "country": "Vietnam"
+  },
+  {
+    "city": "Barcelona",
+    "country": "Spain"
+  },
+  {
+    "city": "Guadalajara",
+    "country": "Mexico"
+  },
+  {
+    "city": "Ankara",
+    "country": "Turkey"
+  },
+  {
+    "city": "Saint Petersburg",
+    "country": "Russia"
+  },
+  {
+    "city": "Melbourne",
+    "country": "Australia"
+  },
+  {
+    "city": "Fukuoka",
+    "country": "Japan"
+  },
+  {
+    "city": "Monterrey",
+    "country": "Mexico"
+  },
+  {
+    "city": "Sydney",
+    "country": "Australia"
+  },
+  {
+    "city": "Urumqi",
+    "country": "China"
+  },
+  {
+    "city": "Changsha",
+    "country": "China"
+  },
+  {
+    "city": "Cape Town",
+    "country": "South Africa"
+  },
+  {
+    "city": "Jiddah",
+    "country": "Saudi Arabia"
+  },
+  {
+    "city": "Kunming",
+    "country": "China"
+  },
+  {
+    "city": "Brasilia",
+    "country": "Brazil"
+  },
+  {
+    "city": "Kabul",
+    "country": "Afghanistan"
+  },
+  {
+    "city": "Yaounde",
+    "country": "Cameroon"
+  },
+  {
+    "city": "Changchun",
+    "country": "China"
+  },
+  {
+    "city": "Hefei",
+    "country": "China"
+  },
+  {
+    "city": "Ningbo",
+    "country": "China"
+  },
+  {
+    "city": "Shantou",
+    "country": "China"
+  },
+  {
+    "city": "Kano",
+    "country": "Nigeria"
+  },
+  {
+    "city": "Tel Aviv",
+    "country": "Israel"
+  },
+  {
+    "city": "Shijiazhuang",
+    "country": "China"
+  },
+  {
+    "city": "New Taipei",
+    "country": "Taiwan"
+  },
+  {
+    "city": "Kozhikode",
+    "country": "India"
+  },
+  {
+    "city": "Jaipur",
+    "country": "India"
+  },
+  {
+    "city": "Douala",
+    "country": "Cameroon"
+  },
+  {
+    "city": "Kampala",
+    "country": "Uganda"
+  },
+  {
+    "city": "Malappuram",
+    "country": "India"
+  },
+  {
+    "city": "Nanning",
+    "country": "China"
+  },
+  {
+    "city": "Montreal",
+    "country": "Canada"
+  },
+  {
+    "city": "Antananarivo",
+    "country": "Madagascar"
+  },
+  {
+    "city": "Abuja",
+    "country": "Nigeria"
+  },
+  {
+    "city": "Recife",
+    "country": "Brazil"
+  },
+  {
+    "city": "Taiyuan Shanxi",
+    "country": "China"
+  },
+  {
+    "city": "Rome",
+    "country": "Italy"
+  },
+  {
+    "city": "Ekurhuleni",
+    "country": "South Africa"
+  },
+  {
+    "city": "Fortaleza",
+    "country": "Brazil"
+  },
+  {
+    "city": "Porto Alegre",
+    "country": "Brazil"
+  },
+  {
+    "city": "Ibadan",
+    "country": "Nigeria"
+  },
+  {
+    "city": "Changzhou",
+    "country": "China"
+  },
+  {
+    "city": "Lucknow",
+    "country": "India"
+  },
+  {
+    "city": "Medellin",
+    "country": "Colombia"
+  },
+  {
+    "city": "Nanchang",
+    "country": "China"
+  },
+  {
+    "city": "Wenzhou",
+    "country": "China"
+  },
+  {
+    "city": "Kumasi",
+    "country": "Ghana"
+  },
+  {
+    "city": "Xiamen",
+    "country": "China"
+  },
+  {
+    "city": "Fuzhou Fujian",
+    "country": "China"
+  },
+  {
+    "city": "Tangshan Hebei",
+    "country": "China"
+  },
+  {
+    "city": "Casablanca",
+    "country": "Morocco"
+  },
+  {
+    "city": "Salvador",
+    "country": "Brazil"
+  },
+  {
+    "city": "Bekasi",
+    "country": "Indonesia"
+  },
+  {
+    "city": "Faisalabad",
+    "country": "Pakistan"
+  },
+  {
+    "city": "Port Harcourt",
+    "country": "Nigeria"
+  },
+  {
+    "city": "Curitiba",
+    "country": "Brazil"
+  },
+  {
+    "city": "Los Angeles",
+    "country": "United States"
+  },
+  {
+    "city": "Thrissur",
+    "country": "India"
+  },
+  {
+    "city": "Guiyang",
+    "country": "China"
+  },
+  {
+    "city": "Dakar",
+    "country": "Senegal"
+  },
+  {
+    "city": "Santo Domingo",
+    "country": "Dominican Republic"
+  },
+  {
+    "city": "Kochi",
+    "country": "India"
+  },
+  {
+    "city": "Ouagadougou",
+    "country": "Burkina Faso"
+  },
+  {
+    "city": "Asuncion",
+    "country": "Paraguay"
+  },
+  {
+    "city": "Sanaa",
+    "country": "Yemen"
+  },
+  {
+    "city": "Lusaka",
+    "country": "Zambia"
+  },
+  {
+    "city": "Wuxi",
+    "country": "China"
+  },
+  {
+    "city": "Berlin",
+    "country": "Germany"
+  },
+  {
+    "city": "Indore",
+    "country": "India"
+  },
+  {
+    "city": "Campinas",
+    "country": "Brazil"
+  },
+  {
+    "city": "Mashhad",
+    "country": "Iran"
+  },
+  {
+    "city": "Busan",
+    "country": "South Korea"
+  },
+  {
+    "city": "Lanzhou",
+    "country": "China"
+  },
+  {
+    "city": "Puebla",
+    "country": "Mexico"
+  },
+  {
+    "city": "Kuwait City",
+    "country": "Kuwait"
+  },
+  {
+    "city": "Kanpur",
+    "country": "India"
+  },
+  {
+    "city": "Durban",
+    "country": "South Africa"
+  },
+  {
+    "city": "Bamako",
+    "country": "Mali"
+  },
+  {
+    "city": "Guatemala City",
+    "country": "Guatemala"
+  },
+  {
+    "city": "Mbuji-Mayi",
+    "country": "DR Congo"
+  },
+  {
+    "city": "Guayaquil",
+    "country": "Ecuador"
+  },
+  {
+    "city": "Depok",
+    "country": "Indonesia"
+  },
+  {
+    "city": "Nagpur",
+    "country": "India"
+  },
+  {
+    "city": "Pyongyang",
+    "country": "North Korea"
+  },
+  {
+    "city": "Coimbatore",
+    "country": "India"
+  },
+  {
+    "city": "Handan",
+    "country": "China"
+  },
+  {
+    "city": "Huaian",
+    "country": "China"
+  },
+  {
+    "city": "Port-au-Prince",
+    "country": "Haiti"
+  },
+  {
+    "city": "Lubumbashi",
+    "country": "DR Congo"
+  },
+  {
+    "city": "Surabaya",
+    "country": "Indonesia"
+  },
+  {
+    "city": "Izmir",
+    "country": "Turkey"
+  },
+  {
+    "city": "Milan",
+    "country": "Italy"
+  },
+  {
+    "city": "Thiruvananthapuram",
+    "country": "India"
+  },
+  {
+    "city": "Athens",
+    "country": "Greece"
+  },
+  {
+    "city": "Dubai",
+    "country": "United Arab Emirates"
+  },
+  {
+    "city": "Zhongshan",
+    "country": "China"
+  },
+  {
+    "city": "Weifang",
+    "country": "China"
+  },
+  {
+    "city": "Algiers",
+    "country": "Algeria"
+  },
+  {
+    "city": "Caracas",
+    "country": "Venezuela"
+  },
+  {
+    "city": "Lisbon",
+    "country": "Portugal"
+  },
+  {
+    "city": "Kiev",
+    "country": "Ukraine"
+  },
+  {
+    "city": "Pretoria",
+    "country": "South Africa"
+  },
+  {
+    "city": "Shaoxing",
+    "country": "China"
+  },
+  {
+    "city": "Mogadishu",
+    "country": "Somalia"
+  },
+  {
+    "city": "Goiania",
+    "country": "Brazil"
+  },
+  {
+    "city": "Yantai",
+    "country": "China"
+  },
+  {
+    "city": "Huizhou",
+    "country": "China"
+  },
+  {
+    "city": "Cali",
+    "country": "Colombia"
+  },
+  {
+    "city": "Zibo",
+    "country": "China"
+  },
+  {
+    "city": "Damascus",
+    "country": "Syria"
+  },
+  {
+    "city": "Shizuoka",
+    "country": "Japan"
+  },
+  {
+    "city": "Brazzaville",
+    "country": "Republic of the Congo"
+  },
+  {
+    "city": "Incheon",
+    "country": "South Korea"
+  },
+  {
+    "city": "Accra",
+    "country": "Ghana"
+  },
+  {
+    "city": "Manchester",
+    "country": "United Kingdom"
+  },
+  {
+    "city": "Bandung",
+    "country": "Indonesia"
+  },
+  {
+    "city": "Taipei",
+    "country": "Taiwan"
+  },
+  {
+    "city": "Luoyang",
+    "country": "China"
+  },
+  {
+    "city": "Toluca de Lerdo",
+    "country": "Mexico"
+  },
+  {
+    "city": "Bhopal",
+    "country": "India"
+  },
+  {
+    "city": "Patna",
+    "country": "India"
+  },
+  {
+    "city": "Vancouver",
+    "country": "Canada"
+  },
+  {
+    "city": "Birmingham",
+    "country": "United Kingdom"
+  },
+  {
+    "city": "Chicago",
+    "country": "United States"
+  },
+  {
+    "city": "Tashkent",
+    "country": "Uzbekistan"
+  },
+  {
+    "city": "Tangerang",
+    "country": "Indonesia"
+  },
+  {
+    "city": "Nantong",
+    "country": "China"
+  },
+  {
+    "city": "Sapporo",
+    "country": "Japan"
+  },
+  {
+    "city": "Peshawar",
+    "country": "Pakistan"
+  },
+  {
+    "city": "Gujranwala",
+    "country": "Pakistan"
+  },
+  {
+    "city": "Brisbane",
+    "country": "Australia"
+  },
+  {
+    "city": "Tunis",
+    "country": "Tunisia"
+  },
+  {
+    "city": "Medan",
+    "country": "Indonesia"
+  },
+  {
+    "city": "Aleppo",
+    "country": "Syria"
+  },
+  {
+    "city": "Hohhot",
+    "country": "China"
+  },
+  {
+    "city": "Rawalpindi",
+    "country": "Pakistan"
+  },
+  {
+    "city": "Agra",
+    "country": "India"
+  },
+  {
+    "city": "Baku",
+    "country": "Azerbaijan"
+  },
+  {
+    "city": "Kannur",
+    "country": "India"
+  },
+  {
+    "city": "Phnom Penh",
+    "country": "Cambodia"
+  },
+  {
+    "city": "Visakhapatnam",
+    "country": "India"
+  },
+  {
+    "city": "Liuzhou",
+    "country": "China"
+  },
+  {
+    "city": "Vadodara",
+    "country": "India"
+  },
+  {
+    "city": "Belem",
+    "country": "Brazil"
+  },
+  {
+    "city": "Baotou",
+    "country": "China"
+  },
+  {
+    "city": "Maracaibo",
+    "country": "Venezuela"
+  },
+  {
+    "city": "Manaus",
+    "country": "Brazil"
+  },
+  {
+    "city": "Houston",
+    "country": "United States"
+  },
+  {
+    "city": "San Juan",
+    "country": "Puerto Rico"
+  },
+  {
+    "city": "Barranquilla",
+    "country": "Colombia"
+  },
+  {
+    "city": "Xuzhou",
+    "country": "China"
+  },
+  {
+    "city": "Vijayawada",
+    "country": "India"
+  },
+  {
+    "city": "Nashik",
+    "country": "India"
+  },
+  {
+    "city": "Taoyuan",
+    "country": "Taiwan"
+  },
+  {
+    "city": "Putian",
+    "country": "China"
+  },
+  {
+    "city": "Tijuana",
+    "country": "Mexico"
+  },
+  {
+    "city": "Beirut",
+    "country": "Lebanon"
+  },
+  {
+    "city": "Esfahan",
+    "country": "Iran"
+  },
+  {
+    "city": "Sendai",
+    "country": "Japan"
+  },
+  {
+    "city": "Conakry",
+    "country": "Guinea"
+  },
+  {
+    "city": "Kollam",
+    "country": "India"
+  },
+  {
+    "city": "Multan",
+    "country": "Pakistan"
+  },
+  {
+    "city": "Wuhu Anhui",
+    "country": "China"
+  },
+  {
+    "city": "Amman",
+    "country": "Jordan"
+  },
+  {
+    "city": "Yangzhou",
+    "country": "China"
+  },
+  {
+    "city": "Mecca",
+    "country": "Saudi Arabia"
+  },
+  {
+    "city": "Grande Vitoria",
+    "country": "Brazil"
+  },
+  {
+    "city": "Taizhou Zhejiang",
+    "country": "China"
+  },
+  {
+    "city": "Baoding",
+    "country": "China"
+  },
+  {
+    "city": "Rajkot",
+    "country": "India"
+  },
+  {
+    "city": "Linyi Shandong",
+    "country": "China"
+  },
+  {
+    "city": "Perth",
+    "country": "Australia"
+  },
+  {
+    "city": "Naples",
+    "country": "Italy"
+  },
+  {
+    "city": "Daegu",
+    "country": "South Korea"
+  },
+  {
+    "city": "Lome",
+    "country": "Togo"
+  },
+  {
+    "city": "Bursa",
+    "country": "Turkey"
+  },
+  {
+    "city": "Havana",
+    "country": "Cuba"
+  },
+  {
+    "city": "Brussels",
+    "country": "Belgium"
+  },
+  {
+    "city": "Haikou",
+    "country": "China"
+  },
+  {
+    "city": "Daqing",
+    "country": "China"
+  },
+  {
+    "city": "Lianyungang",
+    "country": "China"
+  },
+  {
+    "city": "Benin City",
+    "country": "Nigeria"
+  },
+  {
+    "city": "Yancheng Jiangsu",
+    "country": "China"
+  },
+  {
+    "city": "Hyderabad",
+    "country": "Pakistan"
+  },
+  {
+    "city": "Panama City",
+    "country": "Panama"
+  },
+  {
+    "city": "Semarang",
+    "country": "Indonesia"
+  },
+  {
+    "city": "Davao City",
+    "country": "Philippines"
+  },
+  {
+    "city": "Minsk",
+    "country": "Belarus"
+  },
+  {
+    "city": "Ludhiana",
+    "country": "India"
+  },
+  {
+    "city": "Can Tho",
+    "country": "Vietnam"
+  },
+  {
+    "city": "Almaty",
+    "country": "Kazakhstan"
+  },
+  {
+    "city": "Matola",
+    "country": "Mozambique"
+  },
+  {
+    "city": "Rabat",
+    "country": "Morocco"
+  },
+  {
+    "city": "Valencia",
+    "country": "Venezuela"
+  },
+  {
+    "city": "Hiroshima",
+    "country": "Japan"
+  },
+  {
+    "city": "Quito",
+    "country": "Ecuador"
+  },
+  {
+    "city": "La Paz",
+    "country": "Bolivia"
+  },
+  {
+    "city": "Vienna",
+    "country": "Austria"
+  },
+  {
+    "city": "Quanzhou",
+    "country": "China"
+  },
+  {
+    "city": "Zhuhai",
+    "country": "China"
+  },
+  {
+    "city": "Baixada Santista",
+    "country": "Brazil"
+  },
+  {
+    "city": "Datong",
+    "country": "China"
+  },
+  {
+    "city": "Leon de los Aldamas",
+    "country": "Mexico"
+  },
+  {
+    "city": "Raipur",
+    "country": "India"
+  },
+  {
+    "city": "West Yorkshire",
+    "country": "United Kingdom"
+  },
+  {
+    "city": "Mosul",
+    "country": "Iraq"
+  },
+  {
+    "city": "Madurai",
+    "country": "India"
+  },
+  {
+    "city": "Sharjah",
+    "country": "United Arab Emirates"
+  },
+  {
+    "city": "Cixi",
+    "country": "China"
+  },
+  {
+    "city": "Santa Cruz",
+    "country": "Bolivia"
+  },
+  {
+    "city": "Palembang",
+    "country": "Indonesia"
+  },
+  {
+    "city": "Meerut",
+    "country": "India"
+  },
+  {
+    "city": "Batam",
+    "country": "Indonesia"
+  },
+  {
+    "city": "La Laguna",
+    "country": "Mexico"
+  },
+  {
+    "city": "Adana",
+    "country": "Turkey"
+  },
+  {
+    "city": "Kananga",
+    "country": "DR Congo"
+  },
+  {
+    "city": "Gaziantep",
+    "country": "Turkey"
+  },
+  {
+    "city": "Varanasi",
+    "country": "India"
+  },
+  {
+    "city": "Monrovia",
+    "country": "Liberia"
+  },
+  {
+    "city": "Jiangmen",
+    "country": "China"
+  },
+  {
+    "city": "Onitsha",
+    "country": "Nigeria"
+  },
+  {
+    "city": "Yichang",
+    "country": "China"
+  },
+  {
+    "city": "Tiruppur",
+    "country": "India"
+  },
+  {
+    "city": "Xiangyang",
+    "country": "China"
+  },
+  {
+    "city": "Yinchuan",
+    "country": "China"
+  },
+  {
+    "city": "Suqian",
+    "country": "China"
+  },
+  {
+    "city": "Srinagar",
+    "country": "India"
+  },
+  {
+    "city": "Turin",
+    "country": "Italy"
+  },
+  {
+    "city": "Aurangabad",
+    "country": "India"
+  },
+  {
+    "city": "Jamshedpur",
+    "country": "India"
+  },
+  {
+    "city": "Warsaw",
+    "country": "Poland"
+  },
+  {
+    "city": "Lyon",
+    "country": "France"
+  },
+  {
+    "city": "Qinhuangdao",
+    "country": "China"
+  },
+  {
+    "city": "Montevideo",
+    "country": "Uruguay"
+  },
+  {
+    "city": "N-Djamena",
+    "country": "Chad"
+  },
+  {
+    "city": "Hamburg",
+    "country": "Germany"
+  },
+  {
+    "city": "Shiraz",
+    "country": "Iran"
+  },
+  {
+    "city": "Budapest",
+    "country": "Hungary"
+  },
+  {
+    "city": "Anyang",
+    "country": "China"
+  },
+  {
+    "city": "Xining",
+    "country": "China"
+  },
+  {
+    "city": "Hengyang",
+    "country": "China"
+  },
+  {
+    "city": "Makassar",
+    "country": "Indonesia"
+  },
+  {
+    "city": "Anshan",
+    "country": "China"
+  },
+  {
+    "city": "Stockholm",
+    "country": "Sweden"
+  },
+  {
+    "city": "Bucharest",
+    "country": "Romania"
+  },
+  {
+    "city": "Ulaanbaatar",
+    "country": "Mongolia"
+  },
+  {
+    "city": "Jilin",
+    "country": "China"
+  },
+  {
+    "city": "Glasgow",
+    "country": "United Kingdom"
+  },
+  {
+    "city": "Muscat",
+    "country": "Oman"
+  },
+  {
+    "city": "Auckland",
+    "country": "New Zealand"
+  },
+  {
+    "city": "Kathmandu",
+    "country": "Nepal"
+  },
+  {
+    "city": "Qiqihaer",
+    "country": "China"
+  },
+  {
+    "city": "Tabriz",
+    "country": "Iran"
+  },
+  {
+    "city": "Novosibirsk",
+    "country": "Russia"
+  },
+  {
+    "city": "Calgary",
+    "country": "Canada"
+  },
+  {
+    "city": "Jodhpur",
+    "country": "India"
+  },
+  {
+    "city": "Phoenix",
+    "country": "United States"
+  },
+  {
+    "city": "Tegucigalpa",
+    "country": "Honduras"
+  },
+  {
+    "city": "Nouakchott",
+    "country": "Mauritania"
+  },
+  {
+    "city": "Harare",
+    "country": "Zimbabwe"
+  },
+  {
+    "city": "Ranchi",
+    "country": "India"
+  },
+  {
+    "city": "Cordoba",
+    "country": "Argentina"
+  },
+  {
+    "city": "Marseille",
+    "country": "France"
+  },
+  {
+    "city": "Medina",
+    "country": "Saudi Arabia"
+  },
+  {
+    "city": "Rosario",
+    "country": "Argentina"
+  },
+  {
+    "city": "Jining Shandong",
+    "country": "China"
+  },
+  {
+    "city": "Ciudad Juarez",
+    "country": "Mexico"
+  },
+  {
+    "city": "Abu Dhabi",
+    "country": "United Arab Emirates"
+  },
+  {
+    "city": "Kota",
+    "country": "India"
+  },
+  {
+    "city": "Niamey",
+    "country": "Niger"
+  },
+  {
+    "city": "Homs",
+    "country": "Syria"
+  },
+  {
+    "city": "Karaj",
+    "country": "Iran"
+  },
+  {
+    "city": "Zhangjiakou",
+    "country": "China"
+  },
+  {
+    "city": "Mandalay",
+    "country": "Myanmar"
+  },
+  {
+    "city": "Jabalpur",
+    "country": "India"
+  },
+  {
+    "city": "Mombasa",
+    "country": "Kenya"
+  },
+  {
+    "city": "Kisangani",
+    "country": "DR Congo"
+  },
+  {
+    "city": "Edmonton",
+    "country": "Canada"
+  },
+  {
+    "city": "Asansol",
+    "country": "India"
+  },
+  {
+    "city": "Yiwu",
+    "country": "China"
+  },
+  {
+    "city": "Munich",
+    "country": "Germany"
+  },
+  {
+    "city": "Natal",
+    "country": "Brazil"
+  },
+  {
+    "city": "Daejon",
+    "country": "South Korea"
+  },
+  {
+    "city": "Huainan",
+    "country": "China"
+  },
+  {
+    "city": "Ganzhou",
+    "country": "China"
+  },
+  {
+    "city": "Gwalior",
+    "country": "India"
+  },
+  {
+    "city": "Gaoxiong",
+    "country": "Taiwan"
+  },
+  {
+    "city": "San Antonio",
+    "country": "United States"
+  },
+  {
+    "city": "Chaozhou",
+    "country": "China"
+  },
+  {
+    "city": "Basra",
+    "country": "Iraq"
+  },
+  {
+    "city": "Philadelphia",
+    "country": "United States"
+  },
+  {
+    "city": "Grande Sao Luis",
+    "country": "Brazil"
+  },
+  {
+    "city": "Allahabad",
+    "country": "India"
+  },
+  {
+    "city": "Jiaxing",
+    "country": "China"
+  },
+  {
+    "city": "Hai Phong",
+    "country": "Vietnam"
+  },
+  {
+    "city": "Amritsar",
+    "country": "India"
+  },
+  {
+    "city": "Gwangju",
+    "country": "South Korea"
+  },
+  {
+    "city": "Yekaterinburg",
+    "country": "Russia"
+  },
+  {
+    "city": "Taizhou Jiangsu",
+    "country": "China"
+  },
+  {
+    "city": "Weihai",
+    "country": "China"
+  },
+  {
+    "city": "San Jose",
+    "country": "Costa Rica"
+  },
+  {
+    "city": "Uyo",
+    "country": "Nigeria"
+  },
+  {
+    "city": "Mwanza",
+    "country": "Tanzania"
+  },
+  {
+    "city": "Liuyang",
+    "country": "China"
+  },
+  {
+    "city": "Chon Buri",
+    "country": "Thailand"
+  },
+  {
+    "city": "Liuan",
+    "country": "China"
+  },
+  {
+    "city": "Kaifeng",
+    "country": "China"
+  },
+  {
+    "city": "Taian Shandong",
+    "country": "China"
+  },
+  {
+    "city": "Cochabamba",
+    "country": "Bolivia"
+  },
+  {
+    "city": "Rizhao",
+    "country": "China"
+  },
+  {
+    "city": "Queretaro",
+    "country": "Mexico"
+  },
+  {
+    "city": "Ottawa",
+    "country": "Canada"
+  },
+  {
+    "city": "Nanchong",
+    "country": "China"
+  },
+  {
+    "city": "Dhanbad",
+    "country": "India"
+  },
+  {
+    "city": "Pointe-Noire",
+    "country": "Republic of the Congo"
+  },
+  {
+    "city": "Konya",
+    "country": "Turkey"
+  },
+  {
+    "city": "Dongying",
+    "country": "China"
+  },
+  {
+    "city": "Zurich",
+    "country": "Switzerland"
+  },
+  {
+    "city": "Zunyi",
+    "country": "China"
+  },
+  {
+    "city": "Joao Pessoa",
+    "country": "Brazil"
+  },
+  {
+    "city": "Lilongwe",
+    "country": "Malawi"
+  },
+  {
+    "city": "Zhanjiang",
+    "country": "China"
+  },
+  {
+    "city": "Bareilly",
+    "country": "India"
+  },
+  {
+    "city": "Shiyan",
+    "country": "China"
+  },
+  {
+    "city": "Abomey-Calavi",
+    "country": "Benin"
+  },
+  {
+    "city": "Bukavu",
+    "country": "DR Congo"
+  },
+  {
+    "city": "Freetown",
+    "country": "Sierra Leone"
+  },
+  {
+    "city": "Bujumbura",
+    "country": "Burundi"
+  },
+  {
+    "city": "Tengzhou",
+    "country": "China"
+  },
+  {
+    "city": "Bucaramanga",
+    "country": "Colombia"
+  },
+  {
+    "city": "Mianyang Sichuan",
+    "country": "China"
+  },
+  {
+    "city": "Nnewi",
+    "country": "Nigeria"
+  },
+  {
+    "city": "Belgrade",
+    "country": "Serbia"
+  },
+  {
+    "city": "Antalya",
+    "country": "Turkey"
+  },
+  {
+    "city": "San Diego",
+    "country": "United States"
+  },
+  {
+    "city": "Kharkiv",
+    "country": "Ukraine"
+  },
+  {
+    "city": "Aligarh",
+    "country": "India"
+  },
+  {
+    "city": "Yingkou",
+    "country": "China"
+  },
+  {
+    "city": "Tanger",
+    "country": "Morocco"
+  },
+  {
+    "city": "Samut Prakan",
+    "country": "Thailand"
+  },
+  {
+    "city": "Copenhagen",
+    "country": "Denmark"
+  },
+  {
+    "city": "Qom",
+    "country": "Iran"
+  },
+  {
+    "city": "Adelaide",
+    "country": "Australia"
+  },
+  {
+    "city": "Moradabad",
+    "country": "India"
+  },
+  {
+    "city": "Taizhong",
+    "country": "Taiwan"
+  },
+  {
+    "city": "Maceio",
+    "country": "Brazil"
+  },
+  {
+    "city": "Ad-Dammam",
+    "country": "Saudi Arabia"
+  },
+  {
+    "city": "Suweon",
+    "country": "South Korea"
+  },
+  {
+    "city": "Pekan Baru",
+    "country": "Indonesia"
+  },
+  {
+    "city": "Maoming",
+    "country": "China"
+  },
+  {
+    "city": "Joinville",
+    "country": "Brazil"
+  },
+  {
+    "city": "Jieyang",
+    "country": "China"
+  },
+  {
+    "city": "Astana",
+    "country": "Kazakhstan"
+  },
+  {
+    "city": "Mysore",
+    "country": "India"
+  },
+  {
+    "city": "Kigali",
+    "country": "Rwanda"
+  },
+  {
+    "city": "Ruian",
+    "country": "China"
+  },
+  {
+    "city": "Helsinki",
+    "country": "Finland"
+  },
+  {
+    "city": "Fes",
+    "country": "Morocco"
+  },
+  {
+    "city": "Jinhua",
+    "country": "China"
+  },
+  {
+    "city": "Bhubaneswar",
+    "country": "India"
+  },
+  {
+    "city": "Port Elizabeth",
+    "country": "South Africa"
+  },
+  {
+    "city": "Fushun Liaoning",
+    "country": "China"
+  },
+  {
+    "city": "Durg-Bhilainagar",
+    "country": "India"
+  },
+  {
+    "city": "Baoji",
+    "country": "China"
+  },
+  {
+    "city": "Liupanshui",
+    "country": "China"
+  },
+  {
+    "city": "Ahvaz",
+    "country": "Iran"
+  },
+  {
+    "city": "Porto",
+    "country": "Portugal"
+  },
+  {
+    "city": "Pingdingshan Henan",
+    "country": "China"
+  },
+  {
+    "city": "Dallas",
+    "country": "United States"
+  },
+  {
+    "city": "Florianopolis",
+    "country": "Brazil"
+  },
+  {
+    "city": "Islamabad",
+    "country": "Pakistan"
+  },
+  {
+    "city": "Prague",
+    "country": "Czechia"
+  },
+  {
+    "city": "Puning",
+    "country": "China"
+  },
+  {
+    "city": "Tasikmalaya",
+    "country": "Indonesia"
+  },
+  {
+    "city": "San Luis Potosi",
+    "country": "Mexico"
+  },
+  {
+    "city": "Chifeng",
+    "country": "China"
+  },
+  {
+    "city": "Xiongan",
+    "country": "China"
+  },
+  {
+    "city": "Aba",
+    "country": "Nigeria"
+  },
+  {
+    "city": "Zhenjiang Jiangsu",
+    "country": "China"
+  },
+  {
+    "city": "Zhuzhou",
+    "country": "China"
+  },
+  {
+    "city": "Da Nang",
+    "country": "Vietnam"
+  },
+  {
+    "city": "Huaibei",
+    "country": "China"
+  },
+  {
+    "city": "Dublin",
+    "country": "Ireland"
+  },
+  {
+    "city": "Pizhou",
+    "country": "China"
+  },
+  {
+    "city": "Luohe",
+    "country": "China"
+  },
+  {
+    "city": "Bogor",
+    "country": "Indonesia"
+  },
+  {
+    "city": "Bobo-Dioulasso",
+    "country": "Burkina Faso"
+  },
+  {
+    "city": "Bazhong",
+    "country": "China"
+  },
+  {
+    "city": "Kaduna",
+    "country": "Nigeria"
+  },
+  {
+    "city": "Kazan",
+    "country": "Russia"
+  },
+  {
+    "city": "Nanyang Henan",
+    "country": "China"
+  },
+  {
+    "city": "Tiruchirappalli",
+    "country": "India"
+  },
+  {
+    "city": "Xiangtan Hunan",
+    "country": "China"
+  },
+  {
+    "city": "Barquisimeto",
+    "country": "Venezuela"
+  },
+  {
+    "city": "Chandigarh",
+    "country": "India"
+  },
+  {
+    "city": "Binzhou",
+    "country": "China"
+  },
+  {
+    "city": "Quetta",
+    "country": "Pakistan"
+  },
+  {
+    "city": "Sofia",
+    "country": "Bulgaria"
+  },
+  {
+    "city": "Maracay",
+    "country": "Venezuela"
+  },
+  {
+    "city": "Jinzhou",
+    "country": "China"
+  },
+  {
+    "city": "Hargeysa",
+    "country": "Somalia"
+  },
+  {
+    "city": "Benxi",
+    "country": "China"
+  },
+  {
+    "city": "Merida",
+    "country": "Mexico"
+  },
+  {
+    "city": "Saharanpur",
+    "country": "India"
+  },
+  {
+    "city": "Maputo",
+    "country": "Mozambique"
+  },
+  {
+    "city": "Mendoza",
+    "country": "Argentina"
+  },
+  {
+    "city": "Chiang Mai",
+    "country": "Thailand"
+  },
+  {
+    "city": "Guilin",
+    "country": "China"
+  },
+  {
+    "city": "Hubli-Dharwad",
+    "country": "India"
+  },
+  {
+    "city": "Yueqing",
+    "country": "China"
+  },
+  {
+    "city": "Guwahati",
+    "country": "India"
+  },
+  {
+    "city": "Nizhniy Novgorod",
+    "country": "Russia"
+  },
+  {
+    "city": "Ikorodu",
+    "country": "Nigeria"
+  },
+  {
+    "city": "Chelyabinsk",
+    "country": "Russia"
+  },
+  {
+    "city": "Salem",
+    "country": "India"
+  },
+  {
+    "city": "Tshikapa",
+    "country": "DR Congo"
+  },
+  {
+    "city": "Bandar Lampung",
+    "country": "Indonesia"
+  },
+  {
+    "city": "Mexicali",
+    "country": "Mexico"
+  },
+  {
+    "city": "Shimkent",
+    "country": "Kazakhstan"
+  },
+  {
+    "city": "Siliguri",
+    "country": "India"
+  },
+  {
+    "city": "Tripoli",
+    "country": "Libya"
+  },
+  {
+    "city": "Haifa",
+    "country": "Israel"
+  },
+  {
+    "city": "Aguascalientes",
+    "country": "Mexico"
+  },
+  {
+    "city": "Wenling",
+    "country": "China"
+  },
+  {
+    "city": "Bien Hoa",
+    "country": "Vietnam"
+  },
+  {
+    "city": "Xinxiang",
+    "country": "China"
+  },
+  {
+    "city": "Sekondi Takoradi",
+    "country": "Ghana"
+  },
+  {
+    "city": "Amsterdam",
+    "country": "Netherlands"
+  },
+  {
+    "city": "Aden",
+    "country": "Yemen"
+  },
+  {
+    "city": "Asmara",
+    "country": "Eritrea"
+  },
+  {
+    "city": "Jalandhar",
+    "country": "India"
+  },
+  {
+    "city": "Fuyang",
+    "country": "China"
+  },
+  {
+    "city": "Yichun Jiangxi",
+    "country": "China"
+  },
+  {
+    "city": "Nyala",
+    "country": "Sudan"
+  },
+  {
+    "city": "Ma'anshan",
+    "country": "China"
+  },
+  {
+    "city": "Zaozhuang",
+    "country": "China"
+  },
+  {
+    "city": "Fuzhou Jiangxi",
+    "country": "China"
+  },
+  {
+    "city": "Panjin",
+    "country": "China"
+  },
+  {
+    "city": "Krasnoyarsk",
+    "country": "Russia"
+  },
+  {
+    "city": "Omsk",
+    "country": "Russia"
+  },
+  {
+    "city": "Samarinda",
+    "country": "Indonesia"
+  },
+  {
+    "city": "Chenzhou",
+    "country": "China"
+  },
+  {
+    "city": "Bishkek",
+    "country": "Kyrgyzstan"
+  },
+  {
+    "city": "Shangrao",
+    "country": "China"
+  },
+  {
+    "city": "Cuernavaca",
+    "country": "Mexico"
+  },
+  {
+    "city": "Zhaoqing",
+    "country": "China"
+  },
+  {
+    "city": "Chihuahua",
+    "country": "Mexico"
+  },
+  {
+    "city": "Leshan",
+    "country": "China"
+  },
+  {
+    "city": "Yongin",
+    "country": "South Korea"
+  },
+  {
+    "city": "Blantyre-Limbe",
+    "country": "Malawi"
+  },
+  {
+    "city": "Kirkuk",
+    "country": "Iraq"
+  },
+  {
+    "city": "Cologne",
+    "country": "Germany"
+  },
+  {
+    "city": "Dezhou",
+    "country": "China"
+  },
+  {
+    "city": "Samara",
+    "country": "Russia"
+  },
+  {
+    "city": "Ufa",
+    "country": "Russia"
+  },
+  {
+    "city": "Changshu",
+    "country": "China"
+  },
+  {
+    "city": "Johor Bahru",
+    "country": "Malaysia"
+  },
+  {
+    "city": "Jingzhou Hubei",
+    "country": "China"
+  },
+  {
+    "city": "San Salvador",
+    "country": "El Salvador"
+  },
+  {
+    "city": "Diyarbakir",
+    "country": "Turkey"
+  },
+  {
+    "city": "Rostov-on-Don",
+    "country": "Russia"
+  },
+  {
+    "city": "Xuchang",
+    "country": "China"
+  },
+  {
+    "city": "Ilorin",
+    "country": "Nigeria"
+  },
+  {
+    "city": "Managua",
+    "country": "Nicaragua"
+  },
+  {
+    "city": "Huzhou",
+    "country": "China"
+  },
+  {
+    "city": "Kermanshah",
+    "country": "Iran"
+  },
+  {
+    "city": "Solapur",
+    "country": "India"
+  },
+  {
+    "city": "Oslo",
+    "country": "Norway"
+  },
+  {
+    "city": "Goyang",
+    "country": "South Korea"
+  },
+  {
+    "city": "Hamah",
+    "country": "Syria"
+  },
+  {
+    "city": "Warri",
+    "country": "Nigeria"
+  },
+  {
+    "city": "Denpasar",
+    "country": "Indonesia"
+  },
+  {
+    "city": "Qujing",
+    "country": "China"
+  },
+  {
+    "city": "Cartagena",
+    "country": "Colombia"
+  },
+  {
+    "city": "Guiping",
+    "country": "China"
+  },
+  {
+    "city": "Mersin",
+    "country": "Turkey"
+  },
+  {
+    "city": "Warangal",
+    "country": "India"
+  },
+  {
+    "city": "Owerri",
+    "country": "Nigeria"
+  },
+  {
+    "city": "Marrakech",
+    "country": "Morocco"
+  },
+  {
+    "city": "Nampula",
+    "country": "Mozambique"
+  },
+  {
+    "city": "Yerevan",
+    "country": "Armenia"
+  },
+  {
+    "city": "Lille",
+    "country": "France"
+  },
+  {
+    "city": "Yueyang",
+    "country": "China"
+  },
+  {
+    "city": "Xintai",
+    "country": "China"
+  },
+  {
+    "city": "Lubango",
+    "country": "Angola"
+  },
+  {
+    "city": "Tampico",
+    "country": "Mexico"
+  },
+  {
+    "city": "Padang",
+    "country": "Indonesia"
+  },
+  {
+    "city": "Aracaju",
+    "country": "Brazil"
+  },
+  {
+    "city": "Tbilisi",
+    "country": "Georgia"
+  },
+  {
+    "city": "Toulouse",
+    "country": "France"
+  },
+  {
+    "city": "Voronezh",
+    "country": "Russia"
+  },
+  {
+    "city": "Perm",
+    "country": "Russia"
+  },
+  {
+    "city": "Cancun",
+    "country": "Mexico"
+  },
+  {
+    "city": "Cebu City",
+    "country": "Philippines"
+  },
+  {
+    "city": "Saltillo",
+    "country": "Mexico"
+  },
+  {
+    "city": "Teresina",
+    "country": "Brazil"
+  },
+  {
+    "city": "Chengde",
+    "country": "China"
+  },
+  {
+    "city": "Jos",
+    "country": "Nigeria"
+  },
+  {
+    "city": "Leiyang",
+    "country": "China"
+  },
+  {
+    "city": "Antwerp",
+    "country": "Belgium"
+  },
+  {
+    "city": "Dushanbe",
+    "country": "Tajikistan"
+  },
+  {
+    "city": "Zhucheng",
+    "country": "China"
+  },
+  {
+    "city": "Dehradun",
+    "country": "India"
+  },
+  {
+    "city": "Sylhet",
+    "country": "Bangladesh"
+  },
+  {
+    "city": "San Miguel de Tucuman",
+    "country": "Argentina"
+  },
+  {
+    "city": "Pingxiang Jiangxi",
+    "country": "China"
+  },
+  {
+    "city": "Acapulco de Juarez",
+    "country": "Mexico"
+  },
+  {
+    "city": "San Pedro Sula",
+    "country": "Honduras"
+  },
+  {
+    "city": "Changwon",
+    "country": "South Korea"
+  },
+  {
+    "city": "Misratah",
+    "country": "Libya"
+  },
+  {
+    "city": "Laiwu",
+    "country": "China"
+  },
+  {
+    "city": "Fort Worth",
+    "country": "United States"
+  },
+  {
+    "city": "Bangui",
+    "country": "Central African Republic"
+  },
+  {
+    "city": "Kayseri",
+    "country": "Turkey"
+  },
+  {
+    "city": "Najaf",
+    "country": "Iraq"
+  },
+  {
+    "city": "Taiz",
+    "country": "Yemen"
+  },
+  {
+    "city": "Songkhla",
+    "country": "Thailand"
+  },
+  {
+    "city": "Jiujiang",
+    "country": "China"
+  },
+  {
+    "city": "Jixi Heilongjiang",
+    "country": "China"
+  },
+  {
+    "city": "Nonthaburi",
+    "country": "Thailand"
+  },
+  {
+    "city": "Jacksonville",
+    "country": "United States"
+  },
+  {
+    "city": "Agadir",
+    "country": "Morocco"
+  },
+  {
+    "city": "Cabinda",
+    "country": "Angola"
+  },
+  {
+    "city": "Umuahia",
+    "country": "Nigeria"
+  },
+  {
+    "city": "Valparaiso",
+    "country": "Chile"
+  },
+  {
+    "city": "Rajshahi",
+    "country": "Bangladesh"
+  },
+  {
+    "city": "Guigang",
+    "country": "China"
+  },
+  {
+    "city": "Hengshui",
+    "country": "China"
+  },
+  {
+    "city": "Rotterdam",
+    "country": "Netherlands"
+  },
+  {
+    "city": "Morelia",
+    "country": "Mexico"
+  },
+  {
+    "city": "Bordeaux",
+    "country": "France"
+  },
+  {
+    "city": "Liling",
+    "country": "China"
+  },
+  {
+    "city": "Mudanjiang",
+    "country": "China"
+  },
+  {
+    "city": "Xinyu",
+    "country": "China"
+  },
+  {
+    "city": "Linfen",
+    "country": "China"
+  },
+  {
+    "city": "Zhangzhou",
+    "country": "China"
+  },
+  {
+    "city": "Krasnodar",
+    "country": "Russia"
+  },
+  {
+    "city": "Tianmen",
+    "country": "China"
+  },
+  {
+    "city": "Bogra",
+    "country": "Bangladesh"
+  },
+  {
+    "city": "Zamboanga City",
+    "country": "Philippines"
+  },
+  {
+    "city": "Yangjiang",
+    "country": "China"
+  },
+  {
+    "city": "Antipolo",
+    "country": "Philippines"
+  },
+  {
+    "city": "Jerusalem",
+    "country": "Israel"
+  },
+  {
+    "city": "Austin",
+    "country": "United States"
+  },
+  {
+    "city": "Odesa",
+    "country": "Ukraine"
+  },
+  {
+    "city": "Baishan",
+    "country": "China"
+  },
+  {
+    "city": "Deyang",
+    "country": "China"
+  },
+  {
+    "city": "Ciudad Guayana",
+    "country": "Venezuela"
+  },
+  {
+    "city": "Jiangyin",
+    "country": "China"
+  },
+  {
+    "city": "Khulna",
+    "country": "Bangladesh"
+  },
+  {
+    "city": "Reynosa",
+    "country": "Mexico"
+  },
+  {
+    "city": "Arequipa",
+    "country": "Peru"
+  },
+  {
+    "city": "Bahawalpur",
+    "country": "Pakistan"
+  },
+  {
+    "city": "Veracruz",
+    "country": "Mexico"
+  },
+  {
+    "city": "Volgograd",
+    "country": "Russia"
+  },
+  {
+    "city": "San Jose",
+    "country": "United States"
+  },
+  {
+    "city": "Cucuta",
+    "country": "Colombia"
+  },
+  {
+    "city": "Bengbu",
+    "country": "China"
+  },
+  {
+    "city": "Villahermosa",
+    "country": "Mexico"
+  },
+  {
+    "city": "Pathum Thani",
+    "country": "Thailand"
+  },
+  {
+    "city": "Guntur",
+    "country": "India"
+  },
+  {
+    "city": "Oran",
+    "country": "Algeria"
+  },
+  {
+    "city": "Charlotte",
+    "country": "United States"
+  },
+  {
+    "city": "West Rand",
+    "country": "South Africa"
+  },
+  {
+    "city": "Lokoja",
+    "country": "Nigeria"
+  },
+  {
+    "city": "Southampton",
+    "country": "United Kingdom"
+  },
+  {
+    "city": "Changzhi",
+    "country": "China"
+  },
+  {
+    "city": "Erbil",
+    "country": "Iraq"
+  },
+  {
+    "city": "Firozabad",
+    "country": "India"
+  },
+  {
+    "city": "Malang",
+    "country": "Indonesia"
+  },
+  {
+    "city": "Bhiwandi",
+    "country": "India"
+  },
+  {
+    "city": "Puducherry",
+    "country": "India"
+  },
+  {
+    "city": "Dandong",
+    "country": "China"
+  },
+  {
+    "city": "Nice",
+    "country": "France"
+  },
+  {
+    "city": "Ashgabat",
+    "country": "Turkmenistan"
+  },
+  {
+    "city": "Cherthala",
+    "country": "India"
+  },
+  {
+    "city": "Hermosillo",
+    "country": "Mexico"
+  },
+  {
+    "city": "Kuerle",
+    "country": "China"
+  },
+  {
+    "city": "Changde",
+    "country": "China"
+  },
+  {
+    "city": "Quzhou",
+    "country": "China"
+  },
+  {
+    "city": "Shangqiu",
+    "country": "China"
+  },
+  {
+    "city": "Campo Grande",
+    "country": "Brazil"
+  },
+  {
+    "city": "Londrina",
+    "country": "Brazil"
+  },
+  {
+    "city": "Columbus",
+    "country": "United States"
+  },
+  {
+    "city": "Liaoyang",
+    "country": "China"
+  },
+  {
+    "city": "Seongnam",
+    "country": "South Korea"
+  },
+  {
+    "city": "Bunia",
+    "country": "DR Congo"
+  },
+  {
+    "city": "La Plata",
+    "country": "Argentina"
+  },
+  {
+    "city": "Tuxtla Gutierrez",
+    "country": "Mexico"
+  },
+  {
+    "city": "Trujillo",
+    "country": "Peru"
+  },
+  {
+    "city": "Enugu",
+    "country": "Nigeria"
+  },
+  {
+    "city": "Concepcion",
+    "country": "Chile"
+  },
+  {
+    "city": "Xingtai",
+    "country": "China"
+  },
+  {
+    "city": "Liverpool",
+    "country": "United Kingdom"
+  },
+  {
+    "city": "Soshanguve",
+    "country": "South Africa"
+  },
+  {
+    "city": "Tyumen",
+    "country": "Russia"
+  },
+  {
+    "city": "Culiacan",
+    "country": "Mexico"
+  },
+  {
+    "city": "Maiduguri",
+    "country": "Nigeria"
+  },
+  {
+    "city": "Bergamo",
+    "country": "Italy"
+  },
+  {
+    "city": "Dnipro",
+    "country": "Ukraine"
+  },
+  {
+    "city": "Huangshi",
+    "country": "China"
+  },
+  {
+    "city": "Yongzhou",
+    "country": "China"
+  },
+  {
+    "city": "Xinghua",
+    "country": "China"
+  },
+  {
+    "city": "Ulsan",
+    "country": "South Korea"
+  },
+  {
+    "city": "Fuxin",
+    "country": "China"
+  },
+  {
+    "city": "Libreville",
+    "country": "Gabon"
+  },
+  {
+    "city": "Zanzibar",
+    "country": "Tanzania"
+  },
+  {
+    "city": "Kottayam",
+    "country": "India"
+  },
+  {
+    "city": "Benguela",
+    "country": "Angola"
+  },
+  {
+    "city": "Yibin",
+    "country": "China"
+  },
+  {
+    "city": "Huaihua",
+    "country": "China"
+  },
+  {
+    "city": "Hufuf-Mubarraz",
+    "country": "Saudi Arabia"
+  },
+  {
+    "city": "Xinyang",
+    "country": "China"
+  },
+  {
+    "city": "Xiaogan",
+    "country": "China"
+  },
+  {
+    "city": "Ipoh",
+    "country": "Malaysia"
+  },
+  {
+    "city": "Yangquan",
+    "country": "China"
+  },
+  {
+    "city": "Malanje",
+    "country": "Angola"
+  },
+  {
+    "city": "Luzhou",
+    "country": "China"
+  },
+  {
+    "city": "Bozhou",
+    "country": "China"
+  },
+  {
+    "city": "Tianshui",
+    "country": "China"
+  },
+  {
+    "city": "Indianapolis",
+    "country": "United States"
+  },
+  {
+    "city": "Banghazi",
+    "country": "Libya"
+  },
+  {
+    "city": "Kunshan",
+    "country": "China"
+  },
+  {
+    "city": "Tainan",
+    "country": "Taiwan"
+  },
+  {
+    "city": "Zhuji",
+    "country": "China"
+  },
+  {
+    "city": "Ibb",
+    "country": "Yemen"
+  },
+  {
+    "city": "Jincheng",
+    "country": "China"
+  },
+  {
+    "city": "Nellore",
+    "country": "India"
+  },
+  {
+    "city": "Bikaner",
+    "country": "India"
+  },
+  {
+    "city": "Eskisehir",
+    "country": "Turkey"
+  },
+  {
+    "city": "Orumiyeh",
+    "country": "Iran"
+  },
+  {
+    "city": "Zhumadian",
+    "country": "China"
+  },
+  {
+    "city": "Sulaimaniya",
+    "country": "Iraq"
+  },
+  {
+    "city": "Donetsk",
+    "country": "Ukraine"
+  },
+  {
+    "city": "Anqiu",
+    "country": "China"
+  },
+  {
+    "city": "Quebec",
+    "country": "Canada"
+  },
+  {
+    "city": "Winnipeg",
+    "country": "Canada"
+  },
+  {
+    "city": "Huludao",
+    "country": "China"
+  },
+  {
+    "city": "Taixing",
+    "country": "China"
+  },
+  {
+    "city": "Heze",
+    "country": "China"
+  },
+  {
+    "city": "Merca",
+    "country": "Somalia"
+  },
+  {
+    "city": "Langfang",
+    "country": "China"
+  },
+  {
+    "city": "Kayamkulam",
+    "country": "India"
+  },
+  {
+    "city": "Haicheng",
+    "country": "China"
+  },
+  {
+    "city": "Liaocheng",
+    "country": "China"
+  },
+  {
+    "city": "Gaomi",
+    "country": "China"
+  },
+  {
+    "city": "Gebze",
+    "country": "Turkey"
+  },
+  {
+    "city": "Muzaffarnagar",
+    "country": "India"
+  },
+  {
+    "city": "Goma",
+    "country": "DR Congo"
+  },
+  {
+    "city": "Hanchuan",
+    "country": "China"
+  },
+  {
+    "city": "Dasmarinas",
+    "country": "Philippines"
+  },
+  {
+    "city": "Kitwe",
+    "country": "Zambia"
+  },
+  {
+    "city": "Barcelona Puerto La Cruz",
+    "country": "Venezuela"
+  },
+  {
+    "city": "Cagayan de Oro City",
+    "country": "Philippines"
+  },
+  {
+    "city": "Meishan",
+    "country": "China"
+  },
+  {
+    "city": "Palermo",
+    "country": "Italy"
+  },
+  {
+    "city": "Oshogbo",
+    "country": "Nigeria"
+  },
+  {
+    "city": "Gaza",
+    "country": "Palestine"
+  },
+  {
+    "city": "Danyang",
+    "country": "China"
+  },
+  {
+    "city": "Xalapa",
+    "country": "Mexico"
+  },
+  {
+    "city": "Ar-Rayyan",
+    "country": "Qatar"
+  },
+  {
+    "city": "Valencia",
+    "country": "Spain"
+  },
+  {
+    "city": "Amravati",
+    "country": "India"
+  },
+  {
+    "city": "Newcastle upon Tyne",
+    "country": "United Kingdom"
+  },
+  {
+    "city": "Saratov",
+    "country": "Russia"
+  },
+  {
+    "city": "Sorocaba",
+    "country": "Brazil"
+  },
+  {
+    "city": "Zaria",
+    "country": "Nigeria"
+  },
+  {
+    "city": "Akure",
+    "country": "Nigeria"
+  },
+  {
+    "city": "Gorakhpur",
+    "country": "India"
+  },
+  {
+    "city": "Yan'an",
+    "country": "China"
+  },
+  {
+    "city": "Jiaozuo",
+    "country": "China"
+  },
+  {
+    "city": "Nakhon Ratchasima",
+    "country": "Thailand"
+  },
+  {
+    "city": "Linhai",
+    "country": "China"
+  },
+  {
+    "city": "Bucheon",
+    "country": "South Korea"
+  },
+  {
+    "city": "Erduosi-Ordoss",
+    "country": "China"
+  },
+  {
+    "city": "Anqing",
+    "country": "China"
+  },
+  {
+    "city": "Nottingham",
+    "country": "United Kingdom"
+  },
+  {
+    "city": "Bur Sa'id",
+    "country": "Egypt"
+  },
+  {
+    "city": "Vereeniging",
+    "country": "South Africa"
+  },
+  {
+    "city": "Dengzhou",
+    "country": "China"
+  },
+  {
+    "city": "Bologna",
+    "country": "Italy"
+  },
+  {
+    "city": "Cuttack",
+    "country": "India"
+  },
+  {
+    "city": "Tirupati",
+    "country": "India"
+  },
+  {
+    "city": "Malegaon",
+    "country": "India"
+  },
+  {
+    "city": "Belgaum",
+    "country": "India"
+  },
+  {
+    "city": "Shaoguan",
+    "country": "China"
+  },
+  {
+    "city": "Thessaloniki",
+    "country": "Greece"
+  },
+  {
+    "city": "Yuncheng",
+    "country": "China"
+  },
+  {
+    "city": "Nay Pyi Taw",
+    "country": "Myanmar"
+  },
+  {
+    "city": "Banjarmasin",
+    "country": "Indonesia"
+  },
+  {
+    "city": "Yuxi",
+    "country": "China"
+  },
+  {
+    "city": "Al-Hudaydah",
+    "country": "Yemen"
+  },
+  {
+    "city": "Tamale",
+    "country": "Ghana"
+  },
+  {
+    "city": "Sialkot",
+    "country": "Pakistan"
+  },
+  {
+    "city": "Yanji",
+    "country": "China"
+  },
+  {
+    "city": "Frankfurt",
+    "country": "Germany"
+  },
+  {
+    "city": "Huambo",
+    "country": "Angola"
+  },
+  {
+    "city": "Shaoyang",
+    "country": "China"
+  },
+  {
+    "city": "San Francisco",
+    "country": "United States"
+  },
+  {
+    "city": "Zigong",
+    "country": "China"
+  },
+  {
+    "city": "Maturin",
+    "country": "Venezuela"
+  },
+  {
+    "city": "Tongliao",
+    "country": "China"
+  },
+  {
+    "city": "Qingyuan",
+    "country": "China"
+  },
+  {
+    "city": "Amara",
+    "country": "Iraq"
+  },
+  {
+    "city": "Seattle",
+    "country": "United States"
+  },
+  {
+    "city": "Dazhou",
+    "country": "China"
+  },
+  {
+    "city": "Lattakia",
+    "country": "Syria"
+  },
+  {
+    "city": "Tongling",
+    "country": "China"
+  },
+  {
+    "city": "Hamilton",
+    "country": "Canada"
+  },
+  {
+    "city": "Wuzhou",
+    "country": "China"
+  },
+  {
+    "city": "Uvira",
+    "country": "DR Congo"
+  },
+  {
+    "city": "Mangalore",
+    "country": "India"
+  },
+  {
+    "city": "Suining Sichuan",
+    "country": "China"
+  },
+  {
+    "city": "Sargodha",
+    "country": "Pakistan"
+  },
+  {
+    "city": "Zhangjiagang",
+    "country": "China"
+  },
+  {
+    "city": "Niigata",
+    "country": "Japan"
+  },
+  {
+    "city": "Bacoor",
+    "country": "Philippines"
+  },
+  {
+    "city": "Nanded Waghala",
+    "country": "India"
+  },
+  {
+    "city": "Sokoto",
+    "country": "Nigeria"
+  },
+  {
+    "city": "Dongtai",
+    "country": "China"
+  },
+  {
+    "city": "Jiamusi",
+    "country": "China"
+  },
+  {
+    "city": "Ankang",
+    "country": "China"
+  },
+  {
+    "city": "Kurnool",
+    "country": "India"
+  },
+  {
+    "city": "Bhavnagar",
+    "country": "India"
+  },
+  {
+    "city": "Herat",
+    "country": "Afghanistan"
+  },
+  {
+    "city": "Taicang",
+    "country": "China"
+  },
+  {
+    "city": "Cotonou",
+    "country": "Benin"
+  },
+  {
+    "city": "Xianyang Shaanxi",
+    "country": "China"
+  },
+  {
+    "city": "Vientiane",
+    "country": "Laos"
+  },
+  {
+    "city": "Panzhihua",
+    "country": "China"
+  },
+  {
+    "city": "Ansan",
+    "country": "South Korea"
+  },
+  {
+    "city": "Yuyao",
+    "country": "China"
+  },
+  {
+    "city": "Sao Jose dos Campos",
+    "country": "Brazil"
+  },
+  {
+    "city": "Miluo",
+    "country": "China"
+  },
+  {
+    "city": "Krakow",
+    "country": "Poland"
+  },
+  {
+    "city": "Gulbarga",
+    "country": "India"
+  },
+  {
+    "city": "Bali",
+    "country": "Indonesia"
+  },
+  {
+    "city": "Oaxaca de Juarez",
+    "country": "Mexico"
+  },
+  {
+    "city": "Buffalo City",
+    "country": "South Africa"
+  },
+  {
+    "city": "Hezhou",
+    "country": "China"
+  },
+  {
+    "city": "Rasht",
+    "country": "Iran"
+  },
+  {
+    "city": "Jammu",
+    "country": "India"
+  },
+  {
+    "city": "Yulin Shaanxi",
+    "country": "China"
+  },
+  {
+    "city": "Zarqa",
+    "country": "Jordan"
+  },
+  {
+    "city": "Longyan",
+    "country": "China"
+  },
+  {
+    "city": "Ribeirao Preto",
+    "country": "Brazil"
+  },
+  {
+    "city": "Loudi",
+    "country": "China"
+  },
+  {
+    "city": "Bijie",
+    "country": "China"
+  },
+  {
+    "city": "Gold Coast",
+    "country": "Australia"
+  },
+  {
+    "city": "Sheffield",
+    "country": "United Kingdom"
+  },
+  {
+    "city": "Renqiu",
+    "country": "China"
+  },
+  {
+    "city": "Tongxiang",
+    "country": "China"
+  },
+  {
+    "city": "Zhoukou",
+    "country": "China"
+  },
+  {
+    "city": "Manama",
+    "country": "Bahrain"
+  },
+  {
+    "city": "Durgapur",
+    "country": "India"
+  },
+  {
+    "city": "Abakaliki",
+    "country": "Nigeria"
+  },
+  {
+    "city": "Buraydah",
+    "country": "Saudi Arabia"
+  },
+  {
+    "city": "Bauchi",
+    "country": "Nigeria"
+  },
+  {
+    "city": "Longhai",
+    "country": "China"
+  },
+  {
+    "city": "New York",
+    "country": "USA",
+    "aliases": [
+      "NYC",
+      "New York City"
+    ]
+  },
+  {
+    "city": "Los Angeles",
+    "country": "USA",
+    "aliases": [
+      "LA",
+      "L.A."
+    ]
+  },
+  {
+    "city": "San Francisco",
+    "country": "USA",
+    "aliases": [
+      "SF",
+      "San Fran"
+    ]
+  },
+  {
+    "city": "Chicago",
+    "country": "USA"
+  },
+  {
+    "city": "Washington",
+    "country": "USA",
+    "aliases": [
+      "Washington DC",
+      "DC"
+    ]
+  },
+  {
+    "city": "Boston",
+    "country": "USA"
+  },
+  {
+    "city": "Seattle",
+    "country": "USA"
+  },
+  {
+    "city": "Miami",
+    "country": "USA"
+  },
+  {
+    "city": "Austin",
+    "country": "USA"
+  },
+  {
+    "city": "Denver",
+    "country": "USA"
+  },
+  {
+    "city": "London",
+    "country": "UK"
+  },
+  {
+    "city": "Venice",
+    "country": "Italy"
+  },
+  {
+    "city": "Prague",
+    "country": "Czech Republic"
+  },
+  {
+    "city": "Kyiv",
+    "country": "Ukraine"
+  },
+  {
+    "city": "Dubai",
+    "country": "UAE"
+  },
+  {
+    "city": "Abu Dhabi",
+    "country": "UAE"
+  },
+  {
+    "city": "Kyoto",
+    "country": "Japan"
+  },
+  {
+    "city": "Hong Kong",
+    "country": "China"
+  }
+]

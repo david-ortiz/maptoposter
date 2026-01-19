@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Map Poster Studio</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="hero">
+        <div class="brand">
+          <span class="brand-mark"></span>
+          <span class="brand-text">Maptoposter</span>
+          <a
+            class="brand-link"
+            href="https://github.com/originalankur/maptoposter"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Maptoposter on GitHub"
+          >
+            <svg
+              class="brand-icon"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <path
+                d="M12 2C6.48 2 2 6.58 2 12.26c0 4.54 2.87 8.38 6.84 9.74.5.1.68-.22.68-.48 0-.24-.01-.86-.01-1.69-2.78.62-3.37-1.37-3.37-1.37-.45-1.18-1.11-1.49-1.11-1.49-.91-.63.07-.62.07-.62 1.01.07 1.54 1.06 1.54 1.06.9 1.56 2.36 1.11 2.94.85.09-.67.35-1.11.63-1.36-2.22-.26-4.56-1.14-4.56-5.08 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.32.1-2.75 0 0 .84-.27 2.75 1.05a9.34 9.34 0 0 1 2.5-.35c.85 0 1.71.12 2.5.35 1.91-1.32 2.75-1.05 2.75-1.05.55 1.43.2 2.49.1 2.75.64.72 1.03 1.63 1.03 2.75 0 3.95-2.34 4.82-4.57 5.07.36.32.68.94.68 1.9 0 1.37-.01 2.47-.01 2.81 0 .26.18.59.69.48 3.96-1.36 6.83-5.2 6.83-9.74C22 6.58 17.52 2 12 2z"
+              />
+            </svg>
+          </a>
+        </div>
+        <h1>City Map Poster Generator</h1>
+        <p>
+          Pick a city, choose a radius and palette, and the map will be generated for you!
+        </p>
+      </header>
+
+      <section class="grid">
+        <div class="panel form-panel">
+          <div class="panel-header">
+            <div class="panel-title-row">
+              <h2>Build a Poster</h2>
+              <div class="examples-menu">
+                <button id="examples-toggle" class="ghost-btn" type="button">
+                  Examples
+                </button>
+                <div id="examples-list" class="examples-list" aria-hidden="true"></div>
+              </div>
+            </div>
+            <p>All current CLI options are supported</p>
+          </div>
+
+          <form id="poster-form" class="poster-form">
+            <div class="field-group">
+              <label for="city">City</label>
+              <div class="autocomplete">
+                <input
+                  id="city"
+                  name="city"
+                  type="text"
+                  placeholder="Paris"
+                  autocomplete="off"
+                  required
+                />
+                <div class="autocomplete-list" id="city-list"></div>
+              </div>
+            </div>
+            <div class="field-group">
+              <label for="country">Country</label>
+              <div class="autocomplete">
+                <input
+                  id="country"
+                  name="country"
+                  type="text"
+                  placeholder="France"
+                  autocomplete="off"
+                  required
+                />
+                <div class="autocomplete-list" id="country-list"></div>
+              </div>
+            </div>
+
+            <div class="field-group distance-group">
+              <div class="distance-row">
+                <label for="distance-range">Radius (meters)</label>
+                <input
+                  id="distance-input"
+                  name="distance"
+                  type="number"
+                  min="2000"
+                  max="30000"
+                  step="500"
+                  value="29000"
+                />
+              </div>
+              <input
+                id="distance-range"
+                type="range"
+                min="2000"
+                max="30000"
+                step="500"
+                value="29000"
+              />
+              <div class="distance-hint">
+                4–6k for compact districts, 8–12k for downtown focus, 15–20k for
+                big metros.
+              </div>
+            </div>
+
+            <div class="field-group theme-group">
+              <div class="theme-header">
+                <label>Theme</label>
+                <span class="theme-hint">Scroll to explore palettes</span>
+              </div>
+              <div id="theme-grid" class="theme-grid"></div>
+            </div>
+
+            <button class="primary-btn" type="submit">Generate Poster</button>
+            <p id="form-error" class="form-error" role="alert"></p>
+          </form>
+        </div>
+
+        <div class="panel status-panel">
+          <div class="panel-header">
+            <h2>Progress</h2>
+            <p>Your poster is saved locally and added to the gallery below when finished.</p>
+          </div>
+
+          <div class="progress-card">
+            <div class="progress-header">
+              <span class="progress-title">Status</span>
+              <span id="progress-percent" class="progress-percent">0%</span>
+            </div>
+            <div class="progress-bar">
+              <div id="progress-fill" class="progress-fill"></div>
+            </div>
+            <p id="progress-message" class="progress-message">
+              Ready to generate a map.
+            </p>
+          </div>
+
+          <ul class="step-list" id="step-list">
+            <li class="step" data-stage="queued">Queued</li>
+            <li class="step" data-stage="geocode">Geocoding</li>
+            <li class="step" data-stage="network">Street Network</li>
+            <li class="step" data-stage="water">Water Features</li>
+            <li class="step" data-stage="parks">Parks</li>
+            <li class="step" data-stage="render">Rendering</li>
+            <li class="step" data-stage="save">Saving</li>
+            <li class="step" data-stage="done">Complete</li>
+          </ul>
+
+        </div>
+      </section>
+
+      <section class="gallery">
+        <div class="gallery-header">
+          <div class="gallery-title">
+            <h2>Your Poster Gallery</h2>
+            <span class="gallery-path" id="gallery-path"></span>
+          </div>
+          <div class="gallery-actions">
+            <button id="open-gallery" class="ghost-btn" type="button">
+              Open Folder
+            </button>
+          </div>
+        </div>
+        <div id="gallery-grid" class="gallery-grid"></div>
+      </section>
+    </main>
+
+    <div class="lightbox" id="lightbox" aria-hidden="true">
+      <div class="lightbox-backdrop" data-lightbox-close="true"></div>
+      <div class="lightbox-panel" role="dialog" aria-modal="true">
+        <button class="lightbox-close" type="button" data-lightbox-close="true">
+          ✕
+        </button>
+        <button class="lightbox-nav prev" type="button" data-lightbox-prev="true">
+          ‹
+        </button>
+        <div class="lightbox-image-wrap">
+          <img id="lightbox-image" alt="Poster preview" />
+        </div>
+        <button class="lightbox-nav next" type="button" data-lightbox-next="true">
+          ›
+        </button>
+        <div class="lightbox-caption" id="lightbox-caption"></div>
+        <div class="lightbox-strip" id="lightbox-strip"></div>
+      </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>
