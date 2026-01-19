@@ -219,36 +219,62 @@ input[type="range"] {
   color: var(--ink-soft);
 }
 
+.dpi-group {
+  display: grid;
+  gap: 12px;
+  overflow: hidden;
+}
+
+.dpi-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.dpi-row input[type="number"] {
+  max-width: 160px;
+  text-align: right;
+}
+
+.dpi-hint {
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+}
+
 .theme-group {
   position: relative;
 }
 
 .theme-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 12px;
-  max-height: 280px;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+  max-height: 320px;
   overflow: auto;
-  padding-right: 6px;
-  border-radius: 16px;
+  padding-right: 4px;
+  border-radius: 12px;
   border: 1px solid #e5ded3;
-  padding: 12px;
+  padding: 10px;
   background: rgba(255, 255, 255, 0.6);
 }
 
 .theme-card {
   position: relative;
-  padding: 14px;
-  border-radius: 16px;
+  padding: 8px 10px;
+  border-radius: 10px;
   background: #fff;
   border: 1px solid #e5ded3;
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .theme-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 28px rgba(15, 24, 35, 0.12);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(15, 24, 35, 0.1);
 }
 
 .theme-card input {
@@ -258,32 +284,33 @@ input[type="range"] {
 }
 
 .theme-card .theme-title {
-  font-weight: 700;
-  margin-bottom: 6px;
+  font-weight: 600;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .theme-card .theme-description {
-  font-size: 0.85rem;
-  color: var(--ink-soft);
-  min-height: 32px;
+  display: none;
 }
 
 .theme-swatches {
   display: flex;
-  gap: 6px;
-  margin-top: 10px;
+  gap: 4px;
 }
 
 .theme-swatch {
-  width: 26px;
-  height: 26px;
-  border-radius: 8px;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
   border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .theme-card.selected {
   border-color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(199, 107, 43, 0.2);
+  box-shadow: 0 0 0 2px rgba(199, 107, 43, 0.25);
+  background: rgba(199, 107, 43, 0.04);
 }
 
 .theme-header {
@@ -387,39 +414,44 @@ input[type="range"] {
 
 .progress-card {
   background: var(--paper);
-  padding: 18px;
-  border-radius: 18px;
+  padding: 16px;
+  border-radius: 14px;
   border: 1px solid #e0d7cb;
   margin: 0;
   position: relative;
   z-index: 0;
   width: 100%;
   max-width: 100%;
-}
-
-.progress-header {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.progress-message {
+  margin: 0;
+  color: var(--ink);
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.progress-stage {
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+
+.progress-bottom {
+  display: flex;
   align-items: center;
-}
-
-.progress-title {
-  font-weight: 700;
-}
-
-.progress-percent {
-  font-weight: 700;
-  color: var(--accent-2);
+  gap: 12px;
 }
 
 .progress-bar {
   background: #e4dbcf;
   border-radius: 999px;
-  height: 10px;
-  margin: 12px 0;
+  height: 8px;
   overflow: hidden;
-  width: 100%;
-  max-width: 100%;
+  flex: 1;
 }
 
 .progress-fill {
@@ -429,38 +461,12 @@ input[type="range"] {
   transition: width 0.3s ease;
 }
 
-.progress-message {
-  margin: 0;
-  color: var(--ink-soft);
-}
-
-.step-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: grid;
-  gap: 10px;
-}
-
-.step {
-  padding: 10px 14px;
-  border-radius: 10px;
-  border: 1px solid #e0d7cb;
-  background: rgba(255, 255, 255, 0.6);
-  color: var(--ink-soft);
-  font-weight: 600;
-}
-
-.step.active {
-  border-color: var(--accent-2);
-  color: var(--ink);
-  background: rgba(31, 111, 139, 0.08);
-}
-
-.step.done {
-  border-color: var(--accent);
-  color: var(--ink);
-  background: rgba(199, 107, 43, 0.08);
+.progress-percent {
+  font-weight: 700;
+  color: var(--accent-2);
+  font-size: 0.9rem;
+  min-width: 36px;
+  text-align: right;
 }
 
 
@@ -718,6 +724,16 @@ input[type="range"] {
   }
 
   .distance-row input[type="number"] {
+    max-width: none;
+    width: 100%;
+  }
+
+  .dpi-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .dpi-row input[type="number"] {
     max-width: none;
     width: 100%;
   }

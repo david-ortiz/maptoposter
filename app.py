@@ -81,7 +81,7 @@ def push_event(job_id, payload):
         job["queue"].put(event)
 
 
-def run_job(job_id, city, country, theme, distance):
+def run_job(job_id, city, country, theme, distance, dpi):
     def progress(info):
         payload = dict(info)
         payload["status"] = "running"
@@ -108,7 +108,7 @@ def run_job(job_id, city, country, theme, distance):
         coords = poster.get_coordinates(city, country, progress=progress)
         output_file = poster.generate_output_filename(city, theme)
         poster.create_poster(
-            city, country, coords, distance, output_file, progress=progress
+            city, country, coords, distance, output_file, dpi=dpi, progress=progress
         )
 
         output_url = f"/posters/{os.path.basename(output_file)}"
@@ -152,6 +152,7 @@ def job_worker():
                 job["country"],
                 job["theme"],
                 job["distance"],
+                job["dpi"],
             )
         finally:
             JOB_QUEUE.task_done()
@@ -187,6 +188,12 @@ def api_jobs():
         distance = int(payload.get("distance") or 29000)
     except (TypeError, ValueError):
         return jsonify({"error": "Distance must be a number."}), 400
+    try:
+        dpi = int(payload.get("dpi") or 300)
+        if dpi < 72 or dpi > 600:
+            return jsonify({"error": "DPI must be between 72 and 600."}), 400
+    except (TypeError, ValueError):
+        return jsonify({"error": "DPI must be a number."}), 400
 
     if not city or not country:
         return jsonify({"error": "City and country are required."}), 400
@@ -206,6 +213,7 @@ def api_jobs():
         "country": country,
         "theme": theme,
         "distance": distance,
+        "dpi": dpi,
         "created_at": uuid.uuid1().time,
     }
 

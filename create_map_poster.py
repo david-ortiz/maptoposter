@@ -6,7 +6,6 @@ from matplotlib.font_manager import FontProperties
 import matplotlib.colors as mcolors
 import numpy as np
 from geopy.geocoders import Nominatim
-from tqdm import tqdm
 import time
 import json
 import os
@@ -14,6 +13,64 @@ import sys
 from datetime import datetime
 import argparse
 import asyncio
+import threading
+
+# Enable osmnx caching - downloaded data is saved locally for faster repeat requests
+# Use absolute path so cache works regardless of working directory
+CACHE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cache")
+os.makedirs(CACHE_DIR, exist_ok=True)
+ox.settings.use_cache = True
+ox.settings.cache_folder = CACHE_DIR
+ox.settings.log_console = True  # Show cache hits/misses in console
+
+def log(message, end='\n'):
+    """Print with immediate flush for better Windows terminal compatibility."""
+    print(message, end=end, flush=True)
+
+class Spinner:
+    """Animated spinner to show activity during long operations."""
+
+    def __init__(self, message=""):
+        self.message = message
+        self.running = False
+        self.thread = None
+        # Use simple ASCII characters that work in all terminals
+        self.frames = ['|', '/', '-', '\\']
+        self.current = 0
+
+    def _spin(self):
+        while self.running:
+            frame = self.frames[self.current % len(self.frames)]
+            # \r moves cursor to start of line, allowing overwrite
+            print(f"\r{self.message} {frame} ", end='', flush=True)
+            self.current += 1
+            time.sleep(0.15)
+
+    def start(self, message=""):
+        if message:
+            self.message = message
+        self.running = True
+        self.thread = threading.Thread(target=self._spin, daemon=True)
+        self.thread.start()
+
+    def stop(self, final_message=""):
+        self.running = False
+        if self.thread:
+            self.thread.join(timeout=0.5)
+        # Clear the spinner line and print final message
+        print(f"\r{self.message} {final_message}    ", flush=True)
+
+def run_with_spinner(message, func, *args, **kwargs):
+    """Run a function while showing an animated spinner."""
+    spinner = Spinner(message)
+    spinner.start()
+    try:
+        result = func(*args, **kwargs)
+        spinner.stop("✓ done")
+        return result
+    except Exception as e:
+        spinner.stop(f"✗ failed")
+        raise
 
 THEMES_DIR = "themes"
 FONTS_DIR = "fonts"
@@ -33,7 +90,7 @@ def load_fonts():
     # Verify fonts exist
     for weight, path in fonts.items():
         if not os.path.exists(path):
-            print(f"⚠ Font not found: {path}")
+            log(f"⚠ Font not found: {path}")
             return None
     
     return fonts
@@ -74,7 +131,7 @@ def load_theme(theme_name="feature_based"):
     theme_file = os.path.join(THEMES_DIR, f"{theme_name}.json")
     
     if not os.path.exists(theme_file):
-        print(f"⚠ Theme file '{theme_file}' not found. Using default feature_based theme.")
+        log(f"⚠ Theme file '{theme_file}' not found. Using default feature_based theme.")
         # Fallback to embedded default theme
         return {
             "name": "Feature-Based Shading",
@@ -93,9 +150,9 @@ def load_theme(theme_name="feature_based"):
     
     with open(theme_file, 'r') as f:
         theme = json.load(f)
-        print(f"✓ Loaded theme: {theme.get('name', theme_name)}")
+        log(f"✓ Loaded theme: {theme.get('name', theme_name)}")
         if 'description' in theme:
-            print(f"  {theme['description']}")
+            log(f"  {theme['description']}")
         return theme
 
 # Load theme (can be changed via command line or input)
@@ -204,14 +261,17 @@ def get_coordinates(city, country, progress=None):
     """
     if progress:
         progress({"stage": "geocode", "percent": 5, "message": "Looking up coordinates"})
-    print("Looking up coordinates...")
+
     geolocator = Nominatim(user_agent="city_map_poster")
-    
+
     # Add a small delay to respect Nominatim's usage policy
     time.sleep(1)
-    
+
+    spinner = Spinner("Looking up coordinates...")
+    spinner.start()
+
     location = geolocator.geocode(f"{city}, {country}")
-    
+
     # If geocode returned a coroutine in some environments, run it to get the result.
     if asyncio.iscoroutine(location):
         try:
@@ -220,22 +280,22 @@ def get_coordinates(city, country, progress=None):
             # If an event loop is already running, try using it to complete the coroutine.
             loop = asyncio.get_event_loop()
             if loop.is_running():
-                # Running event loop in the same thread; raise a clear error.
-                raise RuntimeError("Geocoder returned a coroutine while an event loop is already running. Run this script in a synchronous environment.")
+                spinner.stop("✗ failed")
+                raise RuntimeError("Geocoder returned a coroutine while an event loop is already running.")
             location = loop.run_until_complete(location)
-    
+
     if location:
+        spinner.stop("✓ found")
         # Use getattr to safely access address (helps static analyzers)
         addr = getattr(location, "address", None)
         if addr:
-            print(f"✓ Found: {addr}")
-        else:
-            print("✓ Found location (address not available)")
-        print(f"✓ Coordinates: {location.latitude}, {location.longitude}")
+            log(f"  Address: {addr}")
+        log(f"  Coordinates: {location.latitude}, {location.longitude}")
         if progress:
             progress({"stage": "geocode", "percent": 12, "message": "Coordinates found"})
         return (location.latitude, location.longitude)
     else:
+        spinner.stop("✗ not found")
         raise ValueError(f"Could not find coordinates for {city}, {country}")
     
 def get_crop_limits(G: MultiDiGraph, fig: Figure) -> tuple[tuple[float, float], tuple[float, float]]:
@@ -290,78 +350,89 @@ def get_crop_limits(G: MultiDiGraph, fig: Figure) -> tuple[tuple[float, float], 
     
     return crop_xlim, crop_ylim
 
-def create_poster(city, country, point, dist, output_file, progress=None):
-    print(f"\nGenerating map for {city}, {country}...")
-    
-    # Progress bar for data fetching
-    with tqdm(total=3, desc="Fetching map data", unit="step", bar_format='{l_bar}{bar}| {n_fmt}/{total_fmt}') as pbar:
-        # 1. Fetch Street Network
-        pbar.set_description("Downloading street network")
-        if progress:
-            progress({"stage": "network", "percent": 20, "message": "Downloading street network"})
-        G = ox.graph_from_point(point, dist=dist, dist_type='bbox', network_type='all')
-        pbar.update(1)
-        if progress:
-            progress({"stage": "network", "percent": 30, "message": "Street network downloaded"})
-        time.sleep(0.5)  # Rate limit between requests
-        
-        # 2. Fetch Water Features
-        pbar.set_description("Downloading water features")
-        if progress:
-            progress({"stage": "water", "percent": 38, "message": "Downloading water features"})
-        try:
-            water = ox.features_from_point(point, tags={'natural': 'water', 'waterway': 'riverbank'}, dist=dist)
-        except:
-            water = None
-        pbar.update(1)
-        if progress:
-            progress({"stage": "water", "percent": 45, "message": "Water features downloaded"})
-        time.sleep(0.3)
-        
-        # 3. Fetch Parks
-        pbar.set_description("Downloading parks/green spaces")
-        if progress:
-            progress({"stage": "parks", "percent": 50, "message": "Downloading parks/green spaces"})
-        try:
-            parks = ox.features_from_point(point, tags={'leisure': 'park', 'landuse': 'grass'}, dist=dist)
-        except:
-            parks = None
-        pbar.update(1)
-        if progress:
-            progress({"stage": "parks", "percent": 60, "message": "Parks downloaded"})
-    
-    print("✓ All data downloaded successfully!")
-    
+def create_poster(city, country, point, dist, output_file, dpi=300, progress=None):
+    log(f"\nGenerating map for {city}, {country}...")
+    log("")
+
+    # 1. Fetch Street Network
+    if progress:
+        progress({"stage": "network", "percent": 20, "message": "Downloading street network"})
+    G = run_with_spinner(
+        "[1/3] Downloading street network...",
+        ox.graph_from_point,
+        point, dist=dist, dist_type='bbox', network_type='all'
+    )
+    if progress:
+        progress({"stage": "network", "percent": 30, "message": "Street network downloaded"})
+    time.sleep(0.5)  # Rate limit between requests
+
+    # 2. Fetch Water Features
+    if progress:
+        progress({"stage": "water", "percent": 38, "message": "Downloading water features"})
+    water = None
+    spinner = Spinner("[2/3] Downloading water features...")
+    spinner.start()
+    try:
+        water = ox.features_from_point(point, tags={'natural': 'water', 'waterway': 'riverbank'}, dist=dist)
+        spinner.stop("✓ done")
+    except Exception as e:
+        spinner.stop(f"⚠ skipped (no data)")
+    if progress:
+        progress({"stage": "water", "percent": 45, "message": "Water features downloaded"})
+    time.sleep(0.3)
+
+    # 3. Fetch Parks
+    if progress:
+        progress({"stage": "parks", "percent": 50, "message": "Downloading parks/green spaces"})
+    parks = None
+    spinner = Spinner("[3/3] Downloading parks/green spaces...")
+    spinner.start()
+    try:
+        parks = ox.features_from_point(point, tags={'leisure': 'park', 'landuse': 'grass'}, dist=dist)
+        spinner.stop("✓ done")
+    except Exception as e:
+        spinner.stop(f"⚠ skipped (no data)")
+    if progress:
+        progress({"stage": "parks", "percent": 60, "message": "Parks downloaded"})
+
+    log("\n✓ All data downloaded successfully!\n")
+
     # 2. Setup Plot
     if progress:
         progress({"stage": "render", "percent": 70, "message": "Rendering map"})
-    print("Rendering map...")
+
+    spinner = Spinner("Rendering map...")
+    spinner.start()
+
     fig, ax = plt.subplots(figsize=(12, 16), facecolor=THEME['bg'])
     ax.set_facecolor(THEME['bg'])
     ax.set_position((0.0, 0.0, 1.0, 1.0))
 
     # Project graph to a metric CRS so distances and aspect are linear (meters)
     G_proj = ox.project_graph(G)
-    
+
     # 3. Plot Layers
-    # Layer 1: Polygons
+    # Layer 1: Polygons (filter out Point geometries to avoid orange dot artifacts)
     if water is not None and not water.empty:
-        # Project water features in the same CRS as the graph
-        try:
-            water = ox.projection.project_gdf(water)
-        except Exception:
-            water = water.to_crs(G_proj.graph['crs'])
-        water.plot(ax=ax, facecolor=THEME['water'], edgecolor='none', zorder=1)
+        # Filter to only Polygon/MultiPolygon geometries
+        water = water[water.geometry.type.isin(['Polygon', 'MultiPolygon'])]
+        if not water.empty:
+            try:
+                water = ox.projection.project_gdf(water)
+            except Exception:
+                water = water.to_crs(G_proj.graph['crs'])
+            water.plot(ax=ax, facecolor=THEME['water'], edgecolor='none', zorder=1)
     if parks is not None and not parks.empty:
-        # Project park features in the same CRS as the graph
-        try:
-            parks = ox.projection.project_gdf(parks)
-        except Exception:
-            parks = parks.to_crs(G_proj.graph['crs'])
-        parks.plot(ax=ax, facecolor=THEME['parks'], edgecolor='none', zorder=2)
-    
+        # Filter to only Polygon/MultiPolygon geometries
+        parks = parks[parks.geometry.type.isin(['Polygon', 'MultiPolygon'])]
+        if not parks.empty:
+            try:
+                parks = ox.projection.project_gdf(parks)
+            except Exception:
+                parks = parks.to_crs(G_proj.graph['crs'])
+            parks.plot(ax=ax, facecolor=THEME['parks'], edgecolor='none', zorder=2)
+
     # Layer 2: Roads with hierarchy coloring
-    print("Applying road hierarchy colors...")
     edge_colors = get_edge_colors_by_type(G_proj)
     edge_widths = get_edge_widths_by_type(G_proj)
 
@@ -372,6 +443,7 @@ def create_poster(city, country, point, dist, output_file, progress=None):
     ox.plot_graph(
         G_proj, ax=ax, bgcolor=THEME['bg'],
         node_size=0,
+        node_color=THEME['bg'],  # Hide any node artifacts by matching background
         edge_color=edge_colors,
         edge_linewidth=edge_widths,
         show=False, close=False
@@ -424,16 +496,20 @@ def create_poster(city, country, point, dist, output_file, progress=None):
         font_attr = FontProperties(family='monospace', size=8)
     
     ax.text(0.98, 0.02, "© OpenStreetMap contributors", transform=ax.transAxes,
-            color=THEME['text'], alpha=0.5, ha='right', va='bottom', 
+            color=THEME['text'], alpha=0.5, ha='right', va='bottom',
             fontproperties=font_attr, zorder=11)
+
+    spinner.stop("✓ done")
 
     # 5. Save
     if progress:
         progress({"stage": "save", "percent": 90, "message": "Saving poster"})
-    print(f"Saving to {output_file}...")
-    plt.savefig(output_file, dpi=300, facecolor=THEME['bg'])
+    spinner = Spinner(f"Saving to {output_file} ({dpi} DPI)...")
+    spinner.start()
+    plt.savefig(output_file, dpi=dpi, facecolor=THEME['bg'])
     plt.close()
-    print(f"✓ Done! Poster saved as {output_file}")
+    spinner.stop("✓ done")
+    log(f"\n✓ Poster saved as {output_file}")
 
 def print_examples():
     """Print usage examples."""
@@ -533,6 +609,7 @@ Examples:
     parser.add_argument('--country', '-C', type=str, help='Country name')
     parser.add_argument('--theme', '-t', type=str, default='feature_based', help='Theme name (default: feature_based)')
     parser.add_argument('--distance', '-d', type=int, default=29000, help='Map radius in meters (default: 29000)')
+    parser.add_argument('--dpi', type=int, default=300, help='Output resolution in DPI (default: 300). Use 150 for smaller files, 72 for preview.')
     parser.add_argument('--list-themes', action='store_true', help='List all available themes')
     
     args = parser.parse_args()
@@ -571,7 +648,7 @@ Examples:
     try:
         coords = get_coordinates(args.city, args.country)
         output_file = generate_output_filename(args.city, args.theme)
-        create_poster(args.city, args.country, coords, args.distance, output_file)
+        create_poster(args.city, args.country, coords, args.distance, output_file, dpi=args.dpi)
         
         print("\n" + "=" * 50)
         print("✓ Poster generation complete!")

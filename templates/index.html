@@ -109,6 +109,32 @@
               </div>
             </div>
 
+            <div class="field-group dpi-group">
+              <div class="dpi-row">
+                <label for="dpi-range">Resolution (DPI)</label>
+                <input
+                  id="dpi-input"
+                  name="dpi"
+                  type="number"
+                  min="72"
+                  max="600"
+                  step="1"
+                  value="300"
+                />
+              </div>
+              <input
+                id="dpi-range"
+                type="range"
+                min="72"
+                max="600"
+                step="1"
+                value="300"
+              />
+              <div class="dpi-hint">
+                72 for preview (~0.5MB), 150 for web (~3MB), 300 for print (~10MB).
+              </div>
+            </div>
+
             <div class="field-group theme-group">
               <div class="theme-header">
                 <label>Theme</label>
@@ -129,28 +155,17 @@
           </div>
 
           <div class="progress-card">
-            <div class="progress-header">
-              <span class="progress-title">Status</span>
-              <span id="progress-percent" class="progress-percent">0%</span>
-            </div>
-            <div class="progress-bar">
-              <div id="progress-fill" class="progress-fill"></div>
-            </div>
             <p id="progress-message" class="progress-message">
               Ready to generate a map.
             </p>
+            <div class="progress-stage" id="progress-stage"></div>
+            <div class="progress-bottom">
+              <div class="progress-bar">
+                <div id="progress-fill" class="progress-fill"></div>
+              </div>
+              <span id="progress-percent" class="progress-percent">0%</span>
+            </div>
           </div>
-
-          <ul class="step-list" id="step-list">
-            <li class="step" data-stage="queued">Queued</li>
-            <li class="step" data-stage="geocode">Geocoding</li>
-            <li class="step" data-stage="network">Street Network</li>
-            <li class="step" data-stage="water">Water Features</li>
-            <li class="step" data-stage="parks">Parks</li>
-            <li class="step" data-stage="render">Rendering</li>
-            <li class="step" data-stage="save">Saving</li>
-            <li class="step" data-stage="done">Complete</li>
-          </ul>
 
         </div>
       </section>

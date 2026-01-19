@@ -3,10 +3,12 @@ const form = document.getElementById("poster-form");
 const formError = document.getElementById("form-error");
 const distanceInput = document.getElementById("distance-input");
 const distanceRange = document.getElementById("distance-range");
+const dpiInput = document.getElementById("dpi-input");
+const dpiRange = document.getElementById("dpi-range");
 const progressFill = document.getElementById("progress-fill");
 const progressPercent = document.getElementById("progress-percent");
 const progressMessage = document.getElementById("progress-message");
-const steps = Array.from(document.querySelectorAll(".step"));
+const progressStage = document.getElementById("progress-stage");
 const cityInput = document.getElementById("city");
 const countryInput = document.getElementById("country");
 const cityList = document.getElementById("city-list");
@@ -60,6 +62,19 @@ distanceInput.addEventListener("input", (event) => {
 
 distanceRange.addEventListener("input", (event) => {
   updateDistance(event.target.value);
+});
+
+const updateDpi = (value) => {
+  dpiInput.value = value;
+  dpiRange.value = value;
+};
+
+dpiInput.addEventListener("input", (event) => {
+  updateDpi(event.target.value);
+});
+
+dpiRange.addEventListener("input", (event) => {
+  updateDpi(event.target.value);
 });
 
 const normalize = (value) =>
@@ -214,6 +229,17 @@ const startPulse = (stage, basePercent) => {
   }, 1200);
 };
 
+const stageLabels = {
+  queued: "Queued",
+  geocode: "Geocoding",
+  network: "Street Network",
+  water: "Water Features",
+  parks: "Parks",
+  render: "Rendering",
+  save: "Saving",
+  done: "Complete",
+};
+
 const setProgress = ({ percent, message, stage, status }) => {
   const bounded = Math.max(0, Math.min(100, percent || 0));
   progressFill.style.width = `${bounded}%`;
@@ -222,11 +248,17 @@ const setProgress = ({ percent, message, stage, status }) => {
   lastKnownPercent = bounded;
 
   const currentIndex = stageOrder.indexOf(stage || "queued");
-  steps.forEach((step) => {
-    const stepIndex = stageOrder.indexOf(step.dataset.stage);
-    step.classList.toggle("done", stepIndex < currentIndex);
-    step.classList.toggle("active", stepIndex === currentIndex);
-  });
+  const totalStages = stageOrder.length;
+  const stageLabel = stageLabels[stage] || stage || "Queued";
+  if (progressStage) {
+    if (status === "done") {
+      progressStage.textContent = "Complete";
+    } else if (currentIndex >= 0) {
+      progressStage.textContent = `Stage ${currentIndex + 1} of ${totalStages}: ${stageLabel}`;
+    } else {
+      progressStage.textContent = "";
+    }
+  }
 
   if (status === "running" && ["network", "water", "parks"].includes(stage)) {
     startPulse(stage, bounded);
@@ -246,10 +278,9 @@ const resetResult = () => {
   progressFill.style.width = "0%";
   progressPercent.textContent = "0%";
   progressMessage.textContent = "Ready to generate a map.";
-  steps.forEach((step) => {
-    step.classList.remove("done", "active");
-  });
-  steps[0].classList.add("active");
+  if (progressStage) {
+    progressStage.textContent = "";
+  }
   stopPulse();
 };
 
@@ -652,6 +683,7 @@ form.addEventListener("submit", async (event) => {
   const formData = new FormData(form);
   const payload = Object.fromEntries(formData.entries());
   payload.distance = Number(payload.distance || distanceInput.value || 29000);
+  payload.dpi = Number(payload.dpi || dpiInput.value || 300);
 
   const response = await fetch("/api/jobs", {
     method: "POST",
