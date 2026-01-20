@@ -24,6 +24,7 @@ const state = {
   format: "png",
   theme: "feature_based",
   font: "",  // Empty means default (Roboto)
+  pin: "none",  // Center pin icon: none, marker, heart, star, home, circle
 };
 
 // ===== THEME CATALOG =====
@@ -103,6 +104,7 @@ const elements = {
   fontPickerLabel: document.getElementById("font-picker-label"),
   fontPickerDropdown: document.getElementById("font-picker-dropdown"),
   fontPickerOptions: document.getElementById("font-picker-options"),
+  pinSelector: document.getElementById("pin-selector"),
   themeQuickPicker: document.getElementById("theme-quick-picker"),
 
   // Preview Widget
@@ -899,6 +901,29 @@ function updatePreview() {
   // Update theme name in footer
   if (elements.previewThemeName) {
     elements.previewThemeName.textContent = theme.name || theme.id || "Theme";
+  }
+
+  // Update center pin icon
+  const pinGroup = svg.querySelector("#preview-pin");
+  if (pinGroup) {
+    // Hide all pins first
+    pinGroup.querySelectorAll(".pin-icon").forEach((p) => {
+      p.style.display = "none";
+    });
+
+    // Show selected pin if not "none"
+    if (state.pin && state.pin !== "none") {
+      const selectedPin = pinGroup.querySelector(`#pin-${state.pin}`);
+      if (selectedPin) {
+        selectedPin.style.display = "block";
+        // Update pin color to match theme text color
+        selectedPin.querySelectorAll("path, circle, rect").forEach((el) => {
+          if (el.getAttribute("fill") !== "white") {
+            el.setAttribute("fill", textColor);
+          }
+        });
+      }
+    }
   }
 }
 
@@ -1899,6 +1924,7 @@ async function generatePoster() {
     theme: state.theme,
     format: state.format,
     font: state.font,
+    pin: state.pin !== "none" ? state.pin : null,
     dpi: state.dpi,
   };
 
@@ -1990,6 +2016,16 @@ function initEventListeners() {
   // Format
   elements.formatSelect?.addEventListener("change", (e) => {
     state.format = e.target.value;
+  });
+
+  // Pin selector
+  elements.pinSelector?.querySelectorAll(".pin-option").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      elements.pinSelector.querySelectorAll(".pin-option").forEach((b) => b.classList.remove("selected"));
+      btn.classList.add("selected");
+      state.pin = btn.dataset.pin;
+      updatePreview();
+    });
   });
 
   // Font picker is initialized in loadFonts()

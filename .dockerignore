@@ -1,16 +1,35 @@
-.git
+# Git
+.git/
 .gitignore
-.claude
-.playwright-mcp
-__pycache__
+
+# Claude/IDE
+.claude/
+.playwright-mcp/
+.vscode/
+.idea/
+
+# Python
+__pycache__/
 *.pyc
 *.pyo
-posters/*
-cache/*
+*.pyd
+.Python
+venv/
 env/
 .env/
 .venv/
+
+# Generated/cache (will be mounted as volumes)
+posters/
+cache/
+starred/
+
+# Docs
 *.md
+
+# OS
 .DS_Store
-.idea
-nul
+Thumbs.db
+
+# Logs
+*.log

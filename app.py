@@ -83,7 +83,7 @@ def push_event(job_id, payload):
         job["queue"].put(event)
 
 
-def run_job(job_id, city, country, theme, distance, dpi, output_format, lat=None, lng=None, font=None, tagline=None):
+def run_job(job_id, city, country, theme, distance, dpi, output_format, lat=None, lng=None, font=None, tagline=None, pin=None):
     def progress(info):
         payload = dict(info)
         payload["status"] = "running"
@@ -117,7 +117,7 @@ def run_job(job_id, city, country, theme, distance, dpi, output_format, lat=None
 
         output_file = poster.generate_output_filename(city, theme, output_format)
         poster.create_poster(
-            city, country, coords, distance, output_file, output_format, dpi=dpi, progress=progress, font_family=font, tagline=tagline
+            city, country, coords, distance, output_file, output_format, dpi=dpi, progress=progress, font_family=font, tagline=tagline, pin=pin
         )
 
         output_url = f"/posters/{os.path.basename(output_file)}"
@@ -167,6 +167,7 @@ def job_worker():
                 lng=job.get("lng"),
                 font=job.get("font"),
                 tagline=job.get("tagline"),
+                pin=job.get("pin"),
             )
         finally:
             JOB_QUEUE.task_done()
@@ -326,6 +327,12 @@ def api_jobs():
     # Optional tagline (replaces coordinates if provided)
     tagline = (payload.get("tagline") or "").strip() or None
 
+    # Optional center pin icon
+    pin = (payload.get("pin") or "").strip() or None
+    valid_pins = ("marker", "heart", "star", "home", "circle")
+    if pin and pin not in valid_pins:
+        return jsonify({"error": f"Pin must be one of: {', '.join(valid_pins)}"}), 400
+
     if not city or not country:
         return jsonify({"error": "City and country are required."}), 400
 
@@ -350,6 +357,7 @@ def api_jobs():
         "lat": lat,
         "lng": lng,
         "tagline": tagline,
+        "pin": pin,
         "created_at": uuid.uuid1().time,
     }
 

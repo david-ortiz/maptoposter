@@ -323,8 +323,130 @@ def create_gradient_fade(ax, color, location='bottom', zorder=10):
     y_bottom = ylim[0] + y_range * extent_y_start
     y_top = ylim[0] + y_range * extent_y_end
     
-    ax.imshow(gradient, extent=[xlim[0], xlim[1], y_bottom, y_top], 
+    ax.imshow(gradient, extent=[xlim[0], xlim[1], y_bottom, y_top],
               aspect='auto', cmap=custom_cmap, zorder=zorder, origin='lower')
+
+def draw_center_pin(ax, crop_xlim, crop_ylim, pin_type, theme):
+    """
+    Draws a center pin/marker icon on the map.
+
+    pin_type: 'marker', 'heart', 'star', 'home', 'circle'
+    """
+    from matplotlib.patches import Circle, Polygon, FancyBboxPatch, PathPatch
+    from matplotlib.path import Path
+    import matplotlib.transforms as transforms
+
+    # Calculate center of map
+    center_x = (crop_xlim[0] + crop_xlim[1]) / 2
+    center_y = (crop_ylim[0] + crop_ylim[1]) / 2
+
+    # Scale based on map size (make pin ~3% of map width)
+    map_width = crop_xlim[1] - crop_xlim[0]
+    scale = map_width * 0.025
+
+    # Get pin color from theme (use text color with slight transparency)
+    pin_color = theme.get('text', '#1A1A1A')
+
+    if pin_type == 'marker':
+        # Classic map marker (teardrop shape pointing down)
+        # Draw using a path
+        marker_height = scale * 2.5
+        marker_width = scale * 1.5
+
+        # Create teardrop path (pointing down)
+        verts = [
+            (center_x, center_y - marker_height * 0.4),  # bottom point
+            (center_x - marker_width/2, center_y + marker_height * 0.2),  # left curve
+            (center_x - marker_width/2, center_y + marker_height * 0.5),  # left top
+            (center_x, center_y + marker_height * 0.6),  # top center
+            (center_x + marker_width/2, center_y + marker_height * 0.5),  # right top
+            (center_x + marker_width/2, center_y + marker_height * 0.2),  # right curve
+            (center_x, center_y - marker_height * 0.4),  # back to bottom
+        ]
+        codes = [Path.MOVETO, Path.CURVE4, Path.CURVE4, Path.CURVE4,
+                 Path.CURVE4, Path.CURVE4, Path.CLOSEPOLY]
+        path = Path(verts, codes)
+        patch = PathPatch(path, facecolor=pin_color, edgecolor='white',
+                         linewidth=scale * 0.05, zorder=15, alpha=0.9)
+        ax.add_patch(patch)
+
+        # Add inner circle (white dot)
+        inner_circle = Circle((center_x, center_y + marker_height * 0.25),
+                              scale * 0.3, facecolor='white', edgecolor='none', zorder=16)
+        ax.add_patch(inner_circle)
+
+    elif pin_type == 'heart':
+        # Heart shape
+        heart_size = scale * 1.2
+        t = np.linspace(0, 2 * np.pi, 100)
+        x = heart_size * 0.8 * (16 * np.sin(t)**3)
+        y = heart_size * 0.8 * (13 * np.cos(t) - 5 * np.cos(2*t) - 2 * np.cos(3*t) - np.cos(4*t))
+        # Scale and center
+        x = x / 16 + center_x
+        y = y / 16 + center_y
+
+        heart = Polygon(np.column_stack([x, y]), closed=True,
+                       facecolor=pin_color, edgecolor='white',
+                       linewidth=scale * 0.05, zorder=15, alpha=0.9)
+        ax.add_patch(heart)
+
+    elif pin_type == 'star':
+        # 5-pointed star
+        star_size = scale * 1.2
+        n_points = 5
+        outer_angles = np.linspace(np.pi/2, np.pi/2 + 2*np.pi, n_points, endpoint=False)
+        inner_angles = outer_angles + np.pi/n_points
+
+        outer_radius = star_size
+        inner_radius = star_size * 0.4
+
+        points = []
+        for i in range(n_points):
+            # Outer point
+            points.append([center_x + outer_radius * np.cos(outer_angles[i]),
+                          center_y + outer_radius * np.sin(outer_angles[i])])
+            # Inner point
+            points.append([center_x + inner_radius * np.cos(inner_angles[i]),
+                          center_y + inner_radius * np.sin(inner_angles[i])])
+
+        star = Polygon(points, closed=True, facecolor=pin_color, edgecolor='white',
+                      linewidth=scale * 0.05, zorder=15, alpha=0.9)
+        ax.add_patch(star)
+
+    elif pin_type == 'home':
+        # House shape
+        house_size = scale * 1.2
+
+        # House body (rectangle)
+        body_width = house_size * 1.2
+        body_height = house_size * 0.8
+        body_bottom = center_y - house_size * 0.5
+
+        body = Polygon([
+            (center_x - body_width/2, body_bottom),
+            (center_x - body_width/2, body_bottom + body_height),
+            (center_x + body_width/2, body_bottom + body_height),
+            (center_x + body_width/2, body_bottom),
+        ], closed=True, facecolor=pin_color, edgecolor='white',
+           linewidth=scale * 0.05, zorder=15, alpha=0.9)
+        ax.add_patch(body)
+
+        # Roof (triangle)
+        roof_height = house_size * 0.7
+        roof = Polygon([
+            (center_x - body_width/2 - house_size * 0.15, body_bottom + body_height),
+            (center_x, body_bottom + body_height + roof_height),
+            (center_x + body_width/2 + house_size * 0.15, body_bottom + body_height),
+        ], closed=True, facecolor=pin_color, edgecolor='white',
+           linewidth=scale * 0.05, zorder=16, alpha=0.9)
+        ax.add_patch(roof)
+
+    elif pin_type == 'circle':
+        # Simple filled circle
+        circle = Circle((center_x, center_y), scale * 0.8,
+                        facecolor=pin_color, edgecolor='white',
+                        linewidth=scale * 0.08, zorder=15, alpha=0.9)
+        ax.add_patch(circle)
 
 def get_edge_colors_by_type(G):
     """
@@ -959,7 +1081,7 @@ def get_crop_limits(G: MultiDiGraph, fig: Figure) -> tuple[tuple[float, float], 
     
     return crop_xlim, crop_ylim
 
-def create_poster(city, country, point, dist, output_file, output_format='png', dpi=300, progress=None, use_cache=True, font_family=None, tagline=None):
+def create_poster(city, country, point, dist, output_file, output_format='png', dpi=300, progress=None, use_cache=True, font_family=None, tagline=None, pin=None):
     log(f"\nGenerating map for {city}, {country}...")
     log("")
 
@@ -1117,6 +1239,7 @@ def create_poster(city, country, point, dist, output_file, output_format='png', 
     
     # 4. Typography - use selected font family or default
     selected_fonts = get_font_family(font_family) if font_family else FONTS
+    log(f"Font family requested: {font_family}, resolved fonts: {selected_fonts}")
 
     if selected_fonts:
         # Get font paths, with fallbacks for missing weights
@@ -1128,8 +1251,10 @@ def create_poster(city, country, point, dist, output_file, output_format='png', 
         font_top = FontProperties(fname=bold_font, size=40)
         font_sub = FontProperties(fname=light_font, size=22)
         font_coords = FontProperties(fname=regular_font, size=14)
+        log(f"Using font_coords with regular_font: {regular_font}")
     else:
         # Fallback to system fonts
+        log("WARNING: No custom fonts available, falling back to monospace")
         font_main = FontProperties(family='monospace', weight='bold', size=60)
         font_top = FontProperties(family='monospace', weight='bold', size=40)
         font_sub = FontProperties(family='monospace', weight='normal', size=22)
@@ -1176,9 +1301,13 @@ def create_poster(city, country, point, dist, output_file, output_format='png', 
     ax.plot([0.4, 0.6], [0.125, 0.125], transform=ax.transAxes,
             color=THEME['text'], linewidth=1, zorder=11)
 
+    # 5. Center Pin Icon (if selected)
+    if pin:
+        draw_center_pin(ax, crop_xlim, crop_ylim, pin, THEME)
+
     spinner.stop("✓ done")
 
-    # 5. Save
+    # 6. Save
     if progress:
         progress({"stage": "save", "percent": 90, "message": "Saving poster"})
 
