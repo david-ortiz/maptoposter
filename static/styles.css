@@ -551,6 +551,17 @@ input[type="range"] {
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
 }
 
+.gallery-placeholder {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--ink-soft);
+  font-size: 1rem;
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 16px;
+  border: 2px dashed #d7d0c4;
+}
+
 .gallery-item {
   border-radius: 16px;
   overflow: hidden;

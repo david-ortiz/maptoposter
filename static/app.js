@@ -16,6 +16,7 @@ const cityList = document.getElementById("city-list");
 const countryList = document.getElementById("country-list");
 const galleryGrid = document.getElementById("gallery-grid");
 const openGallery = document.getElementById("open-gallery");
+const loadGalleryBtn = document.getElementById("load-gallery");
 const themePrev = document.getElementById("theme-prev");
 const themeNext = document.getElementById("theme-next");
 const lightbox = document.getElementById("lightbox");
@@ -51,6 +52,7 @@ let themeCatalog = {};
 let lightboxBuiltCount = 0;
 let lastGallerySignature = "";
 let gallerySource = null;
+let galleryLoaded = false;
 
 const updateDistance = (value) => {
   distanceInput.value = value;
@@ -268,7 +270,12 @@ const setProgress = ({ percent, message, stage, status }) => {
   }
 
   if (status === "done") {
-    loadGallery();
+    // Auto-load gallery when a poster is generated
+    if (!galleryLoaded) {
+      initGallery();
+    } else {
+      loadGallery();
+    }
   }
   if (status === "error" || status === "cancelled") {
     stopPulse();
@@ -708,9 +715,12 @@ form.addEventListener("submit", async (event) => {
 resetResult();
 loadThemes();
 loadCities();
-loadGallery(true);
+// Gallery is lazy-loaded when user clicks "Load Gallery" button
 
-if ("EventSource" in window) {
+const startGalleryStream = () => {
+  if (gallerySource) return; // Already started
+  if (!("EventSource" in window)) return;
+
   gallerySource = new EventSource("/api/posters/stream");
   gallerySource.onmessage = (event) => {
     try {
@@ -723,6 +733,34 @@ if ("EventSource" in window) {
   gallerySource.onerror = () => {
     loadGallery(true);
   };
+};
+
+const initGallery = async () => {
+  if (galleryLoaded) return;
+  galleryLoaded = true;
+
+  // Update button states
+  if (loadGalleryBtn) {
+    loadGalleryBtn.textContent = "Loading...";
+    loadGalleryBtn.disabled = true;
+  }
+
+  await loadGallery(true);
+
+  // Show "Open Folder" button, hide "Load Gallery" button
+  if (loadGalleryBtn) {
+    loadGalleryBtn.style.display = "none";
+  }
+  if (openGallery) {
+    openGallery.style.display = "";
+  }
+
+  // Start the live update stream
+  startGalleryStream();
+};
+
+if (loadGalleryBtn) {
+  loadGalleryBtn.addEventListener("click", initGallery);
 }
 
 if (openGallery) {
