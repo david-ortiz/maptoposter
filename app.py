@@ -81,7 +81,7 @@ def push_event(job_id, payload):
         job["queue"].put(event)
 
 
-def run_job(job_id, city, country, theme, distance, dpi):
+def run_job(job_id, city, country, theme, distance, dpi, output_format):
     def progress(info):
         payload = dict(info)
         payload["status"] = "running"
@@ -106,9 +106,9 @@ def run_job(job_id, city, country, theme, distance, dpi):
 
         poster.THEME = poster.load_theme(theme)
         coords = poster.get_coordinates(city, country, progress=progress)
-        output_file = poster.generate_output_filename(city, theme)
+        output_file = poster.generate_output_filename(city, theme, output_format)
         poster.create_poster(
-            city, country, coords, distance, output_file, dpi=dpi, progress=progress
+            city, country, coords, distance, output_file, output_format, dpi=dpi, progress=progress
         )
 
         output_url = f"/posters/{os.path.basename(output_file)}"
@@ -153,6 +153,7 @@ def job_worker():
                 job["theme"],
                 job["distance"],
                 job["dpi"],
+                job["format"],
             )
         finally:
             JOB_QUEUE.task_done()
@@ -195,6 +196,10 @@ def api_jobs():
     except (TypeError, ValueError):
         return jsonify({"error": "DPI must be a number."}), 400
 
+    output_format = (payload.get("format") or "png").strip().lower()
+    if output_format not in ("png", "svg", "pdf"):
+        return jsonify({"error": "Format must be png, svg, or pdf."}), 400
+
     if not city or not country:
         return jsonify({"error": "City and country are required."}), 400
 
@@ -214,6 +219,7 @@ def api_jobs():
         "theme": theme,
         "distance": distance,
         "dpi": dpi,
+        "format": output_format,
         "created_at": uuid.uuid1().time,
     }
 
@@ -310,8 +316,9 @@ def build_posters_payload():
     if not os.path.exists(posters_dir):
         return {"path": abs_dir, "items": []}
     items = []
+    valid_extensions = (".png", ".svg", ".pdf")
     for filename in os.listdir(posters_dir):
-        if not filename.lower().endswith(".png"):
+        if not filename.lower().endswith(valid_extensions):
             continue
         path = os.path.join(posters_dir, filename)
         try:
@@ -380,7 +387,8 @@ def api_examples():
 @app.route("/api/posters/<path:filename>", methods=["DELETE"])
 def delete_poster(filename):
     safe_name = os.path.basename(filename)
-    if safe_name != filename or not safe_name.lower().endswith(".png"):
+    valid_extensions = (".png", ".svg", ".pdf")
+    if safe_name != filename or not safe_name.lower().endswith(valid_extensions):
         return jsonify({"error": "Invalid filename."}), 400
     posters_dir = poster.POSTERS_DIR
     path = os.path.join(posters_dir, safe_name)

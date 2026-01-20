@@ -242,6 +242,36 @@ input[type="range"] {
   color: var(--ink-soft);
 }
 
+.format-group {
+  display: grid;
+  gap: 8px;
+}
+
+.format-group select {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid #d7d0c4;
+  font-size: 1rem;
+  background: white;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%232a3038' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+}
+
+.format-group select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--glow);
+}
+
+.format-hint {
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+}
+
 .theme-group {
   position: relative;
 }

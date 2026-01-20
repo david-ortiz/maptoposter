@@ -5,6 +5,7 @@ const distanceInput = document.getElementById("distance-input");
 const distanceRange = document.getElementById("distance-range");
 const dpiInput = document.getElementById("dpi-input");
 const dpiRange = document.getElementById("dpi-range");
+const formatSelect = document.getElementById("format-select");
 const progressFill = document.getElementById("progress-fill");
 const progressPercent = document.getElementById("progress-percent");
 const progressMessage = document.getElementById("progress-message");
@@ -684,6 +685,7 @@ form.addEventListener("submit", async (event) => {
   const payload = Object.fromEntries(formData.entries());
   payload.distance = Number(payload.distance || distanceInput.value || 29000);
   payload.dpi = Number(payload.dpi || dpiInput.value || 300);
+  payload.format = payload.format || formatSelect?.value || "png";
 
   const response = await fetch("/api/jobs", {
     method: "POST",
