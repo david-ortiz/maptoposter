@@ -1,0 +1,16 @@
+{
+  "name": "Parking Garage",
+  "description": "Concrete levels with yellow lines",
+  "category": "urban",
+  "bg": "#E5E5E5",
+  "text": "#FFD600",
+  "gradient_color": "#E5E5E5",
+  "water": "#D5D5D5",
+  "parks": "#DDDDDD",
+  "road_motorway": "#FFD600",
+  "road_primary": "#1A1A1A",
+  "road_secondary": "#404040",
+  "road_tertiary": "#666666",
+  "road_residential": "#8C8C8C",
+  "road_default": "#404040"
+}

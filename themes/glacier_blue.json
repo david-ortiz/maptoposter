@@ -1,0 +1,16 @@
+{
+  "name": "Glacier Blue",
+  "description": "Ancient ice with crystalline blue",
+  "category": "nature",
+  "bg": "#F0FAFF",
+  "text": "#4682B4",
+  "gradient_color": "#F0FAFF",
+  "water": "#D5EFFC",
+  "parks": "#E5F5FD",
+  "road_motorway": "#4682B4",
+  "road_primary": "#6495ED",
+  "road_secondary": "#87CEEB",
+  "road_tertiary": "#ADD8E6",
+  "road_residential": "#B0E0E6",
+  "road_default": "#87CEEB"
+}

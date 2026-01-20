@@ -1,0 +1,16 @@
+{
+  "name": "Cotton Candy",
+  "description": "Dreamy pink on fluffy white",
+  "category": "light",
+  "bg": "#FFF8FA",
+  "text": "#E091A3",
+  "gradient_color": "#FFF8FA",
+  "water": "#FFF0F4",
+  "parks": "#FFF4F7",
+  "road_motorway": "#E091A3",
+  "road_primary": "#F0A8B8",
+  "road_secondary": "#F5BDC9",
+  "road_tertiary": "#F9D1DA",
+  "road_residential": "#FCE5EA",
+  "road_default": "#F5BDC9"
+}

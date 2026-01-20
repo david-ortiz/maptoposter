@@ -1,0 +1,16 @@
+{
+  "name": "Baby Room",
+  "description": "Nursery soft pinks and blues",
+  "category": "pastel",
+  "bg": "#FFF8FA",
+  "text": "#90A4AE",
+  "gradient_color": "#FFF8FA",
+  "water": "#F3E5F5",
+  "parks": "#FCE4EC",
+  "road_motorway": "#90A4AE",
+  "road_primary": "#B0BEC5",
+  "road_secondary": "#CFD8DC",
+  "road_tertiary": "#F8BBD0",
+  "road_residential": "#E1BEE7",
+  "road_default": "#B0BEC5"
+}

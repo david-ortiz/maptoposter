@@ -1,0 +1,16 @@
+{
+  "name": "Daguerreotype",
+  "description": "Early photography silver process",
+  "category": "vintage",
+  "bg": "#E8E0D8",
+  "text": "#3D3D3D",
+  "gradient_color": "#E8E0D8",
+  "water": "#D5CCC2",
+  "parks": "#DED5CC",
+  "road_motorway": "#3D3D3D",
+  "road_primary": "#5A5A5A",
+  "road_secondary": "#787878",
+  "road_tertiary": "#969696",
+  "road_residential": "#B4B4B4",
+  "road_default": "#787878"
+}

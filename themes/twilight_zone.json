@@ -1,0 +1,16 @@
+{
+  "name": "Twilight Zone",
+  "description": "Mysterious dusk between day and night",
+  "category": "dark",
+  "bg": "#151025",
+  "text": "#DDA0DD",
+  "gradient_color": "#151025",
+  "water": "#0A0815",
+  "parks": "#1A1530",
+  "road_motorway": "#DDA0DD",
+  "road_primary": "#BA55D3",
+  "road_secondary": "#9370DB",
+  "road_tertiary": "#7B68EE",
+  "road_residential": "#6A5ACD",
+  "road_default": "#9370DB"
+}

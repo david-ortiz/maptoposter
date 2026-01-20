@@ -1,6 +1,7 @@
 {
   "name": "Ocean",
   "description": "Various blues and teals - perfect for coastal cities",
+  "category": "nature",
   "bg": "#F0F8FA",
   "text": "#1A5F7A",
   "gradient_color": "#F0F8FA",

@@ -1,0 +1,16 @@
+{
+  "name": "Cloud Nine",
+  "description": "Soft sky blue on heavenly white",
+  "category": "light",
+  "bg": "#F8FBFF",
+  "text": "#5B8FB9",
+  "gradient_color": "#F8FBFF",
+  "water": "#F0F6FC",
+  "parks": "#F4F9FE",
+  "road_motorway": "#5B8FB9",
+  "road_primary": "#7AADD4",
+  "road_secondary": "#9BC5E8",
+  "road_tertiary": "#B8D8F4",
+  "road_residential": "#D5EBFC",
+  "road_default": "#9BC5E8"
+}

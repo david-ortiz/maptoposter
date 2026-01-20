@@ -1,0 +1,16 @@
+{
+  "name": "Burnt Sienna",
+  "description": "Tuscan earth tones - warm terracotta and rustic Italian charm",
+  "category": "nature",
+  "bg": "#FDF5E6",
+  "text": "#A0522D",
+  "gradient_color": "#FDF5E6",
+  "water": "#F0E5D5",
+  "parks": "#F8EDE0",
+  "road_motorway": "#A0522D",
+  "road_primary": "#B8673F",
+  "road_secondary": "#CD853F",
+  "road_tertiary": "#DEB887",
+  "road_residential": "#EACDA3",
+  "road_default": "#CD853F"
+}

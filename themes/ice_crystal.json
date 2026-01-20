@@ -1,0 +1,16 @@
+{
+  "name": "Ice Crystal",
+  "description": "Frozen winter wonderland - crystalline blues on pristine white",
+  "category": "light",
+  "bg": "#F0F8FF",
+  "text": "#4169E1",
+  "gradient_color": "#F0F8FF",
+  "water": "#E0EFF8",
+  "parks": "#E8F4FB",
+  "road_motorway": "#4169E1",
+  "road_primary": "#6495ED",
+  "road_secondary": "#87CEEB",
+  "road_tertiary": "#ADD8E6",
+  "road_residential": "#CAE4F0",
+  "road_default": "#87CEEB"
+}

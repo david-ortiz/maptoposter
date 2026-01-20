@@ -1,0 +1,16 @@
+{
+  "name": "Vampire Night",
+  "description": "Dark crimson blood - gothic horror with deadly elegance",
+  "category": "dark",
+  "bg": "#0A0508",
+  "text": "#8B0000",
+  "gradient_color": "#0A0508",
+  "water": "#050204",
+  "parks": "#120A0C",
+  "road_motorway": "#8B0000",
+  "road_primary": "#A52A2A",
+  "road_secondary": "#6B1515",
+  "road_tertiary": "#4A0E0E",
+  "road_residential": "#2A0808",
+  "road_default": "#6B1515"
+}

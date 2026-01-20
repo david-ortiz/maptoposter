@@ -1,0 +1,16 @@
+{
+  "name": "Pop Art",
+  "description": "Bold Warhol-inspired primaries - explosive comic book energy",
+  "category": "vibrant",
+  "bg": "#FFFF00",
+  "text": "#FF0080",
+  "gradient_color": "#FFFF00",
+  "water": "#F0F000",
+  "parks": "#F8F828",
+  "road_motorway": "#FF0080",
+  "road_primary": "#00BFFF",
+  "road_secondary": "#FF4500",
+  "road_tertiary": "#32CD32",
+  "road_residential": "#9370DB",
+  "road_default": "#FF4500"
+}

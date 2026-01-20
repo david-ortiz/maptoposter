@@ -1,0 +1,16 @@
+{
+  "name": "Coral Reef",
+  "description": "Underwater paradise - vibrant corals and deep ocean blues",
+  "category": "nature",
+  "bg": "#0A3D62",
+  "text": "#FF7F50",
+  "gradient_color": "#0A3D62",
+  "water": "#062A45",
+  "parks": "#0E4A70",
+  "road_motorway": "#FF7F50",
+  "road_primary": "#FF6B6B",
+  "road_secondary": "#48DBFB",
+  "road_tertiary": "#00D2D3",
+  "road_residential": "#54A0A0",
+  "road_default": "#48DBFB"
+}

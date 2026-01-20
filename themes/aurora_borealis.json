@@ -1,0 +1,16 @@
+{
+  "name": "Aurora Borealis",
+  "description": "Northern lights dancing on polar night sky",
+  "category": "dark",
+  "bg": "#0A0A1A",
+  "text": "#7FFFD4",
+  "gradient_color": "#0A0A1A",
+  "water": "#050510",
+  "parks": "#101025",
+  "road_motorway": "#7FFFD4",
+  "road_primary": "#9370DB",
+  "road_secondary": "#00CED1",
+  "road_tertiary": "#4169E1",
+  "road_residential": "#2F4F4F",
+  "road_default": "#00CED1"
+}

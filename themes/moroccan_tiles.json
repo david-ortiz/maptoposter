@@ -1,0 +1,16 @@
+{
+  "name": "Moroccan Tiles",
+  "description": "North African zellige patterns",
+  "category": "cultural",
+  "bg": "#FDF8F0",
+  "text": "#1E5B8C",
+  "gradient_color": "#FDF8F0",
+  "water": "#C9E4F4",
+  "parks": "#E5F2E0",
+  "road_motorway": "#1E5B8C",
+  "road_primary": "#C9A227",
+  "road_secondary": "#D15B47",
+  "road_tertiary": "#2E8B57",
+  "road_residential": "#8B4513",
+  "road_default": "#C9A227"
+}

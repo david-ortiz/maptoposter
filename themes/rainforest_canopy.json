@@ -1,0 +1,16 @@
+{
+  "name": "Rainforest Canopy",
+  "description": "Dense jungle layers of green",
+  "category": "nature",
+  "bg": "#E5F0E5",
+  "text": "#0D5D0D",
+  "gradient_color": "#E5F0E5",
+  "water": "#D0E5D0",
+  "parks": "#D8EAD8",
+  "road_motorway": "#0D5D0D",
+  "road_primary": "#1A7D1A",
+  "road_secondary": "#2D9D2D",
+  "road_tertiary": "#4DBD4D",
+  "road_residential": "#7DD77D",
+  "road_default": "#2D9D2D"
+}

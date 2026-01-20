@@ -1,0 +1,16 @@
+{
+  "name": "Obsidian Night",
+  "description": "Pure black volcanic glass with silver moonlight traces",
+  "category": "dark",
+  "bg": "#050505",
+  "text": "#C0C0C0",
+  "gradient_color": "#050505",
+  "water": "#0A0A0A",
+  "parks": "#101010",
+  "road_motorway": "#808080",
+  "road_primary": "#606060",
+  "road_secondary": "#404040",
+  "road_tertiary": "#303030",
+  "road_residential": "#202020",
+  "road_default": "#404040"
+}

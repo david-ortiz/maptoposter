@@ -1,0 +1,16 @@
+{
+  "name": "Pride Spectrum",
+  "description": "Rainbow celebration of diversity",
+  "category": "vibrant",
+  "bg": "#FFFFFF",
+  "text": "#E40303",
+  "gradient_color": "#FFFFFF",
+  "water": "#F5F5F5",
+  "parks": "#FAFAFA",
+  "road_motorway": "#E40303",
+  "road_primary": "#FF8C00",
+  "road_secondary": "#FFED00",
+  "road_tertiary": "#008026",
+  "road_residential": "#004DFF",
+  "road_default": "#750787"
+}

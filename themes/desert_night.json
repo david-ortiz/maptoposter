@@ -1,0 +1,16 @@
+{
+  "name": "Desert Night",
+  "description": "Cool desert after sunset",
+  "category": "nature",
+  "bg": "#F8F5F0",
+  "text": "#483D8B",
+  "gradient_color": "#F8F5F0",
+  "water": "#EDE8E0",
+  "parks": "#F2EDE5",
+  "road_motorway": "#483D8B",
+  "road_primary": "#6A5ACD",
+  "road_secondary": "#9370DB",
+  "road_tertiary": "#B8A9E0",
+  "road_residential": "#D8CFF0",
+  "road_default": "#9370DB"
+}

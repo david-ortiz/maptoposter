@@ -1,0 +1,16 @@
+{
+  "name": "Coral Lagoon",
+  "description": "Tropical reef colors in clear waters",
+  "category": "nature",
+  "bg": "#F0FCFC",
+  "text": "#FF6B6B",
+  "gradient_color": "#F0FCFC",
+  "water": "#D8F5F5",
+  "parks": "#E5F9F9",
+  "road_motorway": "#FF6B6B",
+  "road_primary": "#4ECDC4",
+  "road_secondary": "#45B7AA",
+  "road_tertiary": "#3CA090",
+  "road_residential": "#338A78",
+  "road_default": "#45B7AA"
+}

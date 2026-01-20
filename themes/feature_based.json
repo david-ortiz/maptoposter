@@ -1,6 +1,7 @@
 {
   "name": "Feature-Based Shading",
   "description": "Different shades for different road types and features with clear hierarchy",
+  "category": "vibrant",
   "bg": "#FFFFFF",
   "text": "#000000",
   "gradient_color": "#FFFFFF",

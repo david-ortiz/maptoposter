@@ -1,0 +1,16 @@
+{
+  "name": "Moss Rock",
+  "description": "Forest floor aesthetic - mossy greens on stone gray",
+  "category": "nature",
+  "bg": "#3A3A35",
+  "text": "#8FBC8F",
+  "gradient_color": "#3A3A35",
+  "water": "#2E2E2A",
+  "parks": "#454540",
+  "road_motorway": "#8FBC8F",
+  "road_primary": "#6B9E6B",
+  "road_secondary": "#5A8A5A",
+  "road_tertiary": "#4A754A",
+  "road_residential": "#3A5A3A",
+  "road_default": "#5A8A5A"
+}

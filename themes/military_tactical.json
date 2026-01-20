@@ -1,0 +1,16 @@
+{
+  "name": "Military Tactical",
+  "description": "Combat operations - olive drab and desert tan precision",
+  "category": "urban",
+  "bg": "#2F3D2F",
+  "text": "#C9B896",
+  "gradient_color": "#2F3D2F",
+  "water": "#242E24",
+  "parks": "#3A4A3A",
+  "road_motorway": "#C9B896",
+  "road_primary": "#A89A78",
+  "road_secondary": "#8B8060",
+  "road_tertiary": "#6B6348",
+  "road_residential": "#4A4530",
+  "road_default": "#8B8060"
+}

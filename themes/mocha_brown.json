@@ -1,0 +1,16 @@
+{
+  "name": "Mocha Brown",
+  "description": "Rich coffee tones - warm espresso to creamy latte gradients",
+  "category": "vintage",
+  "bg": "#F5F0E8",
+  "text": "#4A3728",
+  "gradient_color": "#F5F0E8",
+  "water": "#E8E0D5",
+  "parks": "#F0E8DD",
+  "road_motorway": "#4A3728",
+  "road_primary": "#6B4F3A",
+  "road_secondary": "#8B6B4C",
+  "road_tertiary": "#A8896A",
+  "road_residential": "#C4A888",
+  "road_default": "#8B6B4C"
+}

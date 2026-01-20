@@ -36,11 +36,13 @@ def load_theme_catalog():
                 "id": theme_name,
                 "name": theme_data.get("name", theme_name),
                 "description": theme_data.get("description", ""),
+                "category": theme_data.get("category", "other"),
                 "colors": {
                     "bg": theme_data.get("bg", "#FFFFFF"),
                     "text": theme_data.get("text", "#111111"),
                     "water": theme_data.get("water", "#C0C0C0"),
                     "parks": theme_data.get("parks", "#F0F0F0"),
+                    "road_motorway": theme_data.get("road_motorway", theme_data.get("road_primary", "#1A1A1A")),
                     "road_primary": theme_data.get("road_primary", "#1A1A1A"),
                     "road_secondary": theme_data.get("road_secondary", "#2A2A2A"),
                     "road_tertiary": theme_data.get("road_tertiary", "#3A3A3A"),
@@ -81,7 +83,7 @@ def push_event(job_id, payload):
         job["queue"].put(event)
 
 
-def run_job(job_id, city, country, theme, distance, dpi, output_format):
+def run_job(job_id, city, country, theme, distance, dpi, output_format, lat=None, lng=None, font=None):
     def progress(info):
         payload = dict(info)
         payload["status"] = "running"
@@ -105,10 +107,17 @@ def run_job(job_id, city, country, theme, distance, dpi, output_format):
             )
 
         poster.THEME = poster.load_theme(theme)
-        coords = poster.get_coordinates(city, country, progress=progress)
+
+        # Use direct coordinates if provided, otherwise geocode city/country
+        if lat is not None and lng is not None:
+            coords = (lat, lng)
+            progress({"stage": "geocode", "percent": 10, "message": "Using provided coordinates"})
+        else:
+            coords = poster.get_coordinates(city, country, progress=progress)
+
         output_file = poster.generate_output_filename(city, theme, output_format)
         poster.create_poster(
-            city, country, coords, distance, output_file, output_format, dpi=dpi, progress=progress
+            city, country, coords, distance, output_file, output_format, dpi=dpi, progress=progress, font_family=font
         )
 
         output_url = f"/posters/{os.path.basename(output_file)}"
@@ -154,6 +163,9 @@ def job_worker():
                 job["distance"],
                 job["dpi"],
                 job["format"],
+                lat=job.get("lat"),
+                lng=job.get("lng"),
+                font=job.get("font"),
             )
         finally:
             JOB_QUEUE.task_done()
@@ -178,6 +190,19 @@ def api_themes():
     return jsonify(load_theme_catalog())
 
 
+@app.route("/api/fonts")
+def api_fonts():
+    """Return list of available font families."""
+    fonts = poster.list_available_fonts()
+    return jsonify(fonts)
+
+
+@app.route("/fonts/<path:filename>")
+def serve_font(filename):
+    """Serve font files from the fonts directory."""
+    return send_from_directory(poster.FONTS_DIR, filename)
+
+
 @app.route("/api/jobs", methods=["POST"])
 def api_jobs():
     ensure_worker()
@@ -185,6 +210,21 @@ def api_jobs():
     city = (payload.get("city") or "").strip()
     country = (payload.get("country") or "").strip()
     theme = (payload.get("theme") or "feature_based").strip()
+
+    # Optional direct coordinates (skip geocoding if provided)
+    lat = payload.get("lat")
+    lng = payload.get("lng")
+    if lat is not None:
+        try:
+            lat = float(lat)
+        except (TypeError, ValueError):
+            return jsonify({"error": "Latitude must be a number."}), 400
+    if lng is not None:
+        try:
+            lng = float(lng)
+        except (TypeError, ValueError):
+            return jsonify({"error": "Longitude must be a number."}), 400
+
     try:
         distance = int(payload.get("distance") or 29000)
     except (TypeError, ValueError):
@@ -199,6 +239,11 @@ def api_jobs():
     output_format = (payload.get("format") or "png").strip().lower()
     if output_format not in ("png", "svg", "pdf", "svg-laser"):
         return jsonify({"error": "Format must be png, svg, pdf, or svg-laser."}), 400
+
+    font = (payload.get("font") or "").strip() or None
+    available_fonts = poster.list_available_fonts()
+    if font and font not in available_fonts:
+        return jsonify({"error": f"Font '{font}' not found. Available: {', '.join(available_fonts)}"}), 400
 
     if not city or not country:
         return jsonify({"error": "City and country are required."}), 400
@@ -220,6 +265,9 @@ def api_jobs():
         "distance": distance,
         "dpi": dpi,
         "format": output_format,
+        "font": font,
+        "lat": lat,
+        "lng": lng,
         "created_at": uuid.uuid1().time,
     }
 
@@ -382,6 +430,96 @@ def api_examples():
     with open(path, "r") as handle:
         content = handle.read()
     return Response(content, mimetype="text/plain")
+
+
+@app.route("/api/geocode/reverse")
+def api_geocode_reverse():
+    """Reverse geocode lat/lng to city/country names."""
+    from geopy.geocoders import Nominatim
+
+    lat = request.args.get("lat", type=float)
+    lng = request.args.get("lng", type=float)
+
+    if lat is None or lng is None:
+        return jsonify({"error": "lat and lng parameters are required"}), 400
+
+    try:
+        geolocator = Nominatim(user_agent="maptoposter_web")
+        location = geolocator.reverse((lat, lng), language="en", timeout=10)
+
+        if location:
+            addr = location.raw.get("address", {})
+            # Try multiple address fields for city name
+            city = (
+                addr.get("city")
+                or addr.get("town")
+                or addr.get("village")
+                or addr.get("municipality")
+                or addr.get("county")
+                or ""
+            )
+            country = addr.get("country", "")
+            return jsonify({
+                "city": city,
+                "country": country,
+                "display": location.address,
+                "lat": lat,
+                "lng": lng
+            })
+        return jsonify({
+            "city": "",
+            "country": "",
+            "display": "Unknown location",
+            "lat": lat,
+            "lng": lng
+        })
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 500
+
+
+@app.route("/api/geocode/search")
+def api_geocode_search():
+    """Forward geocode search - find locations by name for map panning."""
+    from geopy.geocoders import Nominatim
+
+    query = request.args.get("q", "").strip()
+    limit = request.args.get("limit", 5, type=int)
+
+    if not query or len(query) < 2:
+        return jsonify({"results": []})
+
+    try:
+        geolocator = Nominatim(user_agent="maptoposter_web")
+        locations = geolocator.geocode(
+            query,
+            exactly_one=False,
+            limit=min(limit, 10),
+            language="en",
+            timeout=10
+        )
+
+        results = []
+        for loc in (locations or []):
+            addr = loc.raw.get("address", {})
+            city = (
+                addr.get("city")
+                or addr.get("town")
+                or addr.get("village")
+                or addr.get("municipality")
+                or ""
+            )
+            results.append({
+                "display": loc.address,
+                "lat": loc.latitude,
+                "lng": loc.longitude,
+                "city": city,
+                "country": addr.get("country", ""),
+                "type": loc.raw.get("type", ""),
+            })
+
+        return jsonify({"results": results})
+    except Exception as exc:
+        return jsonify({"error": str(exc), "results": []}), 500
 
 
 @app.route("/api/posters/<path:filename>", methods=["DELETE"])

@@ -1,0 +1,16 @@
+{
+  "name": "Emerald City",
+  "description": "Rich jewel-toned greens - lush and luxurious forest kingdom",
+  "category": "vibrant",
+  "bg": "#0A2818",
+  "text": "#50C878",
+  "gradient_color": "#0A2818",
+  "water": "#061810",
+  "parks": "#0F3520",
+  "road_motorway": "#50C878",
+  "road_primary": "#3CB371",
+  "road_secondary": "#2E8B57",
+  "road_tertiary": "#228B45",
+  "road_residential": "#1A6B35",
+  "road_default": "#2E8B57"
+}

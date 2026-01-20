@@ -1,0 +1,16 @@
+{
+  "name": "Black Gold",
+  "description": "Onyx and 24 karat opulence",
+  "category": "luxury",
+  "bg": "#0A0A0A",
+  "text": "#FFD700",
+  "gradient_color": "#0A0A0A",
+  "water": "#050505",
+  "parks": "#0F0F0F",
+  "road_motorway": "#FFD700",
+  "road_primary": "#DAA520",
+  "road_secondary": "#B8860B",
+  "road_tertiary": "#8B6914",
+  "road_residential": "#5C4A0F",
+  "road_default": "#B8860B"
+}

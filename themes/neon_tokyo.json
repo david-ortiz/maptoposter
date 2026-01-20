@@ -1,0 +1,16 @@
+{
+  "name": "Neon Tokyo",
+  "description": "Japanese city nightlife with electric pink and blue",
+  "category": "dark",
+  "bg": "#0D0015",
+  "text": "#FF1493",
+  "gradient_color": "#0D0015",
+  "water": "#08000D",
+  "parks": "#150020",
+  "road_motorway": "#FF1493",
+  "road_primary": "#00BFFF",
+  "road_secondary": "#9932CC",
+  "road_tertiary": "#6A0DAD",
+  "road_residential": "#3D0066",
+  "road_default": "#9932CC"
+}

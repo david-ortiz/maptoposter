@@ -1,0 +1,16 @@
+{
+  "name": "Mango Tango",
+  "description": "Tropical orange vibrancy - juicy mango to tangerine gradient",
+  "category": "vibrant",
+  "bg": "#FFF8F0",
+  "text": "#FF8C00",
+  "gradient_color": "#FFF8F0",
+  "water": "#F8F0E5",
+  "parks": "#FCF5EA",
+  "road_motorway": "#FF8C00",
+  "road_primary": "#FFA500",
+  "road_secondary": "#FFB732",
+  "road_tertiary": "#FFC966",
+  "road_residential": "#FFDB99",
+  "road_default": "#FFB732"
+}

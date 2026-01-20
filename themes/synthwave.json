@@ -1,0 +1,16 @@
+{
+  "name": "Synthwave",
+  "description": "80s retro wave in hot pink and cyan",
+  "category": "vibrant",
+  "bg": "#1A0A2E",
+  "text": "#FF6EC7",
+  "gradient_color": "#1A0A2E",
+  "water": "#0D0518",
+  "parks": "#220F3D",
+  "road_motorway": "#FF6EC7",
+  "road_primary": "#00FFFF",
+  "road_secondary": "#FF1493",
+  "road_tertiary": "#00CED1",
+  "road_residential": "#DA70D6",
+  "road_default": "#00FFFF"
+}

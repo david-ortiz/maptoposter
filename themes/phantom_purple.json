@@ -1,0 +1,16 @@
+{
+  "name": "Phantom Purple",
+  "description": "Ghostly violet mist on endless black",
+  "category": "dark",
+  "bg": "#08050A",
+  "text": "#9B30FF",
+  "gradient_color": "#08050A",
+  "water": "#040208",
+  "parks": "#0D0810",
+  "road_motorway": "#9B30FF",
+  "road_primary": "#7B68EE",
+  "road_secondary": "#6A5ACD",
+  "road_tertiary": "#483D8B",
+  "road_residential": "#2E2060",
+  "road_default": "#6A5ACD"
+}

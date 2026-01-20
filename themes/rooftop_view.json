@@ -1,0 +1,16 @@
+{
+  "name": "Rooftop View",
+  "description": "Urban landscape from above",
+  "category": "urban",
+  "bg": "#F5F8FA",
+  "text": "#37474F",
+  "gradient_color": "#F5F8FA",
+  "water": "#E3EBF0",
+  "parks": "#ECF2F5",
+  "road_motorway": "#37474F",
+  "road_primary": "#546E7A",
+  "road_secondary": "#78909C",
+  "road_tertiary": "#90A4AE",
+  "road_residential": "#B0BEC5",
+  "road_default": "#78909C"
+}

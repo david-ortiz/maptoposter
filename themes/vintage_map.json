@@ -1,0 +1,16 @@
+{
+  "name": "Vintage Map",
+  "description": "Aged parchment with classic cartography brown inks - old world explorer aesthetic",
+  "category": "vintage",
+  "bg": "#F5E6C8",
+  "text": "#5D4037",
+  "gradient_color": "#F5E6C8",
+  "water": "#E8D9B8",
+  "parks": "#EDE0C8",
+  "road_motorway": "#5D4037",
+  "road_primary": "#6D5047",
+  "road_secondary": "#8B7355",
+  "road_tertiary": "#A08060",
+  "road_residential": "#C4A882",
+  "road_default": "#8B7355"
+}

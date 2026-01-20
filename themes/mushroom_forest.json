@@ -1,0 +1,16 @@
+{
+  "name": "Mushroom Forest",
+  "description": "Woodland fungi with earthy tones",
+  "category": "nature",
+  "bg": "#F5F0EB",
+  "text": "#8B4513",
+  "gradient_color": "#F5F0EB",
+  "water": "#E8DFD5",
+  "parks": "#EDE5DC",
+  "road_motorway": "#8B4513",
+  "road_primary": "#A0522D",
+  "road_secondary": "#CD853F",
+  "road_tertiary": "#DEB887",
+  "road_residential": "#F5DEB3",
+  "road_default": "#CD853F"
+}

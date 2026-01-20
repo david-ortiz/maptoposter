@@ -1,0 +1,16 @@
+{
+  "name": "Arctic Aurora",
+  "description": "Northern lights dancing over icy tundra - ethereal greens and purples on deep blue",
+  "category": "dark",
+  "bg": "#0B1628",
+  "text": "#7FFFD4",
+  "gradient_color": "#0B1628",
+  "water": "#061220",
+  "parks": "#0F2035",
+  "road_motorway": "#00FF88",
+  "road_primary": "#7B68EE",
+  "road_secondary": "#5F9EA0",
+  "road_tertiary": "#4682B4",
+  "road_residential": "#2F4F6F",
+  "road_default": "#5F9EA0"
+}

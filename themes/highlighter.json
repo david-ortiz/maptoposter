@@ -1,0 +1,16 @@
+{
+  "name": "Highlighter",
+  "description": "Marker pen bright accent colors",
+  "category": "vibrant",
+  "bg": "#FFFDE7",
+  "text": "#FF6D00",
+  "gradient_color": "#FFFDE7",
+  "water": "#FFF9C4",
+  "parks": "#FFFBD7",
+  "road_motorway": "#FF6D00",
+  "road_primary": "#00E676",
+  "road_secondary": "#FFEA00",
+  "road_tertiary": "#D500F9",
+  "road_residential": "#00B0FF",
+  "road_default": "#00E676"
+}

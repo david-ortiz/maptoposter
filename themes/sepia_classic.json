@@ -1,0 +1,16 @@
+{
+  "name": "Sepia Classic",
+  "description": "Vintage photograph aesthetic - timeless sepia tones",
+  "category": "vintage",
+  "bg": "#F5EBDC",
+  "text": "#5C4033",
+  "gradient_color": "#F5EBDC",
+  "water": "#E8DCC8",
+  "parks": "#EFE5D2",
+  "road_motorway": "#5C4033",
+  "road_primary": "#7A5C45",
+  "road_secondary": "#98755A",
+  "road_tertiary": "#B89A78",
+  "road_residential": "#D4BFA0",
+  "road_default": "#98755A"
+}

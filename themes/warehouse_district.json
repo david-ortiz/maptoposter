@@ -1,0 +1,16 @@
+{
+  "name": "Warehouse District",
+  "description": "Industrial brick and rust",
+  "category": "urban",
+  "bg": "#F5EDE5",
+  "text": "#8B4513",
+  "gradient_color": "#F5EDE5",
+  "water": "#E5D8CC",
+  "parks": "#EDE2D8",
+  "road_motorway": "#8B4513",
+  "road_primary": "#A0522D",
+  "road_secondary": "#B87333",
+  "road_tertiary": "#CD853F",
+  "road_residential": "#D2B48C",
+  "road_default": "#B87333"
+}

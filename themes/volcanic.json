@@ -1,0 +1,16 @@
+{
+  "name": "Volcanic",
+  "description": "Molten lava flows - fiery reds and oranges on black volcanic rock",
+  "category": "dark",
+  "bg": "#0D0D0D",
+  "text": "#FF4500",
+  "gradient_color": "#0D0D0D",
+  "water": "#080808",
+  "parks": "#151515",
+  "road_motorway": "#FF4500",
+  "road_primary": "#FF6347",
+  "road_secondary": "#DC3522",
+  "road_tertiary": "#A52A2A",
+  "road_residential": "#6B1A1A",
+  "road_default": "#DC3522"
+}

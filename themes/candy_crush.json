@@ -1,0 +1,16 @@
+{
+  "name": "Candy Crush",
+  "description": "Sweet game interface colors",
+  "category": "vibrant",
+  "bg": "#FFF0F5",
+  "text": "#FF1493",
+  "gradient_color": "#FFF0F5",
+  "water": "#FFE4EC",
+  "parks": "#FFEAF0",
+  "road_motorway": "#FF1493",
+  "road_primary": "#32CD32",
+  "road_secondary": "#FFD700",
+  "road_tertiary": "#00CED1",
+  "road_residential": "#FF6347",
+  "road_default": "#32CD32"
+}

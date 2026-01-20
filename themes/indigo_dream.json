@@ -1,0 +1,16 @@
+{
+  "name": "Indigo Dream",
+  "description": "Deep blue violet - mysterious midnight indigo hues",
+  "category": "dark",
+  "bg": "#0F0F28",
+  "text": "#6366F1",
+  "gradient_color": "#0F0F28",
+  "water": "#0A0A1E",
+  "parks": "#151535",
+  "road_motorway": "#6366F1",
+  "road_primary": "#818CF8",
+  "road_secondary": "#5555C0",
+  "road_tertiary": "#404090",
+  "road_residential": "#2E2E60",
+  "road_default": "#5555C0"
+}

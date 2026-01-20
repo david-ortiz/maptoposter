@@ -1,0 +1,16 @@
+{
+  "name": "Storm Cloud",
+  "description": "Dramatic thunderstorm grays - moody and atmospheric",
+  "category": "dark",
+  "bg": "#1C2833",
+  "text": "#D5DBDB",
+  "gradient_color": "#1C2833",
+  "water": "#141D26",
+  "parks": "#243342",
+  "road_motorway": "#D5DBDB",
+  "road_primary": "#ABB2B9",
+  "road_secondary": "#808B96",
+  "road_tertiary": "#566573",
+  "road_residential": "#354555",
+  "road_default": "#808B96"
+}

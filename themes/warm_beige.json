@@ -1,6 +1,7 @@
 {
   "name": "Warm Beige",
   "description": "Earthy warm neutrals with sepia tones - vintage map aesthetic",
+  "category": "light",
   "bg": "#F5F0E8",
   "text": "#6B5B4F",
   "gradient_color": "#F5F0E8",

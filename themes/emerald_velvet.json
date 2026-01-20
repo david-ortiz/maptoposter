@@ -1,0 +1,16 @@
+{
+  "name": "Emerald Velvet",
+  "description": "Rich jewel green luxury",
+  "category": "luxury",
+  "bg": "#F5FAF5",
+  "text": "#0B6623",
+  "gradient_color": "#F5FAF5",
+  "water": "#E0F0E0",
+  "parks": "#E8F5E8",
+  "road_motorway": "#0B6623",
+  "road_primary": "#228B22",
+  "road_secondary": "#32CD32",
+  "road_tertiary": "#50C878",
+  "road_residential": "#98FB98",
+  "road_default": "#228B22"
+}

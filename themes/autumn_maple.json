@@ -1,0 +1,16 @@
+{
+  "name": "Autumn Maple",
+  "description": "Fiery fall foliage on cream",
+  "category": "nature",
+  "bg": "#FDF8F0",
+  "text": "#C65D07",
+  "gradient_color": "#FDF8F0",
+  "water": "#F5ECE0",
+  "parks": "#F9F2E8",
+  "road_motorway": "#C65D07",
+  "road_primary": "#D97E2B",
+  "road_secondary": "#E8994F",
+  "road_tertiary": "#F2B477",
+  "road_residential": "#F9CFA0",
+  "road_default": "#E8994F"
+}

@@ -1,6 +1,7 @@
 {
   "name": "Contrast Zones",
   "description": "Strong contrast showing urban density - darker in center, lighter at edges",
+  "category": "vibrant",
   "bg": "#FFFFFF",
   "text": "#000000",
   "gradient_color": "#FFFFFF",

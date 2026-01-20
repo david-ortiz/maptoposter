@@ -1,0 +1,16 @@
+{
+  "name": "Vegas Strip",
+  "description": "Casino lights and glamour",
+  "category": "vibrant",
+  "bg": "#1A1420",
+  "text": "#FFD700",
+  "gradient_color": "#1A1420",
+  "water": "#0D0A10",
+  "parks": "#221A2A",
+  "road_motorway": "#FFD700",
+  "road_primary": "#FF4081",
+  "road_secondary": "#00E5FF",
+  "road_tertiary": "#AEEA00",
+  "road_residential": "#FF6E40",
+  "road_default": "#FF4081"
+}

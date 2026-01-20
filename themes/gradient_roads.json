@@ -1,6 +1,7 @@
 {
   "name": "Gradient Roads",
   "description": "Smooth gradient from dark center to light edges with subtle features",
+  "category": "vibrant",
   "bg": "#FFFFFF",
   "text": "#000000",
   "gradient_color": "#FFFFFF",

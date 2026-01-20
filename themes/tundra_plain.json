@@ -1,0 +1,16 @@
+{
+  "name": "Tundra Plain",
+  "description": "Arctic landscape with lichen colors",
+  "category": "nature",
+  "bg": "#F5F5F0",
+  "text": "#607D8B",
+  "gradient_color": "#F5F5F0",
+  "water": "#E8EBE5",
+  "parks": "#EEF0EB",
+  "road_motorway": "#607D8B",
+  "road_primary": "#78909C",
+  "road_secondary": "#90A4AE",
+  "road_tertiary": "#B0BEC5",
+  "road_residential": "#CFD8DC",
+  "road_default": "#90A4AE"
+}

@@ -1,0 +1,16 @@
+{
+  "name": "Blood Moon",
+  "description": "Lunar eclipse crimson on midnight black",
+  "category": "dark",
+  "bg": "#0A0505",
+  "text": "#DC143C",
+  "gradient_color": "#0A0505",
+  "water": "#050202",
+  "parks": "#100808",
+  "road_motorway": "#DC143C",
+  "road_primary": "#B01030",
+  "road_secondary": "#800020",
+  "road_tertiary": "#500015",
+  "road_residential": "#300010",
+  "road_default": "#800020"
+}

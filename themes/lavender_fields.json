@@ -1,0 +1,16 @@
+{
+  "name": "Lavender Fields",
+  "description": "Provence in bloom - soft purples and gentle pastoral warmth",
+  "category": "pastel",
+  "bg": "#F8F0FF",
+  "text": "#6B4C8A",
+  "gradient_color": "#F8F0FF",
+  "water": "#EDE5F5",
+  "parks": "#F3EAF8",
+  "road_motorway": "#8B6AAD",
+  "road_primary": "#9D7FBD",
+  "road_secondary": "#B094CD",
+  "road_tertiary": "#C4AADD",
+  "road_residential": "#D8C0ED",
+  "road_default": "#B094CD"
+}

@@ -1,0 +1,16 @@
+{
+  "name": "Porcelain",
+  "description": "Delicate ceramic white with blue details",
+  "category": "light",
+  "bg": "#FAFCFF",
+  "text": "#4169E1",
+  "gradient_color": "#FAFCFF",
+  "water": "#F2F7FC",
+  "parks": "#F6F9FD",
+  "road_motorway": "#4169E1",
+  "road_primary": "#6384E8",
+  "road_secondary": "#859FEF",
+  "road_tertiary": "#A7BAF5",
+  "road_residential": "#C9D5FA",
+  "road_default": "#859FEF"
+}

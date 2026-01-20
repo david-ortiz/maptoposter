@@ -1,0 +1,16 @@
+{
+  "name": "Electric Lime",
+  "description": "Bold neon green energy - high voltage street art vibes",
+  "category": "vibrant",
+  "bg": "#0A0A0A",
+  "text": "#ADFF2F",
+  "gradient_color": "#0A0A0A",
+  "water": "#050505",
+  "parks": "#121212",
+  "road_motorway": "#ADFF2F",
+  "road_primary": "#9ACD32",
+  "road_secondary": "#7CB518",
+  "road_tertiary": "#5A8F0A",
+  "road_residential": "#3A5F08",
+  "road_default": "#7CB518"
+}

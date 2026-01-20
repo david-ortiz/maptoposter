@@ -1,0 +1,16 @@
+{
+  "name": "Sea Foam",
+  "description": "Gentle ocean spray pastels",
+  "category": "pastel",
+  "bg": "#F5FFFA",
+  "text": "#80CBC4",
+  "gradient_color": "#F5FFFA",
+  "water": "#B2DFDB",
+  "parks": "#C8E6C9",
+  "road_motorway": "#80CBC4",
+  "road_primary": "#80DEEA",
+  "road_secondary": "#B2EBF2",
+  "road_tertiary": "#B3E5FC",
+  "road_residential": "#BBDEFB",
+  "road_default": "#80DEEA"
+}

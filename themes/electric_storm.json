@@ -1,0 +1,16 @@
+{
+  "name": "Electric Storm",
+  "description": "Lightning strikes across thunderous night",
+  "category": "dark",
+  "bg": "#08080D",
+  "text": "#00FFFF",
+  "gradient_color": "#08080D",
+  "water": "#040408",
+  "parks": "#0D0D15",
+  "road_motorway": "#00FFFF",
+  "road_primary": "#1E90FF",
+  "road_secondary": "#4169E1",
+  "road_tertiary": "#0000CD",
+  "road_residential": "#00008B",
+  "road_default": "#4169E1"
+}

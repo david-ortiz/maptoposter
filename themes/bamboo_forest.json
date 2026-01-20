@@ -1,0 +1,16 @@
+{
+  "name": "Bamboo Forest",
+  "description": "Asian zen garden - bamboo greens with misty atmosphere",
+  "category": "cultural",
+  "bg": "#F0F5E8",
+  "text": "#4A5D23",
+  "gradient_color": "#F0F5E8",
+  "water": "#E0E8D5",
+  "parks": "#E8EFE0",
+  "road_motorway": "#4A5D23",
+  "road_primary": "#5F7530",
+  "road_secondary": "#76903D",
+  "road_tertiary": "#8EAB50",
+  "road_residential": "#A8C268",
+  "road_default": "#76903D"
+}

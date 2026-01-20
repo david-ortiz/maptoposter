@@ -1,0 +1,16 @@
+{
+  "name": "Gothic Dark",
+  "description": "Victorian darkness - deep purples and blacks with mysterious elegance",
+  "category": "dark",
+  "bg": "#0D0A12",
+  "text": "#9B59B6",
+  "gradient_color": "#0D0A12",
+  "water": "#08060C",
+  "parks": "#15101A",
+  "road_motorway": "#9B59B6",
+  "road_primary": "#8E44AD",
+  "road_secondary": "#6C3483",
+  "road_tertiary": "#4A235A",
+  "road_residential": "#2E1A3B",
+  "road_default": "#6C3483"
+}

@@ -1,0 +1,16 @@
+{
+  "name": "Eggshell",
+  "description": "Warm off-white with subtle tan lines",
+  "category": "light",
+  "bg": "#FDF8F0",
+  "text": "#8B7355",
+  "gradient_color": "#FDF8F0",
+  "water": "#F8F3EA",
+  "parks": "#FAF6ED",
+  "road_motorway": "#8B7355",
+  "road_primary": "#A28D75",
+  "road_secondary": "#B9A795",
+  "road_tertiary": "#D0C1B5",
+  "road_residential": "#E7DBD5",
+  "road_default": "#B9A795"
+}

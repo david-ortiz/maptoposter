@@ -1,0 +1,16 @@
+{
+  "name": "Rose Gold",
+  "description": "Elegant metallic pink - luxurious and feminine sophistication",
+  "category": "luxury",
+  "bg": "#FFF5F5",
+  "text": "#B76E79",
+  "gradient_color": "#FFF5F5",
+  "water": "#F5E8E8",
+  "parks": "#FAF0F0",
+  "road_motorway": "#B76E79",
+  "road_primary": "#C9878F",
+  "road_secondary": "#DBA0A6",
+  "road_tertiary": "#EDB9BD",
+  "road_residential": "#F5D2D4",
+  "road_default": "#DBA0A6"
+}

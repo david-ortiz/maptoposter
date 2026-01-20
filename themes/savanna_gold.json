@@ -1,0 +1,16 @@
+{
+  "name": "Savanna Gold",
+  "description": "African grasslands at dry season",
+  "category": "nature",
+  "bg": "#FDF8E8",
+  "text": "#B8860B",
+  "gradient_color": "#FDF8E8",
+  "water": "#F5EDD5",
+  "parks": "#F9F3E0",
+  "road_motorway": "#B8860B",
+  "road_primary": "#DAA520",
+  "road_secondary": "#E6BE44",
+  "road_tertiary": "#F0D26E",
+  "road_residential": "#F7E598",
+  "road_default": "#E6BE44"
+}

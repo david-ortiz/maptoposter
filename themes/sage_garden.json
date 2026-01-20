@@ -1,0 +1,16 @@
+{
+  "name": "Sage Garden",
+  "description": "Muted botanical greens - calming herb garden tranquility",
+  "category": "nature",
+  "bg": "#F5F5F0",
+  "text": "#6B8E6B",
+  "gradient_color": "#F5F5F0",
+  "water": "#E8EBE5",
+  "parks": "#EFF0EA",
+  "road_motorway": "#6B8E6B",
+  "road_primary": "#8BA888",
+  "road_secondary": "#9DB89A",
+  "road_tertiary": "#B0C8AD",
+  "road_residential": "#C8D8C5",
+  "road_default": "#9DB89A"
+}

@@ -1,0 +1,16 @@
+{
+  "name": "Charcoal Sketch",
+  "description": "Artist's pencil drawing - soft charcoal on textured paper",
+  "category": "monochrome",
+  "bg": "#F5F2ED",
+  "text": "#2D2D2D",
+  "gradient_color": "#F5F2ED",
+  "water": "#E8E5E0",
+  "parks": "#EFEBE5",
+  "road_motorway": "#2D2D2D",
+  "road_primary": "#484848",
+  "road_secondary": "#686868",
+  "road_tertiary": "#909090",
+  "road_residential": "#B8B8B8",
+  "road_default": "#686868"
+}

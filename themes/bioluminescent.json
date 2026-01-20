@@ -1,0 +1,16 @@
+{
+  "name": "Bioluminescent",
+  "description": "Deep sea creatures glowing in the abyss",
+  "category": "dark",
+  "bg": "#020510",
+  "text": "#00FA9A",
+  "gradient_color": "#020510",
+  "water": "#010308",
+  "parks": "#051018",
+  "road_motorway": "#00FA9A",
+  "road_primary": "#00CED1",
+  "road_secondary": "#20B2AA",
+  "road_tertiary": "#008B8B",
+  "road_residential": "#006666",
+  "road_default": "#20B2AA"
+}

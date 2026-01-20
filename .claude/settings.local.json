@@ -1,0 +1,40 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git fetch:*)",
+      "Bash(gh pr view:*)",
+      "Bash(git merge:*)",
+      "Bash(findstr:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nAdd high-level map data caching to skip API calls on repeat requests\n\n- Cache graph, water, and parks data by coordinates + distance\n- Instant loading for previously generated locations\n- Add --clear-cache flag to clear all cached map data\n- Add --no-cache flag to force fresh download\n- Cache stored in cache/map_data/ as pickle files\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git commit:*)",
+      "Bash(set PYTHONIOENCODING=utf-8:*)",
+      "Bash(python create_map_poster.py:*)",
+      "Bash(chcp:*)",
+      "Bash(python -X utf8 create_map_poster.py:*)",
+      "Bash(python -X utf8:*)",
+      "Bash(timeout:*)",
+      "Bash(curl:*)",
+      "mcp__playwright__browser_select_option",
+      "mcp__playwright__browser_click",
+      "mcp__playwright__browser_take_screenshot",
+      "mcp__playwright__browser_console_messages",
+      "mcp__playwright__browser_snapshot",
+      "mcp__playwright__browser_evaluate",
+      "Bash(grep:*)",
+      "mcp__playwright__browser_navigate",
+      "Bash(python app.py:*)",
+      "Bash(del /s /q __pycache__*.pyc)",
+      "Bash(python -c:*)",
+      "Bash(dir:*)",
+      "Bash(del /q __pycache__app.cpython-313.pyc)",
+      "Bash(tasklist:*)",
+      "Bash(taskkill:*)",
+      "Bash(cmd /c \"taskkill /F /PID 48176\")",
+      "Bash(cmd /c \"taskkill /F /PID 48152\")",
+      "Bash(powershell -Command \"Stop-Process -Id 48176 -Force; Stop-Process -Id 48152 -Force\")",
+      "Bash(powershell -Command \"if \\(Test-Path ''__pycache__''\\) { Remove-Item -Recurse -Force ''__pycache__'' }\")",
+      "Bash(python:*)"
+    ]
+  }
+}

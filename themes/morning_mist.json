@@ -1,0 +1,16 @@
+{
+  "name": "Morning Mist",
+  "description": "Soft gray dawn breaking through fog",
+  "category": "light",
+  "bg": "#F5F5F5",
+  "text": "#708090",
+  "gradient_color": "#F5F5F5",
+  "water": "#EDEDED",
+  "parks": "#F0F0F0",
+  "road_motorway": "#708090",
+  "road_primary": "#8899A5",
+  "road_secondary": "#A0ADB8",
+  "road_tertiary": "#B8C1CA",
+  "road_residential": "#D0D5DB",
+  "road_default": "#A0ADB8"
+}

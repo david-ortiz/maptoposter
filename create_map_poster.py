@@ -17,7 +17,7 @@ import threading
 import pickle
 import hashlib
 from shapely.geometry import LineString, Polygon, MultiPolygon, box
-from shapely.ops import unary_union
+from shapely.ops import unary_union, polygonize
 import geopandas as gpd
 
 # Enable osmnx caching - downloaded data is saved locally for faster repeat requests
@@ -29,6 +29,9 @@ os.makedirs(MAP_CACHE_DIR, exist_ok=True)
 ox.settings.use_cache = True
 ox.settings.cache_folder = CACHE_DIR
 ox.settings.log_console = True  # Show cache hits/misses in console
+# Use alternative Overpass endpoint (German mirror)
+ox.settings.overpass_url = "https://gall.openstreetmap.de/api/"
+ox.settings.timeout = 180  # 3 minute timeout for slower servers
 
 
 def get_cache_key(lat, lon, dist):
@@ -45,13 +48,14 @@ def get_cache_key(lat, lon, dist):
     return f"map_{lat_r}_{lon_r}_{dist}_{key_hash}"
 
 
-def save_map_cache(cache_key, graph, water, parks):
+def save_map_cache(cache_key, graph, water, parks, coastlines=None):
     """Save downloaded map data to cache."""
     cache_file = os.path.join(MAP_CACHE_DIR, f"{cache_key}.pkl")
     data = {
         "graph": graph,
         "water": water,
         "parks": parks,
+        "coastlines": coastlines,
         "cached_at": datetime.now().isoformat()
     }
     with open(cache_file, "wb") as f:
@@ -62,7 +66,7 @@ def save_map_cache(cache_key, graph, water, parks):
 def load_map_cache(cache_key):
     """
     Load map data from cache if available.
-    Returns (graph, water, parks) tuple or None if not cached.
+    Returns (graph, water, parks, coastlines) tuple or None if not cached.
     """
     cache_file = os.path.join(MAP_CACHE_DIR, f"{cache_key}.pkl")
     if not os.path.exists(cache_file):
@@ -73,7 +77,9 @@ def load_map_cache(cache_key):
         log(f"  [Cache] Loaded map data from {cache_key}.pkl")
         if "cached_at" in data:
             log(f"  [Cache] Data cached at: {data['cached_at']}")
-        return data["graph"], data["water"], data["parks"]
+        # Support older cache files without coastlines
+        coastlines = data.get("coastlines", None)
+        return data["graph"], data["water"], data["parks"], coastlines
     except Exception as e:
         log(f"  [Cache] Failed to load cache: {e}")
         return None
@@ -141,26 +147,81 @@ THEMES_DIR = "themes"
 FONTS_DIR = "fonts"
 POSTERS_DIR = "posters"
 
-def load_fonts():
+def discover_font_families():
     """
-    Load Roboto fonts from the fonts directory.
-    Returns dict with font paths for different weights.
+    Discover available font families from the fonts directory.
+    Expects fonts named: FontFamily-Bold.ttf, FontFamily-Regular.ttf, FontFamily-Light.ttf
+    Returns dict of font families with their available weights.
     """
-    fonts = {
-        'bold': os.path.join(FONTS_DIR, 'Roboto-Bold.ttf'),
-        'regular': os.path.join(FONTS_DIR, 'Roboto-Regular.ttf'),
-        'light': os.path.join(FONTS_DIR, 'Roboto-Light.ttf')
-    }
-    
-    # Verify fonts exist
-    for weight, path in fonts.items():
-        if not os.path.exists(path):
-            log(f"⚠ Font not found: {path}")
-            return None
-    
-    return fonts
+    if not os.path.exists(FONTS_DIR):
+        return {}
 
-FONTS = load_fonts()
+    font_families = {}
+
+    # Scan for .ttf and .otf files
+    for filename in os.listdir(FONTS_DIR):
+        if not (filename.endswith('.ttf') or filename.endswith('.otf')):
+            continue
+
+        filepath = os.path.join(FONTS_DIR, filename)
+        name = filename.rsplit('.', 1)[0]  # Remove extension
+
+        # Parse font name - expect "Family-Weight" format
+        if '-' in name:
+            parts = name.rsplit('-', 1)
+            family = parts[0]
+            weight = parts[1].lower()
+        else:
+            # Single name, assume regular weight
+            family = name
+            weight = 'regular'
+
+        # Normalize weight names
+        weight_map = {
+            'bold': 'bold', 'black': 'bold', 'heavy': 'bold',
+            'regular': 'regular', 'normal': 'regular', 'medium': 'regular',
+            'light': 'light', 'thin': 'light', 'extralight': 'light'
+        }
+        weight = weight_map.get(weight, 'regular')
+
+        if family not in font_families:
+            font_families[family] = {}
+        font_families[family][weight] = filepath
+
+    return font_families
+
+def get_font_family(family_name=None):
+    """
+    Get font paths for a specific family. Falls back to first available or None.
+    Returns dict with 'bold', 'regular', 'light' keys (some may be missing).
+    """
+    families = discover_font_families()
+
+    if not families:
+        return None
+
+    # Try requested family first
+    if family_name and family_name in families:
+        return families[family_name]
+
+    # Fall back to Roboto if available
+    if 'Roboto' in families:
+        return families['Roboto']
+
+    # Fall back to first available family
+    first_family = next(iter(families.values()))
+    return first_family
+
+def list_available_fonts():
+    """
+    List all available font families.
+    Returns list of font family names.
+    """
+    families = discover_font_families()
+    return sorted(families.keys())
+
+# Default font (Roboto or first available)
+FONTS = get_font_family('Roboto')
 
 def generate_output_filename(city, theme_name, output_format):
     """
@@ -347,6 +408,136 @@ def get_road_buffer_width(highway_type):
         return 2.5   # ~5m total width for minor roads
 
 
+def fetch_coastline_data(point, dist, progress=None):
+    """
+    Fetch coastline data from OSM for ocean polygon creation.
+    Returns a GeoDataFrame of coastline LineStrings or None if no coastlines found.
+    """
+    if progress:
+        progress({"stage": "coastline", "percent": 55, "message": "Downloading coastline data"})
+
+    spinner = Spinner("[4/4] Downloading coastline data...")
+    spinner.start()
+
+    try:
+        # Query for coastlines - these are lines where water is on the right side
+        coastlines = ox.features_from_point(point, tags={'natural': 'coastline'}, dist=dist)
+        spinner.stop("✓ done")
+        return coastlines
+    except Exception as e:
+        spinner.stop(f"⚠ skipped (no coastline)")
+        return None
+
+
+def create_ocean_polygon(coastlines, clip_box, crs):
+    """
+    Create ocean polygon from coastline data and bounding box.
+
+    OSM coastlines follow the convention that water is on the right-hand side
+    of the line when following its direction. This function:
+    1. Extracts LineStrings from coastline data
+    2. Creates a polygon by "flooding" from edges that touch the bounding box
+    3. Uses the coastlines as barriers to determine land vs water
+
+    Returns a shapely Polygon/MultiPolygon representing ocean areas, or None.
+    """
+    if coastlines is None or coastlines.empty:
+        return None
+
+    # Extract only LineString geometries from coastlines
+    coast_lines = []
+    for geom in coastlines.geometry:
+        if geom.geom_type == 'LineString':
+            coast_lines.append(geom)
+        elif geom.geom_type == 'MultiLineString':
+            for line in geom.geoms:
+                coast_lines.append(line)
+
+    if not coast_lines:
+        return None
+
+    # Merge all coastlines
+    merged_coastlines = unary_union(coast_lines)
+
+    # Clip coastlines to bounding box (with small buffer to ensure intersection)
+    clipped_coastlines = merged_coastlines.intersection(clip_box.buffer(1))
+
+    if clipped_coastlines.is_empty:
+        return None
+
+    try:
+        # Strategy: Split the bounding box using coastlines
+        # The resulting polygons are either land or water
+        # We identify water polygons by checking if they touch the bbox edges
+        # (since oceans extend to the edge of the map)
+
+        # Create a slightly buffered version of coastlines for splitting
+        coast_buffer = clipped_coastlines.buffer(0.1)  # Small buffer for robustness
+
+        # Try to split the bbox by the coastlines
+        # First, create lines from the coastlines
+        if clipped_coastlines.geom_type == 'LineString':
+            split_lines = [clipped_coastlines]
+        elif clipped_coastlines.geom_type == 'MultiLineString':
+            split_lines = list(clipped_coastlines.geoms)
+        else:
+            split_lines = []
+
+        if not split_lines:
+            return None
+
+        # Create the boundary of the clip box
+        bbox_boundary = clip_box.boundary
+
+        # Combine coastlines with bbox boundary to create closed regions
+        all_lines = unary_union([bbox_boundary] + split_lines)
+
+        # Polygonize to get all enclosed regions
+        polygons = list(polygonize(all_lines))
+
+        if not polygons:
+            return None
+
+        # Determine which polygons are water (ocean)
+        # Heuristic: Polygons that touch the bbox boundary are likely ocean
+        # if coastlines separate them from the center
+        ocean_polygons = []
+        bbox_center = clip_box.centroid
+
+        for poly in polygons:
+            # Check if polygon is outside the coastlines (water side)
+            # by checking if it shares significant boundary with the bbox edge
+            # but is separated from center by coastlines
+
+            poly_boundary = poly.boundary
+            shared_with_bbox = poly_boundary.intersection(bbox_boundary)
+
+            # If significant boundary is shared with bbox, check if it's water
+            if not shared_with_bbox.is_empty:
+                shared_length = shared_with_bbox.length if hasattr(shared_with_bbox, 'length') else 0
+                if shared_length > 0:
+                    # Check if coastline separates this polygon from center
+                    # by seeing if the line from poly centroid to bbox center crosses coastlines
+                    poly_center = poly.centroid
+                    line_to_center = LineString([poly_center, bbox_center])
+
+                    if clipped_coastlines.intersects(line_to_center):
+                        # Coastline separates this polygon from center - it's likely ocean
+                        ocean_polygons.append(poly)
+
+        if ocean_polygons:
+            ocean = unary_union(ocean_polygons)
+            # Clip to bbox to ensure clean edges
+            ocean = ocean.intersection(clip_box)
+            return ocean if not ocean.is_empty else None
+
+        return None
+
+    except Exception as e:
+        log(f"  Warning: Could not create ocean polygon: {e}")
+        return None
+
+
 def geometry_to_svg_path(geom, transform_func=None):
     """
     Convert a shapely geometry to SVG path data.
@@ -396,13 +587,14 @@ def geometry_to_svg_path(geom, transform_func=None):
     return ""
 
 
-def export_laser_svg(output_file, G_proj, water, parks, crop_xlim, crop_ylim, city, country, theme, point):
+def export_laser_svg(output_file, G_proj, water, parks, coastlines, crop_xlim, crop_ylim, city, country, theme, point):
     """
     Export map as layered SVG optimized for laser cutting.
 
     Creates separate layers for:
     - Background (frame/border)
-    - Water features (closed polygons)
+    - Ocean (coastal water from coastlines)
+    - Water features (inland lakes, rivers - closed polygons)
     - Parks/green spaces (closed polygons)
     - Roads by type (buffered to closed polygons)
     - Text elements
@@ -533,6 +725,25 @@ def export_laser_svg(output_file, G_proj, water, parks, crop_xlim, crop_ylim, ci
         if parks_polys:
             parks_geom = unary_union(parks_polys)
 
+    # Process ocean (from coastlines)
+    ocean_geom = None
+    if coastlines is not None and not coastlines.empty:
+        log("  Processing coastline for ocean polygon...")
+        # Project coastlines to same CRS as graph
+        try:
+            coastlines_proj = ox.projection.project_gdf(coastlines)
+        except Exception:
+            try:
+                coastlines_proj = coastlines.to_crs(G_proj.graph['crs'])
+            except:
+                coastlines_proj = coastlines
+
+        ocean_geom = create_ocean_polygon(coastlines_proj, clip_box, G_proj.graph.get('crs'))
+        if ocean_geom:
+            log("    ✓ Ocean polygon created")
+        else:
+            log("    ⚠ No ocean polygon could be created (city may not be coastal)")
+
     # Build SVG
     log("  Writing SVG file...")
 
@@ -556,12 +767,24 @@ def export_laser_svg(output_file, G_proj, water, parks, crop_xlim, crop_ylim, ci
   </g>
 ''')
 
-    # Layer: Water
+    # Layer: Ocean (from coastlines - larger water bodies that extend to map edges)
+    if ocean_geom and not ocean_geom.is_empty:
+        path_data = geometry_to_svg_path(ocean_geom, transform)
+        if path_data:
+            # Use a slightly different shade for ocean vs inland water for visual distinction
+            ocean_color = theme.get('ocean', theme.get('water', '#C0C0C0'))
+            svg_parts.append(f'''
+  <g inkscape:groupmode="layer" inkscape:label="02_Ocean" id="layer_ocean">
+    <path d="{path_data}" fill="{ocean_color}" stroke="none"/>
+  </g>
+''')
+
+    # Layer: Water (inland lakes, rivers)
     if water_geom and not water_geom.is_empty:
         path_data = geometry_to_svg_path(water_geom, transform)
         if path_data:
             svg_parts.append(f'''
-  <g inkscape:groupmode="layer" inkscape:label="02_Water" id="layer_water">
+  <g inkscape:groupmode="layer" inkscape:label="03_Water" id="layer_water">
     <path d="{path_data}" fill="{theme.get('water', '#C0C0C0')}" stroke="none"/>
   </g>
 ''')
@@ -571,19 +794,19 @@ def export_laser_svg(output_file, G_proj, water, parks, crop_xlim, crop_ylim, ci
         path_data = geometry_to_svg_path(parks_geom, transform)
         if path_data:
             svg_parts.append(f'''
-  <g inkscape:groupmode="layer" inkscape:label="03_Parks" id="layer_parks">
+  <g inkscape:groupmode="layer" inkscape:label="04_Parks" id="layer_parks">
     <path d="{path_data}" fill="{theme.get('parks', '#F0F0F0')}" stroke="none"/>
   </g>
 ''')
 
     # Road layers (from minor to major, so major roads are on top)
     road_layer_config = [
-        ('minor', '04_Roads_Minor', theme.get('road_default', '#3A3A3A')),
-        ('residential', '05_Roads_Residential', theme.get('road_residential', '#4A4A4A')),
-        ('tertiary', '06_Roads_Tertiary', theme.get('road_tertiary', '#3A3A3A')),
-        ('secondary', '07_Roads_Secondary', theme.get('road_secondary', '#2A2A2A')),
-        ('primary', '08_Roads_Primary', theme.get('road_primary', '#1A1A1A')),
-        ('motorway', '09_Roads_Motorway', theme.get('road_motorway', '#0A0A0A')),
+        ('minor', '05_Roads_Minor', theme.get('road_default', '#3A3A3A')),
+        ('residential', '06_Roads_Residential', theme.get('road_residential', '#4A4A4A')),
+        ('tertiary', '07_Roads_Tertiary', theme.get('road_tertiary', '#3A3A3A')),
+        ('secondary', '08_Roads_Secondary', theme.get('road_secondary', '#2A2A2A')),
+        ('primary', '09_Roads_Primary', theme.get('road_primary', '#1A1A1A')),
+        ('motorway', '10_Roads_Motorway', theme.get('road_motorway', '#0A0A0A')),
     ]
 
     for layer_key, layer_name, color in road_layer_config:
@@ -613,7 +836,7 @@ def export_laser_svg(output_file, G_proj, water, parks, crop_xlim, crop_ylim, ci
     text_y_coords = height_mm - 8
 
     svg_parts.append(f'''
-  <g inkscape:groupmode="layer" inkscape:label="10_Text" id="layer_text">
+  <g inkscape:groupmode="layer" inkscape:label="11_Text" id="layer_text">
     <text x="{width_mm/2}" y="{text_y_city}"
           font-family="Roboto, Arial, sans-serif" font-size="14" font-weight="bold"
           text-anchor="middle" fill="{theme.get('text', '#000000')}">{city.upper()}</text>
@@ -637,7 +860,7 @@ def export_laser_svg(output_file, G_proj, water, parks, crop_xlim, crop_ylim, ci
 
     log(f"  ✓ Laser-cut SVG saved: {output_file}")
     log(f"    Dimensions: {width_mm}mm x {height_mm}mm")
-    log(f"    Layers: Frame, Water, Parks, 6 road types, Text")
+    log(f"    Layers: Frame, Ocean, Water, Parks, 6 road types, Text")
 
 
 def get_coordinates(city, country, progress=None):
@@ -736,7 +959,7 @@ def get_crop_limits(G: MultiDiGraph, fig: Figure) -> tuple[tuple[float, float], 
     
     return crop_xlim, crop_ylim
 
-def create_poster(city, country, point, dist, output_file, output_format='png', dpi=300, progress=None, use_cache=True):
+def create_poster(city, country, point, dist, output_file, output_format='png', dpi=300, progress=None, use_cache=True, font_family=None):
     log(f"\nGenerating map for {city}, {country}...")
     log("")
 
@@ -746,12 +969,13 @@ def create_poster(city, country, point, dist, output_file, output_format='png', 
 
     if cached_data:
         # Use cached data - skip all API calls
-        G, water, parks = cached_data
+        G, water, parks, coastlines = cached_data
         log("✓ Using cached map data (no API calls needed)\n")
         if progress:
             progress({"stage": "network", "percent": 20, "message": "Loading from cache"})
             progress({"stage": "water", "percent": 40, "message": "Loading from cache"})
-            progress({"stage": "parks", "percent": 60, "message": "Loaded from cache"})
+            progress({"stage": "parks", "percent": 55, "message": "Loading from cache"})
+            progress({"stage": "coastline", "percent": 60, "message": "Loaded from cache"})
     else:
         # Fetch fresh data from API
         log("No cache found, downloading from OpenStreetMap...\n")
@@ -785,9 +1009,9 @@ def create_poster(city, country, point, dist, output_file, output_format='png', 
 
         # 3. Fetch Parks
         if progress:
-            progress({"stage": "parks", "percent": 50, "message": "Downloading parks/green spaces"})
+            progress({"stage": "parks", "percent": 45, "message": "Downloading parks/green spaces"})
         parks = None
-        spinner = Spinner("[3/3] Downloading parks/green spaces...")
+        spinner = Spinner("[3/4] Downloading parks/green spaces...")
         spinner.start()
         try:
             parks = ox.features_from_point(point, tags={'leisure': 'park', 'landuse': 'grass'}, dist=dist)
@@ -795,10 +1019,16 @@ def create_poster(city, country, point, dist, output_file, output_format='png', 
         except Exception as e:
             spinner.stop(f"⚠ skipped (no data)")
         if progress:
-            progress({"stage": "parks", "percent": 60, "message": "Parks downloaded"})
+            progress({"stage": "parks", "percent": 52, "message": "Parks downloaded"})
+        time.sleep(0.3)
+
+        # 4. Fetch Coastlines (for ocean polygons in coastal cities)
+        coastlines = fetch_coastline_data(point, dist, progress=progress)
+        if progress:
+            progress({"stage": "coastline", "percent": 60, "message": "Coastline data processed"})
 
         # Save to cache for next time
-        save_map_cache(cache_key, G, water, parks)
+        save_map_cache(cache_key, G, water, parks, coastlines)
         log("\n✓ All data downloaded and cached!\n")
 
     # 2. Setup Plot
@@ -815,7 +1045,35 @@ def create_poster(city, country, point, dist, output_file, output_format='png', 
     # Project graph to a metric CRS so distances and aspect are linear (meters)
     G_proj = ox.project_graph(G)
 
+    # Pre-calculate crop limits for ocean polygon
+    crop_xlim, crop_ylim = get_crop_limits(G_proj, fig)
+
     # 3. Plot Layers
+    # Layer 0: Ocean (from coastlines - creates land/water boundary)
+    if coastlines is not None and not coastlines.empty:
+        try:
+            # Project coastlines to same CRS as graph
+            try:
+                coastlines_proj = ox.projection.project_gdf(coastlines)
+            except Exception:
+                try:
+                    coastlines_proj = coastlines.to_crs(G_proj.graph['crs'])
+                except Exception:
+                    coastlines_proj = coastlines
+
+            # Create clip box from crop limits
+            clip_box = box(crop_xlim[0], crop_ylim[0], crop_xlim[1], crop_ylim[1])
+
+            # Create ocean polygon
+            ocean_geom = create_ocean_polygon(coastlines_proj, clip_box, G_proj.graph.get('crs'))
+
+            if ocean_geom is not None and not ocean_geom.is_empty:
+                # Create a GeoDataFrame for plotting
+                ocean_gdf = gpd.GeoDataFrame(geometry=[ocean_geom], crs=G_proj.graph.get('crs'))
+                ocean_gdf.plot(ax=ax, facecolor=THEME['water'], edgecolor='none', zorder=0)
+        except Exception as e:
+            log(f"  Note: Could not render ocean polygon: {e}")
+
     # Layer 1: Polygons (filter out Point geometries to avoid orange dot artifacts)
     if water is not None and not water.empty:
         # Filter to only Polygon/MultiPolygon geometries
@@ -840,9 +1098,6 @@ def create_poster(city, country, point, dist, output_file, output_format='png', 
     edge_colors = get_edge_colors_by_type(G_proj)
     edge_widths = get_edge_widths_by_type(G_proj)
 
-    # Determine cropping limits to maintain the poster aspect ratio
-    crop_xlim, crop_ylim = get_crop_limits(G_proj, fig)
-
     # Plot the projected graph and then apply the cropped limits
     ox.plot_graph(
         G_proj, ax=ax, bgcolor=THEME['bg'],
@@ -860,21 +1115,28 @@ def create_poster(city, country, point, dist, output_file, output_format='png', 
     create_gradient_fade(ax, THEME['gradient_color'], location='bottom', zorder=10)
     create_gradient_fade(ax, THEME['gradient_color'], location='top', zorder=10)
     
-    # 4. Typography using Roboto font
-    if FONTS:
-        font_main = FontProperties(fname=FONTS['bold'], size=60)
-        font_top = FontProperties(fname=FONTS['bold'], size=40)
-        font_sub = FontProperties(fname=FONTS['light'], size=22)
-        font_coords = FontProperties(fname=FONTS['regular'], size=14)
+    # 4. Typography - use selected font family or default
+    selected_fonts = get_font_family(font_family) if font_family else FONTS
+
+    if selected_fonts:
+        # Get font paths, with fallbacks for missing weights
+        bold_font = selected_fonts.get('bold') or selected_fonts.get('regular')
+        regular_font = selected_fonts.get('regular') or selected_fonts.get('bold')
+        light_font = selected_fonts.get('light') or selected_fonts.get('regular') or selected_fonts.get('bold')
+
+        font_main = FontProperties(fname=bold_font, size=60)
+        font_top = FontProperties(fname=bold_font, size=40)
+        font_sub = FontProperties(fname=light_font, size=22)
+        font_coords = FontProperties(fname=regular_font, size=14)
     else:
         # Fallback to system fonts
         font_main = FontProperties(family='monospace', weight='bold', size=60)
         font_top = FontProperties(family='monospace', weight='bold', size=40)
         font_sub = FontProperties(family='monospace', weight='normal', size=22)
         font_coords = FontProperties(family='monospace', size=14)
-    
+
     spaced_city = "  ".join(list(city.upper()))
-    
+
     # Dynamically adjust font size based on city name length to prevent truncation
     base_font_size = 60
     city_char_count = len(city)
@@ -884,9 +1146,10 @@ def create_poster(city, country, point, dist, output_file, output_format='png', 
         adjusted_font_size = max(base_font_size * scale_factor, 24)  # Minimum size of 24
     else:
         adjusted_font_size = base_font_size
-    
-    if FONTS:
-        font_main_adjusted = FontProperties(fname=FONTS['bold'], size=adjusted_font_size)
+
+    if selected_fonts:
+        bold_font = selected_fonts.get('bold') or selected_fonts.get('regular')
+        font_main_adjusted = FontProperties(fname=bold_font, size=adjusted_font_size)
     else:
         font_main_adjusted = FontProperties(family='monospace', weight='bold', size=adjusted_font_size)
 
@@ -909,8 +1172,9 @@ def create_poster(city, country, point, dist, output_file, output_format='png', 
             color=THEME['text'], linewidth=1, zorder=11)
 
     # --- ATTRIBUTION (bottom right) ---
-    if FONTS:
-        font_attr = FontProperties(fname=FONTS['light'], size=8)
+    if selected_fonts:
+        light_font = selected_fonts.get('light') or selected_fonts.get('regular') or selected_fonts.get('bold')
+        font_attr = FontProperties(fname=light_font, size=8)
     else:
         font_attr = FontProperties(family='monospace', size=8)
     
@@ -932,7 +1196,7 @@ def create_poster(city, country, point, dist, output_file, output_format='png', 
         spinner = Spinner(f"Generating laser-cut SVG: {output_file}...")
         spinner.start()
         try:
-            export_laser_svg(output_file, G_proj, water, parks, crop_xlim, crop_ylim, city, country, THEME, point)
+            export_laser_svg(output_file, G_proj, water, parks, coastlines, crop_xlim, crop_ylim, city, country, THEME, point)
             spinner.stop("✓ done")
         except Exception as e:
             spinner.stop(f"✗ failed: {e}")

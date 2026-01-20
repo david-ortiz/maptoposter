@@ -1,0 +1,16 @@
+{
+  "name": "Peach Cobbler",
+  "description": "Warm peachy pastels - soft and inviting comfort",
+  "category": "pastel",
+  "bg": "#FFF5EE",
+  "text": "#E07850",
+  "gradient_color": "#FFF5EE",
+  "water": "#F8EBE2",
+  "parks": "#FCF0E8",
+  "road_motorway": "#E07850",
+  "road_primary": "#F0A080",
+  "road_secondary": "#F5B898",
+  "road_tertiary": "#F8D0B8",
+  "road_residential": "#FCE5D5",
+  "road_default": "#F5B898"
+}

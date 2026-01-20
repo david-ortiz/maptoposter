@@ -1,6 +1,7 @@
 {
   "name": "Noir",
   "description": "Pure black background with white/gray roads - modern gallery aesthetic",
+  "category": "dark",
   "bg": "#000000",
   "text": "#FFFFFF",
   "gradient_color": "#000000",

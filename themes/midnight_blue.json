@@ -1,6 +1,7 @@
 {
   "name": "Midnight Blue",
   "description": "Deep navy background with gold/copper roads - luxury atlas aesthetic",
+  "category": "dark",
   "bg": "#0A1628",
   "text": "#D4AF37",
   "gradient_color": "#0A1628",

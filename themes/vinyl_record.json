@@ -1,0 +1,16 @@
+{
+  "name": "Vinyl Record",
+  "description": "Classic album cover aesthetic",
+  "category": "vintage",
+  "bg": "#F5F0E8",
+  "text": "#1A1A1A",
+  "gradient_color": "#F5F0E8",
+  "water": "#E8DFD0",
+  "parks": "#EDE5D8",
+  "road_motorway": "#1A1A1A",
+  "road_primary": "#C41E3A",
+  "road_secondary": "#0047AB",
+  "road_tertiary": "#228B22",
+  "road_residential": "#DAA520",
+  "road_default": "#C41E3A"
+}

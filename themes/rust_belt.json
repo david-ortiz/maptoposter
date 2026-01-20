@@ -1,0 +1,16 @@
+{
+  "name": "Rust Belt",
+  "description": "Industrial decay aesthetic - oxidized metals and weathered charm",
+  "category": "urban",
+  "bg": "#2C2416",
+  "text": "#C65D07",
+  "gradient_color": "#2C2416",
+  "water": "#1E1810",
+  "parks": "#3A3020",
+  "road_motorway": "#C65D07",
+  "road_primary": "#A54A06",
+  "road_secondary": "#8B4513",
+  "road_tertiary": "#6B3810",
+  "road_residential": "#4A280C",
+  "road_default": "#8B4513"
+}

@@ -1,0 +1,16 @@
+{
+  "name": "Metro System",
+  "description": "Subway map inspired bold lines",
+  "category": "urban",
+  "bg": "#FFFFFF",
+  "text": "#1A1A1A",
+  "gradient_color": "#FFFFFF",
+  "water": "#F0F0F0",
+  "parks": "#F5F5F5",
+  "road_motorway": "#E51C23",
+  "road_primary": "#2196F3",
+  "road_secondary": "#4CAF50",
+  "road_tertiary": "#FFC107",
+  "road_residential": "#9C27B0",
+  "road_default": "#2196F3"
+}

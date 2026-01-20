@@ -1,0 +1,16 @@
+{
+  "name": "Honey Gold",
+  "description": "Warm amber sweetness - liquid gold honey tones",
+  "category": "luxury",
+  "bg": "#FFF8E8",
+  "text": "#DAA520",
+  "gradient_color": "#FFF8E8",
+  "water": "#F8F0D8",
+  "parks": "#FCF5E0",
+  "road_motorway": "#DAA520",
+  "road_primary": "#E8B830",
+  "road_secondary": "#F0C850",
+  "road_tertiary": "#F5D870",
+  "road_residential": "#FAE898",
+  "road_default": "#F0C850"
+}

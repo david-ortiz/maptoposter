@@ -1,0 +1,16 @@
+{
+  "name": "Retro Synthwave",
+  "description": "80s retrowave aesthetic - hot pink and electric blue on deep purple night",
+  "category": "vintage",
+  "bg": "#1A0A2E",
+  "text": "#FF6EC7",
+  "gradient_color": "#1A0A2E",
+  "water": "#120820",
+  "parks": "#251540",
+  "road_motorway": "#FF6EC7",
+  "road_primary": "#00D4FF",
+  "road_secondary": "#B967FF",
+  "road_tertiary": "#7B4FBF",
+  "road_residential": "#4A3080",
+  "road_default": "#B967FF"
+}

@@ -1,0 +1,16 @@
+{
+  "name": "Beach Party",
+  "description": "Summer vibes and surf colors",
+  "category": "vibrant",
+  "bg": "#FFF8E1",
+  "text": "#FF7043",
+  "gradient_color": "#FFF8E1",
+  "water": "#81D4FA",
+  "parks": "#C5E1A5",
+  "road_motorway": "#FF7043",
+  "road_primary": "#26C6DA",
+  "road_secondary": "#FFCA28",
+  "road_tertiary": "#EC407A",
+  "road_residential": "#7E57C2",
+  "road_default": "#26C6DA"
+}

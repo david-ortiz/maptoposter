@@ -1,0 +1,16 @@
+{
+  "name": "Rice Paper",
+  "description": "Japanese paper with charcoal brushstrokes",
+  "category": "light",
+  "bg": "#FAF8F5",
+  "text": "#36454F",
+  "gradient_color": "#FAF8F5",
+  "water": "#F4F2EE",
+  "parks": "#F7F5F2",
+  "road_motorway": "#36454F",
+  "road_primary": "#546E7A",
+  "road_secondary": "#78909C",
+  "road_tertiary": "#90A4AE",
+  "road_residential": "#B0BEC5",
+  "road_default": "#78909C"
+}

@@ -1,0 +1,16 @@
+{
+  "name": "Chinese New Year",
+  "description": "Lucky red and gold prosperity",
+  "category": "cultural",
+  "bg": "#FFF8F0",
+  "text": "#C62828",
+  "gradient_color": "#FFF8F0",
+  "water": "#FFEBEE",
+  "parks": "#FFF5F5",
+  "road_motorway": "#C62828",
+  "road_primary": "#FFB300",
+  "road_secondary": "#D32F2F",
+  "road_tertiary": "#E53935",
+  "road_residential": "#EF5350",
+  "road_default": "#FFB300"
+}

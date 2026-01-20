@@ -1,0 +1,16 @@
+{
+  "name": "Russian Constructivist",
+  "description": "Soviet avant-garde red and black",
+  "category": "cultural",
+  "bg": "#EEEEEE",
+  "text": "#D32F2F",
+  "gradient_color": "#EEEEEE",
+  "water": "#E0E0E0",
+  "parks": "#E8E8E8",
+  "road_motorway": "#D32F2F",
+  "road_primary": "#212121",
+  "road_secondary": "#424242",
+  "road_tertiary": "#616161",
+  "road_residential": "#9E9E9E",
+  "road_default": "#212121"
+}

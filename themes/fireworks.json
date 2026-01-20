@@ -1,0 +1,16 @@
+{
+  "name": "Fireworks",
+  "description": "Night sky celebration bursts",
+  "category": "vibrant",
+  "bg": "#0A0A18",
+  "text": "#FFD700",
+  "gradient_color": "#0A0A18",
+  "water": "#05050D",
+  "parks": "#0F0F20",
+  "road_motorway": "#FFD700",
+  "road_primary": "#FF4500",
+  "road_secondary": "#00FF7F",
+  "road_tertiary": "#FF1493",
+  "road_residential": "#00BFFF",
+  "road_default": "#FF4500"
+}

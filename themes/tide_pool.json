@@ -1,0 +1,16 @@
+{
+  "name": "Tide Pool",
+  "description": "Coastal marine life colors",
+  "category": "nature",
+  "bg": "#E8F8F8",
+  "text": "#008080",
+  "gradient_color": "#E8F8F8",
+  "water": "#D0F0F0",
+  "parks": "#DCF4F4",
+  "road_motorway": "#008080",
+  "road_primary": "#20B2AA",
+  "road_secondary": "#48D1CC",
+  "road_tertiary": "#7FFFD4",
+  "road_residential": "#AFEEEE",
+  "road_default": "#48D1CC"
+}

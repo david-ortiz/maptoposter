@@ -1,0 +1,16 @@
+{
+  "name": "Electric Purple",
+  "description": "Vibrant violet energy - bold and electrifying ultraviolet",
+  "category": "vibrant",
+  "bg": "#0D0015",
+  "text": "#BF00FF",
+  "gradient_color": "#0D0015",
+  "water": "#080010",
+  "parks": "#150020",
+  "road_motorway": "#BF00FF",
+  "road_primary": "#9400D3",
+  "road_secondary": "#8A2BE2",
+  "road_tertiary": "#663399",
+  "road_residential": "#4B0082",
+  "road_default": "#8A2BE2"
+}

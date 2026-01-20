@@ -1,0 +1,16 @@
+{
+  "name": "River Delta",
+  "description": "Winding waterways through marshlands",
+  "category": "nature",
+  "bg": "#F0F5F0",
+  "text": "#2F5D50",
+  "gradient_color": "#F0F5F0",
+  "water": "#D5E8E0",
+  "parks": "#E5F0E8",
+  "road_motorway": "#2F5D50",
+  "road_primary": "#3D7566",
+  "road_secondary": "#558B7B",
+  "road_tertiary": "#70A391",
+  "road_residential": "#90BBA8",
+  "road_default": "#558B7B"
+}

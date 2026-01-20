@@ -1,0 +1,16 @@
+{
+  "name": "Desert Dunes",
+  "description": "Saharan sands at golden hour - warm ochres and sandy earth tones",
+  "category": "nature",
+  "bg": "#F5E6D3",
+  "text": "#8B5A2B",
+  "gradient_color": "#F5E6D3",
+  "water": "#E8D8C0",
+  "parks": "#F0E0CC",
+  "road_motorway": "#CD853F",
+  "road_primary": "#D4956A",
+  "road_secondary": "#DBA878",
+  "road_tertiary": "#E5C090",
+  "road_residential": "#EDD8B0",
+  "road_default": "#DBA878"
+}

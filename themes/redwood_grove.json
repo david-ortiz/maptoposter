@@ -1,0 +1,16 @@
+{
+  "name": "Redwood Grove",
+  "description": "Ancient forest giants with earthy browns",
+  "category": "nature",
+  "bg": "#F5F0E8",
+  "text": "#5D4037",
+  "gradient_color": "#F5F0E8",
+  "water": "#E8DFD0",
+  "parks": "#EDE6DB",
+  "road_motorway": "#5D4037",
+  "road_primary": "#795548",
+  "road_secondary": "#8D6E63",
+  "road_tertiary": "#A1887F",
+  "road_residential": "#BCAAA4",
+  "road_default": "#8D6E63"
+}

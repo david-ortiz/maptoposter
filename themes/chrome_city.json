@@ -1,0 +1,16 @@
+{
+  "name": "Chrome City",
+  "description": "Futuristic silver metropolis",
+  "category": "urban",
+  "bg": "#F0F0F5",
+  "text": "#5F6A7D",
+  "gradient_color": "#F0F0F5",
+  "water": "#E0E2E8",
+  "parks": "#E8EAEE",
+  "road_motorway": "#5F6A7D",
+  "road_primary": "#7D8A9A",
+  "road_secondary": "#9AA5B3",
+  "road_tertiary": "#B5BDCA",
+  "road_residential": "#CDD3DD",
+  "road_default": "#9AA5B3"
+}

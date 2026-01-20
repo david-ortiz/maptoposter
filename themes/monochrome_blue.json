@@ -1,6 +1,7 @@
 {
   "name": "Monochrome Blue",
   "description": "Single blue color family with varying saturation - clean and cohesive",
+  "category": "monochrome",
   "bg": "#F5F8FA",
   "text": "#1A3A5C",
   "gradient_color": "#F5F8FA",

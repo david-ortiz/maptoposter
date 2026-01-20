@@ -1,0 +1,16 @@
+{
+  "name": "Slate Stone",
+  "description": "Natural stone grays - cool slate with subtle blue undertones",
+  "category": "urban",
+  "bg": "#2F4F4F",
+  "text": "#B8C4C4",
+  "gradient_color": "#2F4F4F",
+  "water": "#243A3A",
+  "parks": "#3A5A5A",
+  "road_motorway": "#B8C4C4",
+  "road_primary": "#9AABAB",
+  "road_secondary": "#7A8F8F",
+  "road_tertiary": "#5A7070",
+  "road_residential": "#455555",
+  "road_default": "#7A8F8F"
+}

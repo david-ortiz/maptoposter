@@ -1,0 +1,16 @@
+{
+  "name": "Ruby Red",
+  "description": "Precious gemstone deep crimson",
+  "category": "luxury",
+  "bg": "#FFF5F5",
+  "text": "#9B111E",
+  "gradient_color": "#FFF5F5",
+  "water": "#FFE8E8",
+  "parks": "#FFEFEF",
+  "road_motorway": "#9B111E",
+  "road_primary": "#B91C1C",
+  "road_secondary": "#DC2626",
+  "road_tertiary": "#EF4444",
+  "road_residential": "#F87171",
+  "road_default": "#DC2626"
+}

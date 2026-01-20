@@ -1,0 +1,16 @@
+{
+  "name": "Persian Carpet",
+  "description": "Iranian textile rich burgundy and navy",
+  "category": "cultural",
+  "bg": "#FDF5E6",
+  "text": "#800020",
+  "gradient_color": "#FDF5E6",
+  "water": "#F5E6D3",
+  "parks": "#FAEDD8",
+  "road_motorway": "#800020",
+  "road_primary": "#1A1A5E",
+  "road_secondary": "#B8860B",
+  "road_tertiary": "#2F4F4F",
+  "road_residential": "#8B4513",
+  "road_default": "#1A1A5E"
+}

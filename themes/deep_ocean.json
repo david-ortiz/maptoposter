@@ -1,0 +1,16 @@
+{
+  "name": "Deep Ocean",
+  "description": "Abyssal navy depths - midnight blue with aqua highlights",
+  "category": "dark",
+  "bg": "#0A1929",
+  "text": "#00BCD4",
+  "gradient_color": "#0A1929",
+  "water": "#061220",
+  "parks": "#0F2035",
+  "road_motorway": "#00BCD4",
+  "road_primary": "#0097A7",
+  "road_secondary": "#00838F",
+  "road_tertiary": "#006064",
+  "road_residential": "#004D50",
+  "road_default": "#00838F"
+}

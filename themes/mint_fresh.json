@@ -1,0 +1,16 @@
+{
+  "name": "Mint Fresh",
+  "description": "Clean mint greens - crisp and refreshing coolness",
+  "category": "pastel",
+  "bg": "#F5FFFA",
+  "text": "#2E8B57",
+  "gradient_color": "#F5FFFA",
+  "water": "#E8FAF0",
+  "parks": "#F0FFF5",
+  "road_motorway": "#2E8B57",
+  "road_primary": "#3CB371",
+  "road_secondary": "#66CDAA",
+  "road_tertiary": "#90E0B0",
+  "road_residential": "#B8F0D0",
+  "road_default": "#66CDAA"
+}

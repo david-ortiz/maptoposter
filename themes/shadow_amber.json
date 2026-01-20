@@ -1,0 +1,16 @@
+{
+  "name": "Shadow Amber",
+  "description": "Warm amber glow piercing through darkness",
+  "category": "dark",
+  "bg": "#0A0805",
+  "text": "#FFB347",
+  "gradient_color": "#0A0805",
+  "water": "#050402",
+  "parks": "#100D08",
+  "road_motorway": "#FFB347",
+  "road_primary": "#DAA520",
+  "road_secondary": "#B8860B",
+  "road_tertiary": "#8B6914",
+  "road_residential": "#5D4510",
+  "road_default": "#B8860B"
+}

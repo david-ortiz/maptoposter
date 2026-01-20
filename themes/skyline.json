@@ -1,0 +1,16 @@
+{
+  "name": "Skyline",
+  "description": "City silhouette against evening sky",
+  "category": "urban",
+  "bg": "#F0E8F8",
+  "text": "#1A1A2E",
+  "gradient_color": "#F0E8F8",
+  "water": "#E0D5ED",
+  "parks": "#E8DEF2",
+  "road_motorway": "#1A1A2E",
+  "road_primary": "#3D3D5C",
+  "road_secondary": "#5C5C7A",
+  "road_tertiary": "#7A7A98",
+  "road_residential": "#9898B6",
+  "road_default": "#5C5C7A"
+}

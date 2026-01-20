@@ -1,0 +1,16 @@
+{
+  "name": "Eucalyptus",
+  "description": "Australian bush sage - muted greens with earthy warmth",
+  "category": "nature",
+  "bg": "#F5F5F0",
+  "text": "#5F7A6A",
+  "gradient_color": "#F5F5F0",
+  "water": "#E8EBE5",
+  "parks": "#EFF0EA",
+  "road_motorway": "#5F7A6A",
+  "road_primary": "#7A9585",
+  "road_secondary": "#8FAA98",
+  "road_tertiary": "#A8BFAF",
+  "road_residential": "#C4D5C8",
+  "road_default": "#8FAA98"
+}

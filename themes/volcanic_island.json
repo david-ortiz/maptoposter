@@ -1,0 +1,16 @@
+{
+  "name": "Volcanic Island",
+  "description": "Black lava meets tropical green",
+  "category": "nature",
+  "bg": "#F0F5F0",
+  "text": "#2D2D2D",
+  "gradient_color": "#F0F5F0",
+  "water": "#D5EAD5",
+  "parks": "#E3F0E3",
+  "road_motorway": "#2D2D2D",
+  "road_primary": "#228B22",
+  "road_secondary": "#32CD32",
+  "road_tertiary": "#50C878",
+  "road_residential": "#90EE90",
+  "road_default": "#32CD32"
+}

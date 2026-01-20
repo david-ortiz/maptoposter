@@ -1,0 +1,16 @@
+{
+  "name": "Minimal White",
+  "description": "Ultra clean white canvas with subtle gray streets - pure minimalist elegance",
+  "category": "light",
+  "bg": "#FFFFFF",
+  "text": "#1A1A1A",
+  "gradient_color": "#FFFFFF",
+  "water": "#F5F5F5",
+  "parks": "#FAFAFA",
+  "road_motorway": "#1A1A1A",
+  "road_primary": "#333333",
+  "road_secondary": "#555555",
+  "road_tertiary": "#888888",
+  "road_residential": "#BBBBBB",
+  "road_default": "#555555"
+}

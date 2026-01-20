@@ -1,0 +1,16 @@
+{
+  "name": "Rave Party",
+  "description": "Dance floor UV lights",
+  "category": "vibrant",
+  "bg": "#0A0012",
+  "text": "#E0E0FF",
+  "gradient_color": "#0A0012",
+  "water": "#05000A",
+  "parks": "#0F0018",
+  "road_motorway": "#FF00FF",
+  "road_primary": "#00FF00",
+  "road_secondary": "#00FFFF",
+  "road_tertiary": "#FFFF00",
+  "road_residential": "#FF4400",
+  "road_default": "#00FF00"
+}

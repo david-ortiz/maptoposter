@@ -1,0 +1,16 @@
+{
+  "name": "Bubblegum Pop",
+  "description": "Bright playful pinks - fun and youthful energy",
+  "category": "vibrant",
+  "bg": "#FFF0F8",
+  "text": "#FF1493",
+  "gradient_color": "#FFF0F8",
+  "water": "#F8E5F0",
+  "parks": "#FCF0F5",
+  "road_motorway": "#FF1493",
+  "road_primary": "#FF69B4",
+  "road_secondary": "#FF85C1",
+  "road_tertiary": "#FFA4D2",
+  "road_residential": "#FFC4E4",
+  "road_default": "#FF85C1"
+}

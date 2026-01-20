@@ -1,0 +1,16 @@
+{
+  "name": "Firefly Night",
+  "description": "Summer evening glow - dark blue night with golden firefly light",
+  "category": "dark",
+  "bg": "#0D1B2A",
+  "text": "#FFD93D",
+  "gradient_color": "#0D1B2A",
+  "water": "#081420",
+  "parks": "#122435",
+  "road_motorway": "#FFD93D",
+  "road_primary": "#F9C74F",
+  "road_secondary": "#C9A030",
+  "road_tertiary": "#907525",
+  "road_residential": "#5A4A1A",
+  "road_default": "#C9A030"
+}

@@ -1,0 +1,16 @@
+{
+  "name": "Scandinavian",
+  "description": "Nordic minimalism - clean whites with warm wood accents",
+  "category": "light",
+  "bg": "#FAFAFA",
+  "text": "#5D5D5D",
+  "gradient_color": "#FAFAFA",
+  "water": "#F0F0F0",
+  "parks": "#F5F5F5",
+  "road_motorway": "#5D5D5D",
+  "road_primary": "#8A8A8A",
+  "road_secondary": "#A8A8A8",
+  "road_tertiary": "#C5C5C5",
+  "road_residential": "#DEDEDE",
+  "road_default": "#A8A8A8"
+}

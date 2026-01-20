@@ -1,0 +1,16 @@
+{
+  "name": "Comic Book",
+  "description": "Bold graphic novel style",
+  "category": "vibrant",
+  "bg": "#FFFEF0",
+  "text": "#1A1A1A",
+  "gradient_color": "#FFFEF0",
+  "water": "#FFF8C0",
+  "parks": "#FFFBE0",
+  "road_motorway": "#1A1A1A",
+  "road_primary": "#E53935",
+  "road_secondary": "#1E88E5",
+  "road_tertiary": "#FDD835",
+  "road_residential": "#43A047",
+  "road_default": "#E53935"
+}

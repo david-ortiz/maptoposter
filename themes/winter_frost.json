@@ -1,0 +1,16 @@
+{
+  "name": "Winter Frost",
+  "description": "Icy white with cool blue undertones",
+  "category": "light",
+  "bg": "#F8FCFF",
+  "text": "#5F9EA0",
+  "gradient_color": "#F8FCFF",
+  "water": "#F0F8FC",
+  "parks": "#F4FAFD",
+  "road_motorway": "#5F9EA0",
+  "road_primary": "#7FB3B5",
+  "road_secondary": "#9FC8CA",
+  "road_tertiary": "#BFDDDF",
+  "road_residential": "#DFF2F4",
+  "road_default": "#9FC8CA"
+}

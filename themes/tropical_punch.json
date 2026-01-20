@@ -1,0 +1,16 @@
+{
+  "name": "Tropical Punch",
+  "description": "Fruity cocktail colors explosion",
+  "category": "vibrant",
+  "bg": "#FFF8F0",
+  "text": "#FF4757",
+  "gradient_color": "#FFF8F0",
+  "water": "#FFDFBA",
+  "parks": "#FFF0DD",
+  "road_motorway": "#FF4757",
+  "road_primary": "#FFA502",
+  "road_secondary": "#2ED573",
+  "road_tertiary": "#1E90FF",
+  "road_residential": "#FF6B81",
+  "road_default": "#FFA502"
+}

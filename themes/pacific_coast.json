@@ -1,0 +1,16 @@
+{
+  "name": "Pacific Coast",
+  "description": "Ocean blues meeting rocky shores",
+  "category": "nature",
+  "bg": "#E8F4F8",
+  "text": "#1E6091",
+  "gradient_color": "#E8F4F8",
+  "water": "#D0E8F0",
+  "parks": "#DCF0F5",
+  "road_motorway": "#1E6091",
+  "road_primary": "#3A7CA5",
+  "road_secondary": "#5694B5",
+  "road_tertiary": "#78ADCA",
+  "road_residential": "#9FC5DD",
+  "road_default": "#5694B5"
+}

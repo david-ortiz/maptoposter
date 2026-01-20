@@ -5,232 +5,332 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Map Poster Studio</title>
     <link rel="stylesheet" href="/static/styles.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
   </head>
   <body>
-    <main class="shell">
-      <header class="hero">
-        <div class="brand">
-          <span class="brand-mark"></span>
-          <span class="brand-text">Maptoposter</span>
-          <a
-            class="brand-link"
-            href="https://github.com/originalankur/maptoposter"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Maptoposter on GitHub"
-          >
-            <svg
-              class="brand-icon"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-              focusable="false"
+    <!-- FULL-SCREEN MAP -->
+    <div id="map-container" class="map-fullscreen">
+      <div id="leaflet-map"></div>
+    </div>
+
+    <!-- LEFT WIDGET - Controls Panel -->
+    <aside id="controls-widget" class="floating-widget widget-left" data-collapsed="false">
+      <button class="widget-toggle" aria-label="Toggle controls panel">
+        <span class="toggle-icon"></span>
+      </button>
+
+      <div class="widget-content">
+        <!-- Header/Brand -->
+        <header class="widget-header">
+          <div class="brand">
+            <span class="brand-mark"></span>
+            <span class="brand-text">Maptoposter</span>
+            <a
+              class="brand-link"
+              href="https://github.com/originalankur/maptoposter"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="GitHub"
             >
-              <path
-                d="M12 2C6.48 2 2 6.58 2 12.26c0 4.54 2.87 8.38 6.84 9.74.5.1.68-.22.68-.48 0-.24-.01-.86-.01-1.69-2.78.62-3.37-1.37-3.37-1.37-.45-1.18-1.11-1.49-1.11-1.49-.91-.63.07-.62.07-.62 1.01.07 1.54 1.06 1.54 1.06.9 1.56 2.36 1.11 2.94.85.09-.67.35-1.11.63-1.36-2.22-.26-4.56-1.14-4.56-5.08 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.32.1-2.75 0 0 .84-.27 2.75 1.05a9.34 9.34 0 0 1 2.5-.35c.85 0 1.71.12 2.5.35 1.91-1.32 2.75-1.05 2.75-1.05.55 1.43.2 2.49.1 2.75.64.72 1.03 1.63 1.03 2.75 0 3.95-2.34 4.82-4.57 5.07.36.32.68.94.68 1.9 0 1.37-.01 2.47-.01 2.81 0 .26.18.59.69.48 3.96-1.36 6.83-5.2 6.83-9.74C22 6.58 17.52 2 12 2z"
-              />
-            </svg>
-          </a>
-        </div>
-        <h1>City Map Poster Generator</h1>
-        <p>
-          Pick a city, choose a radius and palette, and the map will be generated for you!
-        </p>
-      </header>
-
-      <section class="grid">
-        <div class="panel form-panel">
-          <div class="panel-header">
-            <div class="panel-title-row">
-              <h2>Build a Poster</h2>
-              <div class="examples-menu">
-                <button id="examples-toggle" class="ghost-btn" type="button">
-                  Examples
-                </button>
-                <div id="examples-list" class="examples-list" aria-hidden="true"></div>
-              </div>
-            </div>
-            <p>All current CLI options are supported</p>
-          </div>
-
-          <form id="poster-form" class="poster-form">
-            <div class="field-group">
-              <label for="city">City</label>
-              <div class="autocomplete">
-                <input
-                  id="city"
-                  name="city"
-                  type="text"
-                  placeholder="Paris"
-                  autocomplete="off"
-                  required
-                />
-                <div class="autocomplete-list" id="city-list"></div>
-              </div>
-            </div>
-            <div class="field-group">
-              <label for="country">Country</label>
-              <div class="autocomplete">
-                <input
-                  id="country"
-                  name="country"
-                  type="text"
-                  placeholder="France"
-                  autocomplete="off"
-                  required
-                />
-                <div class="autocomplete-list" id="country-list"></div>
-              </div>
-            </div>
-
-            <div class="field-group distance-group">
-              <div class="distance-row">
-                <label for="distance-range">Radius (meters)</label>
-                <input
-                  id="distance-input"
-                  name="distance"
-                  type="number"
-                  min="2000"
-                  max="30000"
-                  step="500"
-                  value="29000"
-                />
-              </div>
-              <input
-                id="distance-range"
-                type="range"
-                min="2000"
-                max="30000"
-                step="500"
-                value="29000"
-              />
-              <div class="distance-hint">
-                4–6k for compact districts, 8–12k for downtown focus, 15–20k for
-                big metros.
-              </div>
-            </div>
-
-            <div class="field-group dpi-group">
-              <div class="dpi-row">
-                <label for="dpi-range">Resolution (DPI)</label>
-                <input
-                  id="dpi-input"
-                  name="dpi"
-                  type="number"
-                  min="72"
-                  max="600"
-                  step="1"
-                  value="300"
-                />
-              </div>
-              <input
-                id="dpi-range"
-                type="range"
-                min="72"
-                max="600"
-                step="1"
-                value="300"
-              />
-              <div class="dpi-hint">
-                72 for preview (~0.5MB), 150 for web (~3MB), 300 for print (~10MB).
-              </div>
-            </div>
-
-            <div class="field-group format-group">
-              <label for="format-select">Output Format</label>
-              <select id="format-select" name="format">
-                <option value="png" selected>PNG (Raster image)</option>
-                <option value="svg">SVG (Vector graphics)</option>
-                <option value="pdf">PDF (Print-ready)</option>
-                <option value="svg-laser">SVG Laser (Layered for laser cutting)</option>
-              </select>
-              <div class="format-hint">
-                PNG for sharing, SVG/PDF for printing, SVG Laser for CNC/laser cutters.
-              </div>
-            </div>
-
-            <div class="field-group theme-group">
-              <div class="theme-header">
-                <label>Theme</label>
-                <span class="theme-hint">Scroll to explore palettes</span>
-              </div>
-              <div id="theme-grid" class="theme-grid"></div>
-            </div>
-
-            <button class="primary-btn" type="submit">Generate Poster</button>
-            <p id="form-error" class="form-error" role="alert"></p>
-          </form>
-        </div>
-
-        <div class="panel status-panel">
-          <div class="panel-header">
-            <h2>Progress</h2>
-            <p>Your poster is saved locally and added to the gallery below when finished.</p>
-          </div>
-
-          <div class="progress-card">
-            <p id="progress-message" class="progress-message">
-              Ready to generate a map.
-            </p>
-            <div class="progress-stage" id="progress-stage"></div>
-            <div class="progress-bottom">
-              <div class="progress-bar">
-                <div id="progress-fill" class="progress-fill"></div>
-              </div>
-              <span id="progress-percent" class="progress-percent">0%</span>
-            </div>
-          </div>
-
-          <div id="latest-poster" class="latest-poster" style="display: none;">
-            <div class="latest-poster-label">Latest:</div>
-            <a id="latest-poster-link" href="#" target="_blank">
-              <img id="latest-poster-thumb" alt="Latest poster" />
+              <svg class="brand-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M12 2C6.48 2 2 6.58 2 12.26c0 4.54 2.87 8.38 6.84 9.74.5.1.68-.22.68-.48 0-.24-.01-.86-.01-1.69-2.78.62-3.37-1.37-3.37-1.37-.45-1.18-1.11-1.49-1.11-1.49-.91-.63.07-.62.07-.62 1.01.07 1.54 1.06 1.54 1.06.9 1.56 2.36 1.11 2.94.85.09-.67.35-1.11.63-1.36-2.22-.26-4.56-1.14-4.56-5.08 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.32.1-2.75 0 0 .84-.27 2.75 1.05a9.34 9.34 0 0 1 2.5-.35c.85 0 1.71.12 2.5.35 1.91-1.32 2.75-1.05 2.75-1.05.55 1.43.2 2.49.1 2.75.64.72 1.03 1.63 1.03 2.75 0 3.95-2.34 4.82-4.57 5.07.36.32.68.94.68 1.9 0 1.37-.01 2.47-.01 2.81 0 .26.18.59.69.48 3.96-1.36 6.83-5.2 6.83-9.74C22 6.58 17.52 2 12 2z"/>
+              </svg>
             </a>
           </div>
+        </header>
 
+        <!-- Location Search (pans map) -->
+        <section class="widget-section">
+          <label class="section-label" for="location-search">Find Location</label>
+          <div class="search-input-wrap">
+            <input
+              type="text"
+              id="location-search"
+              placeholder="Search city or place..."
+              autocomplete="off"
+            />
+            <button id="search-btn" class="icon-btn" type="button" aria-label="Search">
+              <svg viewBox="0 0 24 24" width="18" height="18">
+                <path fill="currentColor" d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 0 0 1.48-5.34c-.47-2.78-2.79-5-5.59-5.34a6.505 6.505 0 0 0-7.27 7.27c.34 2.8 2.56 5.12 5.34 5.59a6.5 6.5 0 0 0 5.34-1.48l.27.28v.79l4.25 4.25c.41.41 1.08.41 1.49 0 .41-.41.41-1.08 0-1.49L15.5 14zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+              </svg>
+            </button>
+          </div>
+          <div id="search-results" class="search-dropdown"></div>
+          <p class="section-hint">Search to pan map. Click on map to set poster center.</p>
+        </section>
+
+        <!-- Selected Coordinates -->
+        <section class="widget-section coords-section">
+          <div class="coords-display">
+            <div class="coords-row">
+              <span class="coords-label">Selected:</span>
+              <span id="selected-coords" class="coords-value">Click on map</span>
+            </div>
+            <div id="suggested-location" class="suggested-location"></div>
+          </div>
+        </section>
+
+        <!-- Poster Text (editable, decoupled from map) -->
+        <section class="widget-section">
+          <label class="section-label">Poster Text</label>
+          <div class="field-row">
+            <input type="text" id="poster-city" placeholder="City name" />
+            <button id="sync-city" class="sync-btn" type="button" title="Use suggested city">
+              <svg viewBox="0 0 24 24" width="16" height="16">
+                <path fill="currentColor" d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46A7.93 7.93 0 0 0 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74A7.93 7.93 0 0 0 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/>
+              </svg>
+            </button>
+          </div>
+          <div class="field-row">
+            <input type="text" id="poster-country" placeholder="Country" />
+            <button id="sync-country" class="sync-btn" type="button" title="Use suggested country">
+              <svg viewBox="0 0 24 24" width="16" height="16">
+                <path fill="currentColor" d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46A7.93 7.93 0 0 0 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74A7.93 7.93 0 0 0 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/>
+              </svg>
+            </button>
+          </div>
+          <p class="section-hint">Edit freely or click sync to use map suggestion.</p>
+        </section>
+
+        <!-- Radius Slider -->
+        <section class="widget-section">
+          <div class="slider-header">
+            <label class="section-label" for="radius-slider">Radius</label>
+            <span id="radius-value" class="slider-value">29 km</span>
+          </div>
+          <input
+            type="range"
+            id="radius-slider"
+            min="2000"
+            max="30000"
+            step="500"
+            value="29000"
+          />
+          <p class="section-hint">4-6km districts, 8-12km downtown, 15-20km metros</p>
+        </section>
+
+        <!-- DPI Slider -->
+        <section class="widget-section">
+          <div class="slider-header">
+            <label class="section-label" for="dpi-slider">Resolution (DPI)</label>
+            <span id="dpi-value" class="slider-value">300</span>
+          </div>
+          <input
+            type="range"
+            id="dpi-slider"
+            min="72"
+            max="600"
+            step="1"
+            value="300"
+          />
+        </section>
+
+        <!-- Output Format & Font -->
+        <section class="widget-section format-font-row">
+          <div class="format-select-wrap">
+            <label class="section-label" for="format-select">Format</label>
+            <select id="format-select">
+              <option value="png" selected>PNG (Raster)</option>
+              <option value="svg">SVG (Vector)</option>
+              <option value="pdf">PDF (Print)</option>
+              <option value="svg-laser">SVG Laser (CNC)</option>
+            </select>
+          </div>
+          <div class="font-select-wrap">
+            <label class="section-label">Font</label>
+            <div id="font-picker" class="font-picker">
+              <button type="button" id="font-picker-toggle" class="font-picker-toggle">
+                <span id="font-picker-label">Loading...</span>
+                <svg viewBox="0 0 24 24" width="16" height="16">
+                  <path fill="currentColor" d="M7 10l5 5 5-5z"/>
+                </svg>
+              </button>
+              <div id="font-picker-dropdown" class="font-picker-dropdown" aria-hidden="true">
+                <div id="font-picker-options" class="font-picker-options"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Theme Carousel -->
+        <section class="widget-section theme-section">
+          <div class="theme-header">
+            <label class="section-label">Theme</label>
+            <button id="theme-browse-btn" class="link-btn" type="button">
+              Browse All
+              <svg viewBox="0 0 24 24" width="14" height="14">
+                <path fill="currentColor" d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+              </svg>
+            </button>
+          </div>
+          <div id="theme-category-tabs" class="theme-category-tabs"></div>
+          <div id="theme-carousel-wrap" class="theme-carousel-wrap">
+            <div class="carousel-fade-left"></div>
+            <div id="theme-carousel" class="theme-carousel"></div>
+            <div class="carousel-fade-right"></div>
+          </div>
+          <div id="selected-theme-name" class="selected-theme-name"></div>
+        </section>
+
+        <!-- Generate Button -->
+        <section class="widget-section generate-section">
+          <button id="generate-btn" class="primary-btn" type="button" disabled>
+            Select location to generate
+          </button>
+        </section>
+
+        <!-- Gallery Toggle -->
+        <section class="widget-section gallery-toggle-section">
+          <button id="gallery-toggle" class="ghost-btn" type="button">
+            <svg viewBox="0 0 24 24" width="18" height="18">
+              <path fill="currentColor" d="M22 16V4c0-1.1-.9-2-2-2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2zm-11-4l2.03 2.71L16 11l4 5H8l3-4zM2 6v14c0 1.1.9 2 2 2h14v-2H4V6H2z"/>
+            </svg>
+            View Gallery
+          </button>
+        </section>
+      </div>
+    </aside>
+
+    <!-- TOP-RIGHT WIDGET - Progress & Latest Poster -->
+    <aside id="status-widget" class="floating-widget widget-top-right">
+      <!-- Progress Widget (hidden until generating) -->
+      <section id="progress-section" class="widget-section progress-widget" style="display: none;">
+        <div class="progress-status">
+          <span id="progress-message">Generating...</span>
+          <span id="progress-percent">0%</span>
         </div>
+        <div class="progress-bar">
+          <div id="progress-fill" class="progress-fill"></div>
+        </div>
+        <div id="progress-stage" class="progress-stage"></div>
+        <p id="progress-error" class="progress-error" role="alert"></p>
       </section>
 
-      <section class="gallery">
+      <!-- Latest Poster (shown after generation) -->
+      <section id="latest-section" class="widget-section latest-section" style="display: none;">
+        <div class="latest-header">
+          <span class="latest-label">Latest:</span>
+          <a id="latest-link" href="#" target="_blank" class="latest-download">Download</a>
+        </div>
+        <a id="latest-poster-link" href="#" target="_blank" class="latest-thumb-link">
+          <img id="latest-poster-thumb" alt="Latest poster" class="latest-thumb" />
+        </a>
+      </section>
+    </aside>
+
+    <!-- BOTTOM-RIGHT WIDGET - Map Style Selector -->
+    <aside id="style-widget" class="floating-widget widget-bottom-right">
+      <button id="style-toggle" class="style-toggle" type="button" aria-label="Change map style">
+        <svg viewBox="0 0 24 24" width="24" height="24">
+          <path fill="currentColor" d="M11.99 18.54l-7.37-5.73L3 14.07l9 7 9-7-1.63-1.27-7.38 5.74zM12 16l7.36-5.73L21 9l-9-7-9 7 1.63 1.27L12 16z"/>
+        </svg>
+      </button>
+      <div id="style-dropdown" class="style-dropdown" aria-hidden="true">
+        <div class="style-dropdown-header">Map Style</div>
+        <div class="style-options">
+          <label class="style-option">
+            <input type="radio" name="map-style" value="cartodb-voyager" checked />
+            <span class="style-preview" style="background: linear-gradient(135deg, #e8e0d8 50%, #b8d4e3 50%);"></span>
+            <span class="style-name">Voyager</span>
+          </label>
+          <label class="style-option">
+            <input type="radio" name="map-style" value="cartodb-positron" />
+            <span class="style-preview" style="background: linear-gradient(135deg, #f2f2f2 50%, #d4e4ed 50%);"></span>
+            <span class="style-name">Light</span>
+          </label>
+          <label class="style-option">
+            <input type="radio" name="map-style" value="cartodb-dark" />
+            <span class="style-preview" style="background: linear-gradient(135deg, #2b2b2b 50%, #3d5c6e 50%);"></span>
+            <span class="style-name">Dark</span>
+          </label>
+          <label class="style-option">
+            <input type="radio" name="map-style" value="osm-standard" />
+            <span class="style-preview" style="background: linear-gradient(135deg, #f2efe9 50%, #aad3df 50%);"></span>
+            <span class="style-name">OSM</span>
+          </label>
+          <label class="style-option">
+            <input type="radio" name="map-style" value="osm-hot" />
+            <span class="style-preview" style="background: linear-gradient(135deg, #f0e6d2 50%, #99c9e9 50%);"></span>
+            <span class="style-name">Humanitarian</span>
+          </label>
+          <label class="style-option">
+            <input type="radio" name="map-style" value="stamen-toner" />
+            <span class="style-preview" style="background: linear-gradient(135deg, #fff 50%, #ccc 50%);"></span>
+            <span class="style-name">Toner</span>
+          </label>
+        </div>
+      </div>
+    </aside>
+
+    <!-- THEME DRAWER (Full-screen overlay) -->
+    <div id="theme-drawer" class="theme-drawer" aria-hidden="true">
+      <div class="drawer-header">
+        <h3>Select Theme</h3>
+        <input type="text" id="theme-search" placeholder="Filter themes..." />
+        <button id="drawer-close" class="drawer-close" type="button" aria-label="Close">
+          <svg viewBox="0 0 24 24" width="24" height="24">
+            <path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+          </svg>
+        </button>
+      </div>
+      <div id="theme-grid-full" class="theme-grid-expanded"></div>
+    </div>
+
+    <!-- GALLERY SIDEBAR -->
+    <div id="gallery-overlay" class="gallery-overlay" aria-hidden="true">
+      <div class="gallery-backdrop" data-close-gallery></div>
+      <div class="gallery-sidebar">
         <div class="gallery-header">
-          <div class="gallery-title">
-            <h2>Your Poster Gallery</h2>
-            <span class="gallery-path" id="gallery-path"></span>
-          </div>
-          <div class="gallery-actions">
-            <button id="load-gallery" class="primary-btn" type="button">
-              Load Gallery
-            </button>
-            <button id="open-gallery" class="ghost-btn" type="button" style="display: none;">
-              Open Folder
-            </button>
-          </div>
+          <h2>Your Posters</h2>
+          <button id="gallery-close" class="drawer-close" type="button" aria-label="Close">
+            <svg viewBox="0 0 24 24" width="24" height="24">
+              <path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+            </svg>
+          </button>
+        </div>
+        <div class="gallery-actions">
+          <button id="open-folder-btn" class="ghost-btn" type="button">
+            <svg viewBox="0 0 24 24" width="16" height="16">
+              <path fill="currentColor" d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/>
+            </svg>
+            Open Folder
+          </button>
+          <span id="gallery-path" class="gallery-path"></span>
         </div>
         <div id="gallery-grid" class="gallery-grid">
-          <div class="gallery-placeholder">Click "Load Gallery" to view your posters</div>
+          <div class="gallery-placeholder">No posters yet. Generate one!</div>
         </div>
-      </section>
-    </main>
+      </div>
+    </div>
 
+    <!-- LIGHTBOX -->
     <div class="lightbox" id="lightbox" aria-hidden="true">
       <div class="lightbox-backdrop" data-lightbox-close="true"></div>
       <div class="lightbox-panel" role="dialog" aria-modal="true">
         <button class="lightbox-close" type="button" data-lightbox-close="true">
-          ✕
+          <svg viewBox="0 0 24 24" width="24" height="24">
+            <path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+          </svg>
         </button>
         <button class="lightbox-nav prev" type="button" data-lightbox-prev="true">
-          ‹
+          <svg viewBox="0 0 24 24" width="32" height="32">
+            <path fill="currentColor" d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+          </svg>
         </button>
         <div class="lightbox-image-wrap">
           <img id="lightbox-image" alt="Poster preview" />
         </div>
         <button class="lightbox-nav next" type="button" data-lightbox-next="true">
-          ›
+          <svg viewBox="0 0 24 24" width="32" height="32">
+            <path fill="currentColor" d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+          </svg>
         </button>
         <div class="lightbox-caption" id="lightbox-caption"></div>
         <div class="lightbox-strip" id="lightbox-strip"></div>
       </div>
     </div>
 
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
     <script src="/static/app.js"></script>
   </body>
 </html>

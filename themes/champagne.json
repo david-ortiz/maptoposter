@@ -1,0 +1,16 @@
+{
+  "name": "Champagne",
+  "description": "Celebration bubbles in gold",
+  "category": "luxury",
+  "bg": "#FFF9F0",
+  "text": "#C9A227",
+  "gradient_color": "#FFF9F0",
+  "water": "#F5EDD8",
+  "parks": "#FAF3E5",
+  "road_motorway": "#C9A227",
+  "road_primary": "#D4AF37",
+  "road_secondary": "#E1C158",
+  "road_tertiary": "#EDD37A",
+  "road_residential": "#F5E49C",
+  "road_default": "#D4AF37"
+}

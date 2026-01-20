@@ -1,0 +1,16 @@
+{
+  "name": "Dark Matter",
+  "description": "Cosmic void with subtle purple radiation",
+  "category": "dark",
+  "bg": "#030305",
+  "text": "#8A2BE2",
+  "gradient_color": "#030305",
+  "water": "#020203",
+  "parks": "#050508",
+  "road_motorway": "#8A2BE2",
+  "road_primary": "#663399",
+  "road_secondary": "#4B0082",
+  "road_tertiary": "#301060",
+  "road_residential": "#200840",
+  "road_default": "#4B0082"
+}

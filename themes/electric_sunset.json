@@ -1,0 +1,16 @@
+{
+  "name": "Electric Sunset",
+  "description": "Vivid orange to purple gradient energy",
+  "category": "vibrant",
+  "bg": "#FFF5F0",
+  "text": "#FF5722",
+  "gradient_color": "#FFF5F0",
+  "water": "#FFE0D5",
+  "parks": "#FFEBE2",
+  "road_motorway": "#FF5722",
+  "road_primary": "#E91E63",
+  "road_secondary": "#9C27B0",
+  "road_tertiary": "#673AB7",
+  "road_residential": "#3F51B5",
+  "road_default": "#E91E63"
+}

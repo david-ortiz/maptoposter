@@ -1,0 +1,16 @@
+{
+  "name": "Greek Island",
+  "description": "Aegean blue and whitewashed walls",
+  "category": "cultural",
+  "bg": "#FFFFFF",
+  "text": "#1565C0",
+  "gradient_color": "#FFFFFF",
+  "water": "#E3F2FD",
+  "parks": "#F5F5F5",
+  "road_motorway": "#1565C0",
+  "road_primary": "#1976D2",
+  "road_secondary": "#2196F3",
+  "road_tertiary": "#64B5F6",
+  "road_residential": "#90CAF9",
+  "road_default": "#2196F3"
+}

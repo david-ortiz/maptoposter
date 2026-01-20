@@ -1,0 +1,16 @@
+{
+  "name": "Wine Country",
+  "description": "Deep burgundy vineyard - rich wine reds on cream",
+  "category": "luxury",
+  "bg": "#FDF8F0",
+  "text": "#722F37",
+  "gradient_color": "#FDF8F0",
+  "water": "#F0E8E0",
+  "parks": "#F8F0E8",
+  "road_motorway": "#722F37",
+  "road_primary": "#8B3A4A",
+  "road_secondary": "#A04858",
+  "road_tertiary": "#B86070",
+  "road_residential": "#D08090",
+  "road_default": "#A04858"
+}

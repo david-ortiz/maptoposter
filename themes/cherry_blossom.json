@@ -1,0 +1,16 @@
+{
+  "name": "Cherry Blossom",
+  "description": "Japanese spring sakura - soft pinks on cream with delicate beauty",
+  "category": "pastel",
+  "bg": "#FFF8F0",
+  "text": "#8B4563",
+  "gradient_color": "#FFF8F0",
+  "water": "#F8E8E0",
+  "parks": "#FFF0E8",
+  "road_motorway": "#D4749A",
+  "road_primary": "#E091AA",
+  "road_secondary": "#ECADC0",
+  "road_tertiary": "#F5C8D5",
+  "road_residential": "#FAE0E8",
+  "road_default": "#ECADC0"
+}

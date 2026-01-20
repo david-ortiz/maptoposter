@@ -1,0 +1,16 @@
+{
+  "name": "Canyon Sunset",
+  "description": "Grand canyon reds at golden hour",
+  "category": "nature",
+  "bg": "#FCF5F0",
+  "text": "#B35C44",
+  "gradient_color": "#FCF5F0",
+  "water": "#F5E8E0",
+  "parks": "#F8EDE5",
+  "road_motorway": "#B35C44",
+  "road_primary": "#CD7F5E",
+  "road_secondary": "#D99A7D",
+  "road_tertiary": "#E5B59C",
+  "road_residential": "#F0D0BC",
+  "road_default": "#D99A7D"
+}

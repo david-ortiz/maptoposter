@@ -1,0 +1,16 @@
+{
+  "name": "Neon District",
+  "description": "Urban nightlife with electric signs",
+  "category": "urban",
+  "bg": "#151520",
+  "text": "#FF4081",
+  "gradient_color": "#151520",
+  "water": "#0A0A12",
+  "parks": "#1A1A28",
+  "road_motorway": "#FF4081",
+  "road_primary": "#00E5FF",
+  "road_secondary": "#FFEA00",
+  "road_tertiary": "#76FF03",
+  "road_residential": "#E040FB",
+  "road_default": "#00E5FF"
+}

@@ -1,0 +1,16 @@
+{
+  "name": "Witch Hour",
+  "description": "Supernatural midnight with eerie green",
+  "category": "dark",
+  "bg": "#050808",
+  "text": "#ADFF2F",
+  "gradient_color": "#050808",
+  "water": "#020505",
+  "parks": "#080D0D",
+  "road_motorway": "#ADFF2F",
+  "road_primary": "#7CFC00",
+  "road_secondary": "#32CD32",
+  "road_tertiary": "#228B22",
+  "road_residential": "#006400",
+  "road_default": "#32CD32"
+}

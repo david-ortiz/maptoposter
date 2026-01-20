@@ -1,0 +1,16 @@
+{
+  "name": "Soft Serve",
+  "description": "Ice cream parlor creamy tones",
+  "category": "pastel",
+  "bg": "#FFFDF8",
+  "text": "#FFAB91",
+  "gradient_color": "#FFFDF8",
+  "water": "#FFE0B2",
+  "parks": "#FFF3E0",
+  "road_motorway": "#FFAB91",
+  "road_primary": "#FFCC80",
+  "road_secondary": "#FFF59D",
+  "road_tertiary": "#C5E1A5",
+  "road_residential": "#B2DFDB",
+  "road_default": "#FFCC80"
+}

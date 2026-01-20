@@ -1,0 +1,16 @@
+{
+  "name": "Starfield",
+  "description": "Deep space with distant star clusters",
+  "category": "dark",
+  "bg": "#020208",
+  "text": "#E6E6FA",
+  "gradient_color": "#020208",
+  "water": "#010105",
+  "parks": "#05050D",
+  "road_motorway": "#F0F8FF",
+  "road_primary": "#B0C4DE",
+  "road_secondary": "#87CEEB",
+  "road_tertiary": "#6495ED",
+  "road_residential": "#4169E1",
+  "road_default": "#87CEEB"
+}

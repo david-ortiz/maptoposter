@@ -1,0 +1,16 @@
+{
+  "name": "Powder Puff",
+  "description": "Makeup palette delicate shades",
+  "category": "pastel",
+  "bg": "#FFF5F5",
+  "text": "#CE93D8",
+  "gradient_color": "#FFF5F5",
+  "water": "#F8BBD0",
+  "parks": "#FCE4EC",
+  "road_motorway": "#CE93D8",
+  "road_primary": "#F48FB1",
+  "road_secondary": "#F8BBD0",
+  "road_tertiary": "#FFCDD2",
+  "road_residential": "#FFEFD5",
+  "road_default": "#F48FB1"
+}

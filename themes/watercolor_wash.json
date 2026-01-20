@@ -1,0 +1,16 @@
+{
+  "name": "Watercolor Wash",
+  "description": "Bleeding soft pigments",
+  "category": "pastel",
+  "bg": "#FFFBF5",
+  "text": "#7986CB",
+  "gradient_color": "#FFFBF5",
+  "water": "#D1C4E9",
+  "parks": "#C5CAE9",
+  "road_motorway": "#7986CB",
+  "road_primary": "#9FA8DA",
+  "road_secondary": "#BBDEFB",
+  "road_tertiary": "#B2EBF2",
+  "road_residential": "#B2DFDB",
+  "road_default": "#9FA8DA"
+}

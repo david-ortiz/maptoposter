@@ -1,0 +1,16 @@
+{
+  "name": "Industrial Steel",
+  "description": "Urban metallic - brushed steel and iron with cold precision",
+  "category": "urban",
+  "bg": "#1C1C1E",
+  "text": "#A8A8AC",
+  "gradient_color": "#1C1C1E",
+  "water": "#141416",
+  "parks": "#252528",
+  "road_motorway": "#C0C0C4",
+  "road_primary": "#9898A0",
+  "road_secondary": "#787880",
+  "road_tertiary": "#585860",
+  "road_residential": "#404045",
+  "road_default": "#787880"
+}

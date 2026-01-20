@@ -1,0 +1,16 @@
+{
+  "name": "Fresh Linen",
+  "description": "Crisp natural white with warm gray",
+  "category": "light",
+  "bg": "#FDFBF8",
+  "text": "#6B5E50",
+  "gradient_color": "#FDFBF8",
+  "water": "#F7F4F0",
+  "parks": "#FAF8F4",
+  "road_motorway": "#6B5E50",
+  "road_primary": "#877A6C",
+  "road_secondary": "#A39688",
+  "road_tertiary": "#BFB2A4",
+  "road_residential": "#DBD0C4",
+  "road_default": "#A39688"
+}

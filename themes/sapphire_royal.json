@@ -1,0 +1,16 @@
+{
+  "name": "Sapphire Royal",
+  "description": "Deep blue gemstone elegance",
+  "category": "luxury",
+  "bg": "#F5F8FF",
+  "text": "#0F52BA",
+  "gradient_color": "#F5F8FF",
+  "water": "#E0EAFF",
+  "parks": "#E8F0FF",
+  "road_motorway": "#0F52BA",
+  "road_primary": "#1E90FF",
+  "road_secondary": "#4169E1",
+  "road_tertiary": "#6495ED",
+  "road_residential": "#87CEEB",
+  "road_default": "#1E90FF"
+}

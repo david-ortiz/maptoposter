@@ -1,0 +1,16 @@
+{
+  "name": "Color Explosion",
+  "description": "Paint splatter chaos",
+  "category": "vibrant",
+  "bg": "#FAFAFA",
+  "text": "#212121",
+  "gradient_color": "#FAFAFA",
+  "water": "#EEEEEE",
+  "parks": "#F5F5F5",
+  "road_motorway": "#F44336",
+  "road_primary": "#2196F3",
+  "road_secondary": "#FFEB3B",
+  "road_tertiary": "#4CAF50",
+  "road_residential": "#9C27B0",
+  "road_default": "#FF9800"
+}

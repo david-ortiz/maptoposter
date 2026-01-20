@@ -1,0 +1,16 @@
+{
+  "name": "Dusty Rose",
+  "description": "Muted vintage pink - soft and romantic nostalgia",
+  "category": "pastel",
+  "bg": "#FAF5F5",
+  "text": "#B8707A",
+  "gradient_color": "#FAF5F5",
+  "water": "#F0E8E8",
+  "parks": "#F5F0F0",
+  "road_motorway": "#B8707A",
+  "road_primary": "#C9888F",
+  "road_secondary": "#D8A0A5",
+  "road_tertiary": "#E5B8BC",
+  "road_residential": "#F0D0D2",
+  "road_default": "#D8A0A5"
+}

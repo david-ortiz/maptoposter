@@ -1,0 +1,16 @@
+{
+  "name": "Monsoon Season",
+  "description": "Tropical rain with lush green intensity",
+  "category": "nature",
+  "bg": "#E8F5E0",
+  "text": "#1B5E20",
+  "gradient_color": "#E8F5E0",
+  "water": "#D0EBC5",
+  "parks": "#DCF0D2",
+  "road_motorway": "#1B5E20",
+  "road_primary": "#2E7D32",
+  "road_secondary": "#43A047",
+  "road_tertiary": "#66BB6A",
+  "road_residential": "#A5D6A7",
+  "road_default": "#43A047"
+}

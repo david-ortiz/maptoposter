@@ -1,0 +1,16 @@
+{
+  "name": "Spring Blossom",
+  "description": "Cherry trees in bloom with fresh green",
+  "category": "nature",
+  "bg": "#FFF5F8",
+  "text": "#D16587",
+  "gradient_color": "#FFF5F8",
+  "water": "#FFEAEF",
+  "parks": "#FFF0F4",
+  "road_motorway": "#D16587",
+  "road_primary": "#6B8E4E",
+  "road_secondary": "#8BAB6E",
+  "road_tertiary": "#ACC88E",
+  "road_residential": "#CDE5B0",
+  "road_default": "#8BAB6E"
+}

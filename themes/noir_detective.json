@@ -1,0 +1,16 @@
+{
+  "name": "Noir Detective",
+  "description": "1940s film noir with stark contrast",
+  "category": "dark",
+  "bg": "#0D0D0D",
+  "text": "#DCDCDC",
+  "gradient_color": "#0D0D0D",
+  "water": "#080808",
+  "parks": "#141414",
+  "road_motorway": "#F5F5F5",
+  "road_primary": "#C0C0C0",
+  "road_secondary": "#A9A9A9",
+  "road_tertiary": "#808080",
+  "road_residential": "#505050",
+  "road_default": "#A9A9A9"
+}

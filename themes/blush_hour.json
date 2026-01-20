@@ -1,0 +1,16 @@
+{
+  "name": "Blush Hour",
+  "description": "Golden hour soft pinks",
+  "category": "pastel",
+  "bg": "#FFF8F5",
+  "text": "#E57373",
+  "gradient_color": "#FFF8F5",
+  "water": "#FFCCBC",
+  "parks": "#FFE0CC",
+  "road_motorway": "#E57373",
+  "road_primary": "#F48FB1",
+  "road_secondary": "#FFAB91",
+  "road_tertiary": "#FFCC80",
+  "road_residential": "#FFE082",
+  "road_default": "#F48FB1"
+}

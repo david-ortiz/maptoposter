@@ -1,0 +1,16 @@
+{
+  "name": "Pure Snow",
+  "description": "Pristine white with soft gray details",
+  "category": "light",
+  "bg": "#FFFFFF",
+  "text": "#4A4A4A",
+  "gradient_color": "#FFFFFF",
+  "water": "#F8F8F8",
+  "parks": "#FAFAFA",
+  "road_motorway": "#4A4A4A",
+  "road_primary": "#6A6A6A",
+  "road_secondary": "#8A8A8A",
+  "road_tertiary": "#AAAAAA",
+  "road_residential": "#CCCCCC",
+  "road_default": "#8A8A8A"
+}

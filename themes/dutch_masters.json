@@ -1,0 +1,16 @@
+{
+  "name": "Dutch Masters",
+  "description": "Golden age painting palette",
+  "category": "cultural",
+  "bg": "#F5EDE0",
+  "text": "#3E2723",
+  "gradient_color": "#F5EDE0",
+  "water": "#E5D8C5",
+  "parks": "#EDE3D3",
+  "road_motorway": "#3E2723",
+  "road_primary": "#5D4037",
+  "road_secondary": "#795548",
+  "road_tertiary": "#8D6E63",
+  "road_residential": "#A1887F",
+  "road_default": "#795548"
+}

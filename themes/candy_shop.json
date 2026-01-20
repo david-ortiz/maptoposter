@@ -1,0 +1,16 @@
+{
+  "name": "Candy Shop",
+  "description": "Playful confectionery pastels - sweet and whimsical",
+  "category": "pastel",
+  "bg": "#FFF0F5",
+  "text": "#FF69B4",
+  "gradient_color": "#FFF0F5",
+  "water": "#F8E5EA",
+  "parks": "#FCF0F2",
+  "road_motorway": "#FF69B4",
+  "road_primary": "#87CEEB",
+  "road_secondary": "#FFB347",
+  "road_tertiary": "#98FB98",
+  "road_residential": "#DDA0DD",
+  "road_default": "#87CEEB"
+}

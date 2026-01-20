@@ -1,0 +1,16 @@
+{
+  "name": "Tropical Paradise",
+  "description": "Vibrant beach vacation - turquoise waters and coral sunset hues",
+  "category": "nature",
+  "bg": "#FFF5E6",
+  "text": "#FF6B35",
+  "gradient_color": "#FFF5E6",
+  "water": "#F0E8D8",
+  "parks": "#FAF0E0",
+  "road_motorway": "#FF6B35",
+  "road_primary": "#00CED1",
+  "road_secondary": "#40E0D0",
+  "road_tertiary": "#7FFFD4",
+  "road_residential": "#B0E8E8",
+  "road_default": "#40E0D0"
+}

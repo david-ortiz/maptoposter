@@ -1,0 +1,16 @@
+{
+  "name": "Platinum",
+  "description": "Cool silver prestige metal",
+  "category": "luxury",
+  "bg": "#F5F5F8",
+  "text": "#5D6D7E",
+  "gradient_color": "#F5F5F8",
+  "water": "#E8E8ED",
+  "parks": "#EDEDF0",
+  "road_motorway": "#5D6D7E",
+  "road_primary": "#7F8C8D",
+  "road_secondary": "#95A5A6",
+  "road_tertiary": "#BDC3C7",
+  "road_residential": "#D5DBDB",
+  "road_default": "#95A5A6"
+}

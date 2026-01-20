@@ -1,0 +1,16 @@
+{
+  "name": "Macaron",
+  "description": "French pastry pastel rainbow",
+  "category": "pastel",
+  "bg": "#FFF9F9",
+  "text": "#B39DDB",
+  "gradient_color": "#FFF9F9",
+  "water": "#E1BEE7",
+  "parks": "#F8BBD0",
+  "road_motorway": "#B39DDB",
+  "road_primary": "#90CAF9",
+  "road_secondary": "#80DEEA",
+  "road_tertiary": "#A5D6A7",
+  "road_residential": "#FFF59D",
+  "road_default": "#90CAF9"
+}

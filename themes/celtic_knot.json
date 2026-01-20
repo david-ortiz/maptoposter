@@ -1,0 +1,16 @@
+{
+  "name": "Celtic Knot",
+  "description": "Irish emerald and bronze",
+  "category": "cultural",
+  "bg": "#F0F5F0",
+  "text": "#1B5E20",
+  "gradient_color": "#F0F5F0",
+  "water": "#E0EBE0",
+  "parks": "#E8F0E8",
+  "road_motorway": "#1B5E20",
+  "road_primary": "#B8860B",
+  "road_secondary": "#2E7D32",
+  "road_tertiary": "#43A047",
+  "road_residential": "#66BB6A",
+  "road_default": "#B8860B"
+}

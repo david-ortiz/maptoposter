@@ -1,0 +1,16 @@
+{
+  "name": "Aquamarine",
+  "description": "Sea glass colors - gentle turquoise like calm tropical waters",
+  "category": "nature",
+  "bg": "#F0FFFF",
+  "text": "#20B2AA",
+  "gradient_color": "#F0FFFF",
+  "water": "#E0F5F5",
+  "parks": "#E8FAFA",
+  "road_motorway": "#20B2AA",
+  "road_primary": "#48D1CC",
+  "road_secondary": "#66E0DB",
+  "road_tertiary": "#88E8E5",
+  "road_residential": "#AAF0EE",
+  "road_default": "#66E0DB"
+}

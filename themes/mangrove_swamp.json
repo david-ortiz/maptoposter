@@ -1,0 +1,16 @@
+{
+  "name": "Mangrove Swamp",
+  "description": "Wetland ecosystem with murky waters",
+  "category": "nature",
+  "bg": "#EDF2E8",
+  "text": "#556B2F",
+  "gradient_color": "#EDF2E8",
+  "water": "#D8E5D0",
+  "parks": "#E3EBD8",
+  "road_motorway": "#556B2F",
+  "road_primary": "#6B8E23",
+  "road_secondary": "#7BA428",
+  "road_tertiary": "#8FBC3F",
+  "road_residential": "#A9D15F",
+  "road_default": "#7BA428"
+}

@@ -1,0 +1,16 @@
+{
+  "name": "Typewriter",
+  "description": "Old paper with ink ribbon text",
+  "category": "vintage",
+  "bg": "#F5F0E1",
+  "text": "#2B2B2B",
+  "gradient_color": "#F5F0E1",
+  "water": "#E8E0CC",
+  "parks": "#EDE6D5",
+  "road_motorway": "#2B2B2B",
+  "road_primary": "#4A4A4A",
+  "road_secondary": "#6A6A6A",
+  "road_tertiary": "#8A8A8A",
+  "road_residential": "#AAAAAA",
+  "road_default": "#6A6A6A"
+}

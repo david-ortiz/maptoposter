@@ -1,0 +1,16 @@
+{
+  "name": "Sahara Sunset",
+  "description": "Desert evening glow - warm oranges fading to dusky purple",
+  "category": "nature",
+  "bg": "#2D1B2D",
+  "text": "#FF8C42",
+  "gradient_color": "#2D1B2D",
+  "water": "#201520",
+  "parks": "#3A253A",
+  "road_motorway": "#FF8C42",
+  "road_primary": "#FF6B35",
+  "road_secondary": "#E85D40",
+  "road_tertiary": "#C94F50",
+  "road_residential": "#8B4060",
+  "road_default": "#E85D40"
+}

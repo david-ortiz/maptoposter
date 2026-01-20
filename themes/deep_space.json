@@ -1,0 +1,16 @@
+{
+  "name": "Deep Space",
+  "description": "Infinite cosmic void with stardust trails - mysterious and vast",
+  "category": "dark",
+  "bg": "#050510",
+  "text": "#E8E8FF",
+  "gradient_color": "#050510",
+  "water": "#03030A",
+  "parks": "#0A0A18",
+  "road_motorway": "#E8E8FF",
+  "road_primary": "#9090C0",
+  "road_secondary": "#6060A0",
+  "road_tertiary": "#404080",
+  "road_residential": "#252550",
+  "road_default": "#6060A0"
+}

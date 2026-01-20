@@ -1,0 +1,16 @@
+{
+  "name": "Northern Lights",
+  "description": "Arctic sky with aurora colors",
+  "category": "nature",
+  "bg": "#F0F8F5",
+  "text": "#2E8B57",
+  "gradient_color": "#F0F8F5",
+  "water": "#D8F0E8",
+  "parks": "#E5F5ED",
+  "road_motorway": "#2E8B57",
+  "road_primary": "#00CED1",
+  "road_secondary": "#9370DB",
+  "road_tertiary": "#FF69B4",
+  "road_residential": "#FFD700",
+  "road_default": "#00CED1"
+}

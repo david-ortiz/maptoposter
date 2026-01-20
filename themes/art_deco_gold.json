@@ -1,0 +1,16 @@
+{
+  "name": "Art Deco Gold",
+  "description": "1920s luxury glamour - black and gold geometric elegance",
+  "category": "luxury",
+  "bg": "#0F0F0F",
+  "text": "#D4AF37",
+  "gradient_color": "#0F0F0F",
+  "water": "#080808",
+  "parks": "#181818",
+  "road_motorway": "#D4AF37",
+  "road_primary": "#C9A227",
+  "road_secondary": "#B8962A",
+  "road_tertiary": "#9A7D25",
+  "road_residential": "#6B5A1F",
+  "road_default": "#B8962A"
+}

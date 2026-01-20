@@ -1,0 +1,16 @@
+{
+  "name": "Cyber Grid",
+  "description": "Digital matrix with green terminal glow",
+  "category": "dark",
+  "bg": "#000A00",
+  "text": "#00FF00",
+  "gradient_color": "#000A00",
+  "water": "#000500",
+  "parks": "#001000",
+  "road_motorway": "#00FF00",
+  "road_primary": "#00CC00",
+  "road_secondary": "#009900",
+  "road_tertiary": "#006600",
+  "road_residential": "#003300",
+  "road_default": "#009900"
+}

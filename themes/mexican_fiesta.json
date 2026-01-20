@@ -1,0 +1,16 @@
+{
+  "name": "Mexican Fiesta",
+  "description": "Dia de los Muertos celebration",
+  "category": "cultural",
+  "bg": "#FFF8E1",
+  "text": "#D32F2F",
+  "gradient_color": "#FFF8E1",
+  "water": "#FFECB3",
+  "parks": "#FFF3D0",
+  "road_motorway": "#D32F2F",
+  "road_primary": "#FF6F00",
+  "road_secondary": "#7CB342",
+  "road_tertiary": "#00ACC1",
+  "road_residential": "#AB47BC",
+  "road_default": "#FF6F00"
+}

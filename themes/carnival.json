@@ -1,0 +1,16 @@
+{
+  "name": "Carnival",
+  "description": "Festival colors in celebration mode",
+  "category": "vibrant",
+  "bg": "#FFF8E7",
+  "text": "#FF1744",
+  "gradient_color": "#FFF8E7",
+  "water": "#FFE8A1",
+  "parks": "#FFF0D0",
+  "road_motorway": "#FF1744",
+  "road_primary": "#00BFA5",
+  "road_secondary": "#FFD600",
+  "road_tertiary": "#651FFF",
+  "road_residential": "#F50057",
+  "road_default": "#00BFA5"
+}

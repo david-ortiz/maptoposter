@@ -1,0 +1,16 @@
+{
+  "name": "Brutalist",
+  "description": "Raw concrete architecture in stark grays",
+  "category": "urban",
+  "bg": "#E8E8E8",
+  "text": "#3C3C3C",
+  "gradient_color": "#E8E8E8",
+  "water": "#D0D0D0",
+  "parks": "#DCDCDC",
+  "road_motorway": "#3C3C3C",
+  "road_primary": "#585858",
+  "road_secondary": "#747474",
+  "road_tertiary": "#909090",
+  "road_residential": "#ACACAC",
+  "road_default": "#747474"
+}

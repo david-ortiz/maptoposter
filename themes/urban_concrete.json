@@ -1,0 +1,16 @@
+{
+  "name": "Urban Concrete",
+  "description": "City jungle gray - raw concrete and asphalt urbanity",
+  "category": "urban",
+  "bg": "#E5E5E5",
+  "text": "#424242",
+  "gradient_color": "#E5E5E5",
+  "water": "#D5D5D5",
+  "parks": "#DDDDDD",
+  "road_motorway": "#424242",
+  "road_primary": "#5A5A5A",
+  "road_secondary": "#757575",
+  "road_tertiary": "#9E9E9E",
+  "road_residential": "#BDBDBD",
+  "road_default": "#757575"
+}

@@ -1,0 +1,16 @@
+{
+  "name": "Bronze Age",
+  "description": "Ancient metallics - warm bronze and copper patina",
+  "category": "luxury",
+  "bg": "#1A1410",
+  "text": "#CD7F32",
+  "gradient_color": "#1A1410",
+  "water": "#10100C",
+  "parks": "#201A14",
+  "road_motorway": "#CD7F32",
+  "road_primary": "#B87333",
+  "road_secondary": "#A06030",
+  "road_tertiary": "#854D28",
+  "road_residential": "#5C3A1E",
+  "road_default": "#A06030"
+}

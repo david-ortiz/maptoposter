@@ -1,0 +1,16 @@
+{
+  "name": "Paper Craft",
+  "description": "Cream paper with ink pen lines",
+  "category": "light",
+  "bg": "#FFFEF5",
+  "text": "#2C2C2C",
+  "gradient_color": "#FFFEF5",
+  "water": "#FAF9F0",
+  "parks": "#FCFBF3",
+  "road_motorway": "#2C2C2C",
+  "road_primary": "#505050",
+  "road_secondary": "#757575",
+  "road_tertiary": "#9A9A9A",
+  "road_residential": "#C0C0C0",
+  "road_default": "#757575"
+}

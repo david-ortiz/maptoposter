@@ -1,0 +1,16 @@
+{
+  "name": "Pearl",
+  "description": "Iridescent nacre shimmer",
+  "category": "luxury",
+  "bg": "#FDFBF8",
+  "text": "#8E8E8E",
+  "gradient_color": "#FDFBF8",
+  "water": "#F5F0EA",
+  "parks": "#F8F5F0",
+  "road_motorway": "#8E8E8E",
+  "road_primary": "#A8A8A8",
+  "road_secondary": "#C0C0C0",
+  "road_tertiary": "#D5D5D5",
+  "road_residential": "#EAEAEA",
+  "road_default": "#C0C0C0"
+}

@@ -1,0 +1,16 @@
+{
+  "name": "Graffiti Alley",
+  "description": "Street art explosion of colors",
+  "category": "urban",
+  "bg": "#F8F8F8",
+  "text": "#E91E63",
+  "gradient_color": "#F8F8F8",
+  "water": "#ECEFF1",
+  "parks": "#F0F3F4",
+  "road_motorway": "#E91E63",
+  "road_primary": "#00BCD4",
+  "road_secondary": "#FFEB3B",
+  "road_tertiary": "#8BC34A",
+  "road_residential": "#FF5722",
+  "road_default": "#00BCD4"
+}

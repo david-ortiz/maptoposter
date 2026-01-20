@@ -1,0 +1,16 @@
+{
+  "name": "Construction Zone",
+  "description": "Safety orange and industrial gray",
+  "category": "urban",
+  "bg": "#F0EDE8",
+  "text": "#FF6600",
+  "gradient_color": "#F0EDE8",
+  "water": "#E0DBD2",
+  "parks": "#E8E3DC",
+  "road_motorway": "#FF6600",
+  "road_primary": "#FFA500",
+  "road_secondary": "#6C757D",
+  "road_tertiary": "#868E96",
+  "road_residential": "#ADB5BD",
+  "road_default": "#6C757D"
+}

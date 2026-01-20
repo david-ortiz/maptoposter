@@ -1,0 +1,16 @@
+{
+  "name": "Spring Garden",
+  "description": "New growth tender greens",
+  "category": "pastel",
+  "bg": "#F9FFF0",
+  "text": "#81C784",
+  "gradient_color": "#F9FFF0",
+  "water": "#C8E6C9",
+  "parks": "#DCEDC8",
+  "road_motorway": "#81C784",
+  "road_primary": "#A5D6A7",
+  "road_secondary": "#C5E1A5",
+  "road_tertiary": "#E6EE9C",
+  "road_residential": "#FFF9C4",
+  "road_default": "#A5D6A7"
+}

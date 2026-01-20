@@ -1,0 +1,16 @@
+{
+  "name": "Faded Postcard",
+  "description": "Sun-bleached travel memories",
+  "category": "vintage",
+  "bg": "#FAF5E8",
+  "text": "#7D6B5D",
+  "gradient_color": "#FAF5E8",
+  "water": "#D5E5E5",
+  "parks": "#D5E0D0",
+  "road_motorway": "#7D6B5D",
+  "road_primary": "#9A8A7A",
+  "road_secondary": "#B5A595",
+  "road_tertiary": "#CFC0B0",
+  "road_residential": "#E5DACC",
+  "road_default": "#B5A595"
+}

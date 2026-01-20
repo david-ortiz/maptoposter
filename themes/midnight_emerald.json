@@ -1,0 +1,16 @@
+{
+  "name": "Midnight Emerald",
+  "description": "Deep forest at night with glowing green accents",
+  "category": "dark",
+  "bg": "#0A1510",
+  "text": "#50C878",
+  "gradient_color": "#0A1510",
+  "water": "#051008",
+  "parks": "#0F1F18",
+  "road_motorway": "#50C878",
+  "road_primary": "#3DA060",
+  "road_secondary": "#2A7848",
+  "road_tertiary": "#1A5030",
+  "road_residential": "#0F3020",
+  "road_default": "#2A7848"
+}

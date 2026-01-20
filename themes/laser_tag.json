@@ -1,0 +1,16 @@
+{
+  "name": "Laser Tag",
+  "description": "Arcade game room neon assault",
+  "category": "vibrant",
+  "bg": "#0D0D15",
+  "text": "#00FF7F",
+  "gradient_color": "#0D0D15",
+  "water": "#08080D",
+  "parks": "#12121A",
+  "road_motorway": "#00FF7F",
+  "road_primary": "#FF00FF",
+  "road_secondary": "#00FFFF",
+  "road_tertiary": "#FFFF00",
+  "road_residential": "#FF4500",
+  "road_default": "#FF00FF"
+}
