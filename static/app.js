@@ -17,6 +17,9 @@ const countryList = document.getElementById("country-list");
 const galleryGrid = document.getElementById("gallery-grid");
 const openGallery = document.getElementById("open-gallery");
 const loadGalleryBtn = document.getElementById("load-gallery");
+const latestPoster = document.getElementById("latest-poster");
+const latestPosterThumb = document.getElementById("latest-poster-thumb");
+const latestPosterLink = document.getElementById("latest-poster-link");
 const themePrev = document.getElementById("theme-prev");
 const themeNext = document.getElementById("theme-next");
 const lightbox = document.getElementById("lightbox");
@@ -243,7 +246,17 @@ const stageLabels = {
   done: "Complete",
 };
 
-const setProgress = ({ percent, message, stage, status }) => {
+const showLatestPoster = (url) => {
+  if (!latestPoster || !latestPosterThumb || !latestPosterLink || !url) return;
+
+  // Add cache-busting timestamp
+  const thumbUrl = `${url}?t=${Date.now()}`;
+  latestPosterThumb.src = thumbUrl;
+  latestPosterLink.href = url;
+  latestPoster.style.display = "flex";
+};
+
+const setProgress = ({ percent, message, stage, status, output_url }) => {
   const bounded = Math.max(0, Math.min(100, percent || 0));
   progressFill.style.width = `${bounded}%`;
   progressPercent.textContent = `${Math.round(bounded)}%`;
@@ -270,10 +283,12 @@ const setProgress = ({ percent, message, stage, status }) => {
   }
 
   if (status === "done") {
-    // Auto-load gallery when a poster is generated
-    if (!galleryLoaded) {
-      initGallery();
-    } else {
+    // Show thumbnail of the just-generated poster
+    if (output_url) {
+      showLatestPoster(output_url);
+    }
+    // Refresh gallery in background if already loaded
+    if (galleryLoaded) {
       loadGallery();
     }
   }

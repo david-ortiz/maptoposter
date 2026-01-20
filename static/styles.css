@@ -499,6 +499,41 @@ input[type="range"] {
   text-align: right;
 }
 
+.latest-poster {
+  margin-top: 16px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 12px;
+  border: 1px solid #e0d7cb;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.latest-poster-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.latest-poster a {
+  display: block;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.15s ease;
+}
+
+.latest-poster a:hover {
+  transform: scale(1.02);
+}
+
+.latest-poster img {
+  display: block;
+  max-height: 120px;
+  width: auto;
+  max-width: 100%;
+}
 
 .ghost-btn {
   padding: 8px 12px;
