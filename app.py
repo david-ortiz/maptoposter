@@ -197,8 +197,8 @@ def api_jobs():
         return jsonify({"error": "DPI must be a number."}), 400
 
     output_format = (payload.get("format") or "png").strip().lower()
-    if output_format not in ("png", "svg", "pdf"):
-        return jsonify({"error": "Format must be png, svg, or pdf."}), 400
+    if output_format not in ("png", "svg", "pdf", "svg-laser"):
+        return jsonify({"error": "Format must be png, svg, pdf, or svg-laser."}), 400
 
     if not city or not country:
         return jsonify({"error": "City and country are required."}), 400

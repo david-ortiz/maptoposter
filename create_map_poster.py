@@ -16,6 +16,9 @@ import asyncio
 import threading
 import pickle
 import hashlib
+from shapely.geometry import LineString, Polygon, MultiPolygon, box
+from shapely.ops import unary_union
+import geopandas as gpd
 
 # Enable osmnx caching - downloaded data is saved locally for faster repeat requests
 # Use absolute path so cache works regardless of working directory
@@ -165,11 +168,18 @@ def generate_output_filename(city, theme_name, output_format):
     """
     if not os.path.exists(POSTERS_DIR):
         os.makedirs(POSTERS_DIR)
-    
+
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     city_slug = city.lower().replace(' ', '_')
-    ext = output_format.lower()
-    filename = f"{city_slug}_{theme_name}_{timestamp}.{ext}"
+    fmt = output_format.lower()
+    # Handle svg-laser format (produces .svg file with _laser suffix)
+    if fmt == 'svg-laser':
+        ext = 'svg'
+        suffix = '_laser'
+    else:
+        ext = fmt
+        suffix = ''
+    filename = f"{city_slug}_{theme_name}{suffix}_{timestamp}.{ext}"
     return os.path.join(POSTERS_DIR, filename)
 
 def get_available_themes():
@@ -316,6 +326,319 @@ def get_edge_widths_by_type(G):
         edge_widths.append(width)
     
     return edge_widths
+
+
+def get_road_buffer_width(highway_type):
+    """
+    Returns buffer width in meters for converting road lines to polygons.
+    These values create closed polygons suitable for laser cutting.
+    """
+    if highway_type in ['motorway', 'motorway_link']:
+        return 12.0  # ~24m total width
+    elif highway_type in ['trunk', 'trunk_link', 'primary', 'primary_link']:
+        return 8.0   # ~16m total width
+    elif highway_type in ['secondary', 'secondary_link']:
+        return 6.0   # ~12m total width
+    elif highway_type in ['tertiary', 'tertiary_link']:
+        return 4.5   # ~9m total width
+    elif highway_type in ['residential', 'living_street']:
+        return 3.5   # ~7m total width
+    else:
+        return 2.5   # ~5m total width for minor roads
+
+
+def geometry_to_svg_path(geom, transform_func=None):
+    """
+    Convert a shapely geometry to SVG path data.
+    Returns a string suitable for the 'd' attribute of an SVG path.
+    """
+    def coords_to_path(coords, close=True):
+        if not coords:
+            return ""
+        points = list(coords)
+        if transform_func:
+            points = [transform_func(p) for p in points]
+        if not points:
+            return ""
+        path = f"M {points[0][0]:.2f},{points[0][1]:.2f}"
+        for p in points[1:]:
+            path += f" L {p[0]:.2f},{p[1]:.2f}"
+        if close:
+            path += " Z"
+        return path
+
+    if geom.is_empty:
+        return ""
+
+    if geom.geom_type == 'Polygon':
+        # Exterior ring
+        path = coords_to_path(geom.exterior.coords)
+        # Interior rings (holes)
+        for interior in geom.interiors:
+            path += " " + coords_to_path(interior.coords)
+        return path
+    elif geom.geom_type == 'MultiPolygon':
+        paths = []
+        for poly in geom.geoms:
+            p = geometry_to_svg_path(poly, transform_func)
+            if p:
+                paths.append(p)
+        return " ".join(paths)
+    elif geom.geom_type == 'LineString':
+        return coords_to_path(geom.coords, close=False)
+    elif geom.geom_type == 'MultiLineString':
+        paths = []
+        for line in geom.geoms:
+            p = coords_to_path(line.coords, close=False)
+            if p:
+                paths.append(p)
+        return " ".join(paths)
+    return ""
+
+
+def export_laser_svg(output_file, G_proj, water, parks, crop_xlim, crop_ylim, city, country, theme, point):
+    """
+    Export map as layered SVG optimized for laser cutting.
+
+    Creates separate layers for:
+    - Background (frame/border)
+    - Water features (closed polygons)
+    - Parks/green spaces (closed polygons)
+    - Roads by type (buffered to closed polygons)
+    - Text elements
+
+    All elements are closed polygons suitable for laser cutting.
+    Uses Inkscape-compatible layer groups.
+    """
+    log("Generating laser-cut optimized SVG...")
+
+    # SVG dimensions (in mm for laser cutting)
+    width_mm = 300  # A3-ish width
+    height_mm = 400  # Poster aspect ratio
+
+    # Calculate transform from map coordinates to SVG coordinates
+    map_width = crop_xlim[1] - crop_xlim[0]
+    map_height = crop_ylim[1] - crop_ylim[0]
+
+    # Scale to fit, maintaining aspect ratio
+    scale_x = width_mm / map_width
+    scale_y = height_mm / map_height
+    scale = min(scale_x, scale_y)
+
+    # Center the map
+    svg_map_width = map_width * scale
+    svg_map_height = map_height * scale
+    offset_x = (width_mm - svg_map_width) / 2
+    offset_y = (height_mm - svg_map_height) / 2
+
+    def transform(coord):
+        """Transform map coordinates to SVG coordinates (Y flipped)."""
+        x = (coord[0] - crop_xlim[0]) * scale + offset_x
+        y = height_mm - ((coord[1] - crop_ylim[0]) * scale + offset_y)
+        return (x, y)
+
+    # Create clipping box
+    clip_box = box(crop_xlim[0], crop_ylim[0], crop_xlim[1], crop_ylim[1])
+
+    # Collect roads by type
+    road_layers = {
+        'motorway': [],
+        'primary': [],
+        'secondary': [],
+        'tertiary': [],
+        'residential': [],
+        'minor': []
+    }
+
+    log("  Processing roads into polygons...")
+    for u, v, data in G_proj.edges(data=True):
+        highway = data.get('highway', 'unclassified')
+        if isinstance(highway, list):
+            highway = highway[0] if highway else 'unclassified'
+
+        # Get geometry
+        if 'geometry' in data:
+            line = data['geometry']
+        else:
+            # Create line from node coordinates
+            u_data = G_proj.nodes[u]
+            v_data = G_proj.nodes[v]
+            line = LineString([(u_data['x'], u_data['y']), (v_data['x'], v_data['y'])])
+
+        # Buffer the line to create a polygon
+        buffer_width = get_road_buffer_width(highway)
+        road_poly = line.buffer(buffer_width, cap_style=2, join_style=2)  # flat caps, mitre joins
+
+        # Clip to bounds
+        try:
+            road_poly = road_poly.intersection(clip_box)
+        except:
+            continue
+
+        if road_poly.is_empty:
+            continue
+
+        # Categorize
+        if highway in ['motorway', 'motorway_link']:
+            road_layers['motorway'].append(road_poly)
+        elif highway in ['trunk', 'trunk_link', 'primary', 'primary_link']:
+            road_layers['primary'].append(road_poly)
+        elif highway in ['secondary', 'secondary_link']:
+            road_layers['secondary'].append(road_poly)
+        elif highway in ['tertiary', 'tertiary_link']:
+            road_layers['tertiary'].append(road_poly)
+        elif highway in ['residential', 'living_street']:
+            road_layers['residential'].append(road_poly)
+        else:
+            road_layers['minor'].append(road_poly)
+
+    # Merge overlapping roads in each layer
+    log("  Merging road polygons...")
+    for layer_name in road_layers:
+        if road_layers[layer_name]:
+            try:
+                road_layers[layer_name] = unary_union(road_layers[layer_name])
+            except:
+                pass
+
+    # Process water
+    water_geom = None
+    if water is not None and not water.empty:
+        log("  Processing water features...")
+        water_polys = []
+        for geom in water.geometry:
+            if geom.geom_type in ['Polygon', 'MultiPolygon']:
+                try:
+                    clipped = geom.intersection(clip_box)
+                    if not clipped.is_empty:
+                        water_polys.append(clipped)
+                except:
+                    pass
+        if water_polys:
+            water_geom = unary_union(water_polys)
+
+    # Process parks
+    parks_geom = None
+    if parks is not None and not parks.empty:
+        log("  Processing park features...")
+        parks_polys = []
+        for geom in parks.geometry:
+            if geom.geom_type in ['Polygon', 'MultiPolygon']:
+                try:
+                    clipped = geom.intersection(clip_box)
+                    if not clipped.is_empty:
+                        parks_polys.append(clipped)
+                except:
+                    pass
+        if parks_polys:
+            parks_geom = unary_union(parks_polys)
+
+    # Build SVG
+    log("  Writing SVG file...")
+
+    # SVG header with Inkscape namespace for layers
+    svg_parts = [
+        f'''<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+     width="{width_mm}mm" height="{height_mm}mm"
+     viewBox="0 0 {width_mm} {height_mm}">
+  <title>{city}, {country} - Laser Cut Map</title>
+  <desc>Generated by Maptoposter for laser cutting. Each layer contains closed polygons.</desc>
+'''
+    ]
+
+    # Layer: Frame/Border
+    svg_parts.append(f'''
+  <g inkscape:groupmode="layer" inkscape:label="01_Frame" id="layer_frame">
+    <rect x="0" y="0" width="{width_mm}" height="{height_mm}"
+          fill="none" stroke="{theme.get('text', '#000000')}" stroke-width="0.5"/>
+  </g>
+''')
+
+    # Layer: Water
+    if water_geom and not water_geom.is_empty:
+        path_data = geometry_to_svg_path(water_geom, transform)
+        if path_data:
+            svg_parts.append(f'''
+  <g inkscape:groupmode="layer" inkscape:label="02_Water" id="layer_water">
+    <path d="{path_data}" fill="{theme.get('water', '#C0C0C0')}" stroke="none"/>
+  </g>
+''')
+
+    # Layer: Parks
+    if parks_geom and not parks_geom.is_empty:
+        path_data = geometry_to_svg_path(parks_geom, transform)
+        if path_data:
+            svg_parts.append(f'''
+  <g inkscape:groupmode="layer" inkscape:label="03_Parks" id="layer_parks">
+    <path d="{path_data}" fill="{theme.get('parks', '#F0F0F0')}" stroke="none"/>
+  </g>
+''')
+
+    # Road layers (from minor to major, so major roads are on top)
+    road_layer_config = [
+        ('minor', '04_Roads_Minor', theme.get('road_default', '#3A3A3A')),
+        ('residential', '05_Roads_Residential', theme.get('road_residential', '#4A4A4A')),
+        ('tertiary', '06_Roads_Tertiary', theme.get('road_tertiary', '#3A3A3A')),
+        ('secondary', '07_Roads_Secondary', theme.get('road_secondary', '#2A2A2A')),
+        ('primary', '08_Roads_Primary', theme.get('road_primary', '#1A1A1A')),
+        ('motorway', '09_Roads_Motorway', theme.get('road_motorway', '#0A0A0A')),
+    ]
+
+    for layer_key, layer_name, color in road_layer_config:
+        geom = road_layers.get(layer_key)
+        if geom and not (hasattr(geom, 'is_empty') and geom.is_empty):
+            # Handle both single geometry and list
+            if isinstance(geom, list):
+                if not geom:
+                    continue
+                geom = unary_union(geom)
+            path_data = geometry_to_svg_path(geom, transform)
+            if path_data:
+                svg_parts.append(f'''
+  <g inkscape:groupmode="layer" inkscape:label="{layer_name}" id="layer_{layer_key}">
+    <path d="{path_data}" fill="{color}" stroke="none"/>
+  </g>
+''')
+
+    # Layer: Text (as paths would require font rendering, so we use text elements)
+    lat, lon = point
+    coords_text = f"{lat:.4f}°N / {lon:.4f}°E" if lat >= 0 else f"{abs(lat):.4f}°S / {lon:.4f}°E"
+    if lon < 0:
+        coords_text = coords_text.replace("E", "W")
+
+    text_y_city = height_mm - 25
+    text_y_country = height_mm - 15
+    text_y_coords = height_mm - 8
+
+    svg_parts.append(f'''
+  <g inkscape:groupmode="layer" inkscape:label="10_Text" id="layer_text">
+    <text x="{width_mm/2}" y="{text_y_city}"
+          font-family="Roboto, Arial, sans-serif" font-size="14" font-weight="bold"
+          text-anchor="middle" fill="{theme.get('text', '#000000')}">{city.upper()}</text>
+    <text x="{width_mm/2}" y="{text_y_country}"
+          font-family="Roboto, Arial, sans-serif" font-size="8"
+          text-anchor="middle" fill="{theme.get('text', '#000000')}">{country.upper()}</text>
+    <text x="{width_mm/2}" y="{text_y_coords}"
+          font-family="Roboto, Arial, sans-serif" font-size="5"
+          text-anchor="middle" fill="{theme.get('text', '#000000')}" opacity="0.7">{coords_text}</text>
+    <line x1="{width_mm*0.35}" y1="{text_y_city + 3}" x2="{width_mm*0.65}" y2="{text_y_city + 3}"
+          stroke="{theme.get('text', '#000000')}" stroke-width="0.3"/>
+  </g>
+''')
+
+    # Close SVG
+    svg_parts.append('</svg>')
+
+    # Write file
+    with open(output_file, 'w', encoding='utf-8') as f:
+        f.write(''.join(svg_parts))
+
+    log(f"  ✓ Laser-cut SVG saved: {output_file}")
+    log(f"    Dimensions: {width_mm}mm x {height_mm}mm")
+    log(f"    Layers: Frame, Water, Parks, 6 road types, Text")
+
 
 def get_coordinates(city, country, progress=None):
     """
@@ -602,18 +925,33 @@ def create_poster(city, country, point, dist, output_file, output_format='png', 
         progress({"stage": "save", "percent": 90, "message": "Saving poster"})
 
     fmt = output_format.lower()
-    spinner = Spinner(f"Saving to {output_file} ({fmt.upper()}, {dpi} DPI)...")
-    spinner.start()
 
-    save_kwargs = dict(facecolor=THEME["bg"], bbox_inches="tight", pad_inches=0.05)
+    # Handle laser-cut SVG format separately
+    if fmt == "svg-laser":
+        plt.close()  # Don't need the matplotlib figure for laser export
+        spinner = Spinner(f"Generating laser-cut SVG: {output_file}...")
+        spinner.start()
+        try:
+            export_laser_svg(output_file, G_proj, water, parks, crop_xlim, crop_ylim, city, country, THEME, point)
+            spinner.stop("✓ done")
+        except Exception as e:
+            spinner.stop(f"✗ failed: {e}")
+            raise
+    else:
+        # Standard matplotlib export (png, svg, pdf)
+        spinner = Spinner(f"Saving to {output_file} ({fmt.upper()}, {dpi} DPI)...")
+        spinner.start()
 
-    # DPI matters mainly for raster formats (PNG)
-    if fmt == "png":
-        save_kwargs["dpi"] = dpi
+        save_kwargs = dict(facecolor=THEME["bg"], bbox_inches="tight", pad_inches=0.05)
 
-    plt.savefig(output_file, format=fmt, **save_kwargs)
-    plt.close()
-    spinner.stop("✓ done")
+        # DPI matters mainly for raster formats (PNG)
+        if fmt == "png":
+            save_kwargs["dpi"] = dpi
+
+        plt.savefig(output_file, format=fmt if fmt != "svg-laser" else "svg", **save_kwargs)
+        plt.close()
+        spinner.stop("✓ done")
+
     log(f"\n✓ Poster saved as {output_file}")
 
 
@@ -717,7 +1055,8 @@ Examples:
     parser.add_argument('--distance', '-d', type=int, default=29000, help='Map radius in meters (default: 29000)')
     parser.add_argument('--dpi', type=int, default=300, help='Output resolution in DPI (default: 300). Use 150 for smaller files, 72 for preview.')
     parser.add_argument('--list-themes', action='store_true', help='List all available themes')
-    parser.add_argument('--format', '-f', default='png', choices=['png', 'svg', 'pdf'],help='Output format for the poster (default: png)')
+    parser.add_argument('--format', '-f', default='png', choices=['png', 'svg', 'pdf', 'svg-laser'],
+                        help='Output format: png, svg, pdf, or svg-laser (layered SVG for laser cutting)')
     parser.add_argument('--clear-cache', action='store_true', help='Clear all cached map data')
     parser.add_argument('--no-cache', action='store_true', help='Skip cache and always download fresh data')
 
