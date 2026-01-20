@@ -165,10 +165,10 @@ body {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 20px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 
 .widget-content::-webkit-scrollbar {
@@ -190,9 +190,9 @@ body {
 
 /* === WIDGET HEADER === */
 .widget-header {
-  padding-bottom: 12px;
+  padding-bottom: 10px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 .brand {
@@ -235,7 +235,7 @@ body {
 .widget-section {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .section-label {
@@ -259,10 +259,10 @@ body {
 
 .search-input-wrap input {
   flex: 1;
-  padding: 10px 14px;
+  padding: 8px 12px;
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: var(--radius-md);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   background: white;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
@@ -274,8 +274,8 @@ body {
 }
 
 .icon-btn {
-  width: 42px;
-  height: 42px;
+  width: 34px;
+  height: 34px;
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: var(--radius-md);
   background: white;
@@ -284,6 +284,7 @@ body {
   place-items: center;
   color: var(--ink-soft);
   transition: all 0.15s ease;
+  flex-shrink: 0;
 }
 
 .icon-btn:hover {
@@ -346,50 +347,10 @@ body {
   color: var(--ink-soft);
 }
 
-/* === COORDINATES DISPLAY === */
-.coords-section {
-  background: rgba(0, 0, 0, 0.03);
-  border-radius: var(--radius-md);
-  padding: 12px;
-}
-
-.coords-display {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.coords-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.coords-label {
-  font-size: 0.8rem;
-  color: var(--ink-soft);
-}
-
-.coords-value {
-  font-family: "SF Mono", "Consolas", monospace;
-  font-size: 0.85rem;
-  color: var(--ink);
-  font-weight: 500;
-}
-
-.suggested-location {
-  font-size: 0.85rem;
-  color: var(--accent-2);
-  font-weight: 500;
-}
-
+/* === COORDINATES DISPLAY (now in bottom-right widget) === */
 .suggested-location.loading {
   color: var(--ink-soft);
   font-style: italic;
-}
-
-.coords-value.has-coords {
-  color: var(--accent);
 }
 
 /* === FIELD ROW === */
@@ -400,10 +361,10 @@ body {
 
 .field-row input {
   flex: 1;
-  padding: 10px 14px;
+  padding: 8px 12px;
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: var(--radius-md);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   background: white;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
@@ -415,8 +376,8 @@ body {
 }
 
 .sync-btn {
-  width: 42px;
-  height: 42px;
+  width: 34px;
+  height: 34px;
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: var(--radius-md);
   background: white;
@@ -425,6 +386,7 @@ body {
   place-items: center;
   color: var(--ink-soft);
   transition: all 0.15s ease;
+  flex-shrink: 0;
 }
 
 .sync-btn:hover {
@@ -490,17 +452,17 @@ input[type="range"]::-moz-range-thumb {
 /* === SELECT === */
 select {
   width: 100%;
-  padding: 10px 14px;
-  padding-right: 36px;
+  padding: 8px 12px;
+  padding-right: 32px;
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: var(--radius-md);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   background: white;
   cursor: pointer;
   appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%232a3038' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 12px center;
+  background-position: right 10px center;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
@@ -535,11 +497,11 @@ select:focus {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 10px 12px;
+  padding: 8px 10px;
   background: white;
   border: 1px solid rgba(0, 0, 0, 0.12);
   border-radius: var(--radius-sm);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   color: var(--ink);
   cursor: pointer;
   transition: all 0.15s ease;
@@ -1040,10 +1002,61 @@ select:focus {
   object-fit: contain;
 }
 
-/* === BOTTOM-RIGHT WIDGET (Map Style) === */
-.widget-bottom-right {
+/* === BOTTOM-RIGHT WIDGETS (Coords & Map Style) === */
+.bottom-right-group {
+  position: fixed;
   bottom: 30px;
   right: 20px;
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  z-index: 500;
+}
+
+.coords-widget {
+  position: relative;
+  bottom: auto;
+  right: auto;
+  background: white;
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.coords-widget .coords-display {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.coords-widget .coords-value {
+  font-family: "SF Mono", "Consolas", monospace;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+}
+
+.coords-widget .coords-value.has-coords {
+  color: var(--accent);
+}
+
+.coords-widget .suggested-location {
+  font-size: 0.75rem;
+  color: var(--accent);
+  font-weight: 500;
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.coords-widget .suggested-location:empty {
+  display: none;
+}
+
+.widget-bottom-right {
+  position: relative;
+  bottom: auto;
+  right: auto;
   border-radius: var(--radius-md);
   padding: 0;
 }
@@ -1626,10 +1639,14 @@ select:focus {
     content: "\2303";
   }
 
-  .widget-bottom-right {
+  .bottom-right-group {
     bottom: auto;
     top: 20px;
     right: 20px;
+  }
+
+  .coords-widget {
+    display: none;
   }
 
   .widget-top-right {

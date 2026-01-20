@@ -59,17 +59,6 @@
           <p class="section-hint">Search to pan map. Click on map to set poster center.</p>
         </section>
 
-        <!-- Selected Coordinates -->
-        <section class="widget-section coords-section">
-          <div class="coords-display">
-            <div class="coords-row">
-              <span class="coords-label">Selected:</span>
-              <span id="selected-coords" class="coords-value">Click on map</span>
-            </div>
-            <div id="suggested-location" class="suggested-location"></div>
-          </div>
-        </section>
-
         <!-- Poster Text (editable, decoupled from map) -->
         <section class="widget-section">
           <label class="section-label">Poster Text</label>
@@ -218,8 +207,18 @@
       </section>
     </aside>
 
-    <!-- BOTTOM-RIGHT WIDGET - Map Style Selector -->
-    <aside id="style-widget" class="floating-widget widget-bottom-right">
+    <!-- BOTTOM-RIGHT WIDGETS - Coords & Map Style -->
+    <div class="bottom-right-group">
+      <!-- Selected Location -->
+      <aside id="coords-widget" class="floating-widget coords-widget">
+        <div class="coords-display">
+          <span id="selected-coords" class="coords-value">Click on map</span>
+          <span id="suggested-location" class="suggested-location"></span>
+        </div>
+      </aside>
+
+      <!-- Map Style Selector -->
+      <aside id="style-widget" class="floating-widget widget-bottom-right">
       <button id="style-toggle" class="style-toggle" type="button" aria-label="Change map style">
         <svg viewBox="0 0 24 24" width="24" height="24">
           <path fill="currentColor" d="M11.99 18.54l-7.37-5.73L3 14.07l9 7 9-7-1.63-1.27-7.38 5.74zM12 16l7.36-5.73L21 9l-9-7-9 7 1.63 1.27L12 16z"/>
@@ -261,6 +260,7 @@
         </div>
       </div>
     </aside>
+    </div>
 
     <!-- THEME DRAWER (Full-screen overlay) -->
     <div id="theme-drawer" class="theme-drawer" aria-hidden="true">
