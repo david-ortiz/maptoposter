@@ -83,7 +83,7 @@ def push_event(job_id, payload):
         job["queue"].put(event)
 
 
-def run_job(job_id, city, country, theme, distance, dpi, output_format, lat=None, lng=None, font=None):
+def run_job(job_id, city, country, theme, distance, dpi, output_format, lat=None, lng=None, font=None, tagline=None):
     def progress(info):
         payload = dict(info)
         payload["status"] = "running"
@@ -117,7 +117,7 @@ def run_job(job_id, city, country, theme, distance, dpi, output_format, lat=None
 
         output_file = poster.generate_output_filename(city, theme, output_format)
         poster.create_poster(
-            city, country, coords, distance, output_file, output_format, dpi=dpi, progress=progress, font_family=font
+            city, country, coords, distance, output_file, output_format, dpi=dpi, progress=progress, font_family=font, tagline=tagline
         )
 
         output_url = f"/posters/{os.path.basename(output_file)}"
@@ -166,6 +166,7 @@ def job_worker():
                 lat=job.get("lat"),
                 lng=job.get("lng"),
                 font=job.get("font"),
+                tagline=job.get("tagline"),
             )
         finally:
             JOB_QUEUE.task_done()
@@ -185,6 +186,16 @@ def index():
     return render_template("index.html")
 
 
+@app.route("/font-samples")
+def font_samples():
+    return render_template("font-samples.html")
+
+
+@app.route("/theme-samples")
+def theme_samples():
+    return render_template("theme-samples.html")
+
+
 @app.route("/api/themes")
 def api_themes():
     return jsonify(load_theme_catalog())
@@ -195,6 +206,68 @@ def api_fonts():
     """Return list of available font families."""
     fonts = poster.list_available_fonts()
     return jsonify(fonts)
+
+
+# ===== STARRED SYSTEM =====
+STARRED_DIR = os.path.join(os.path.dirname(__file__), "starred")
+
+
+def ensure_starred_dir():
+    if not os.path.exists(STARRED_DIR):
+        os.makedirs(STARRED_DIR)
+
+
+def load_starred(item_type):
+    """Load starred items from JSON file. item_type is 'fonts' or 'themes'."""
+    ensure_starred_dir()
+    filepath = os.path.join(STARRED_DIR, f"{item_type}.json")
+    if not os.path.exists(filepath):
+        return []
+    try:
+        with open(filepath, "r") as f:
+            return json.load(f)
+    except (json.JSONDecodeError, IOError):
+        return []
+
+
+def save_starred(item_type, items):
+    """Save starred items to JSON file."""
+    ensure_starred_dir()
+    filepath = os.path.join(STARRED_DIR, f"{item_type}.json")
+    with open(filepath, "w") as f:
+        json.dump(items, f, indent=2)
+
+
+@app.route("/api/starred/<item_type>")
+def api_starred_get(item_type):
+    """Get starred items for fonts or themes."""
+    if item_type not in ("fonts", "themes"):
+        return jsonify({"error": "Invalid type. Use 'fonts' or 'themes'."}), 400
+    return jsonify(load_starred(item_type))
+
+
+@app.route("/api/starred/<item_type>/<item_id>", methods=["POST"])
+def api_starred_add(item_type, item_id):
+    """Add an item to starred list."""
+    if item_type not in ("fonts", "themes"):
+        return jsonify({"error": "Invalid type. Use 'fonts' or 'themes'."}), 400
+    starred = load_starred(item_type)
+    if item_id not in starred:
+        starred.append(item_id)
+        save_starred(item_type, starred)
+    return jsonify({"ok": True, "starred": starred})
+
+
+@app.route("/api/starred/<item_type>/<item_id>", methods=["DELETE"])
+def api_starred_remove(item_type, item_id):
+    """Remove an item from starred list."""
+    if item_type not in ("fonts", "themes"):
+        return jsonify({"error": "Invalid type. Use 'fonts' or 'themes'."}), 400
+    starred = load_starred(item_type)
+    if item_id in starred:
+        starred.remove(item_id)
+        save_starred(item_type, starred)
+    return jsonify({"ok": True, "starred": starred})
 
 
 @app.route("/fonts/<path:filename>")
@@ -250,6 +323,9 @@ def api_jobs():
     if font and font not in available_fonts:
         return jsonify({"error": f"Font '{font}' not found. Available: {', '.join(available_fonts)}"}), 400
 
+    # Optional tagline (replaces coordinates if provided)
+    tagline = (payload.get("tagline") or "").strip() or None
+
     if not city or not country:
         return jsonify({"error": "City and country are required."}), 400
 
@@ -273,6 +349,7 @@ def api_jobs():
         "font": font,
         "lat": lat,
         "lng": lng,
+        "tagline": tagline,
         "created_at": uuid.uuid1().time,
     }
 

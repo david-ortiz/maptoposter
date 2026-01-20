@@ -959,7 +959,7 @@ def get_crop_limits(G: MultiDiGraph, fig: Figure) -> tuple[tuple[float, float], 
     
     return crop_xlim, crop_ylim
 
-def create_poster(city, country, point, dist, output_file, output_format='png', dpi=300, progress=None, use_cache=True, font_family=None):
+def create_poster(city, country, point, dist, output_file, output_format='png', dpi=300, progress=None, use_cache=True, font_family=None, tagline=None):
     log(f"\nGenerating map for {city}, {country}...")
     log("")
 
@@ -1160,27 +1160,21 @@ def create_poster(city, country, point, dist, output_file, output_format='png', 
     ax.text(0.5, 0.10, country.upper(), transform=ax.transAxes,
             color=THEME['text'], ha='center', fontproperties=font_sub, zorder=11)
     
-    lat, lon = point
-    coords = f"{lat:.4f}° N / {lon:.4f}° E" if lat >= 0 else f"{abs(lat):.4f}° S / {lon:.4f}° E"
-    if lon < 0:
-        coords = coords.replace("E", "W")
-    
-    ax.text(0.5, 0.07, coords, transform=ax.transAxes,
+    # Third line: custom tagline or coordinates
+    if tagline:
+        third_line = tagline
+    else:
+        lat, lon = point
+        coords = f"{lat:.4f}° N / {lon:.4f}° E" if lat >= 0 else f"{abs(lat):.4f}° S / {lon:.4f}° E"
+        if lon < 0:
+            coords = coords.replace("E", "W")
+        third_line = coords
+
+    ax.text(0.5, 0.07, third_line, transform=ax.transAxes,
             color=THEME['text'], alpha=0.7, ha='center', fontproperties=font_coords, zorder=11)
     
-    ax.plot([0.4, 0.6], [0.125, 0.125], transform=ax.transAxes, 
+    ax.plot([0.4, 0.6], [0.125, 0.125], transform=ax.transAxes,
             color=THEME['text'], linewidth=1, zorder=11)
-
-    # --- ATTRIBUTION (bottom right) ---
-    if selected_fonts:
-        light_font = selected_fonts.get('light') or selected_fonts.get('regular') or selected_fonts.get('bold')
-        font_attr = FontProperties(fname=light_font, size=8)
-    else:
-        font_attr = FontProperties(family='monospace', size=8)
-    
-    ax.text(0.98, 0.02, "© OpenStreetMap contributors", transform=ax.transAxes,
-            color=THEME['text'], alpha=0.5, ha='right', va='bottom',
-            fontproperties=font_attr, zorder=11)
 
     spinner.stop("✓ done")
 

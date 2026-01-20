@@ -10,6 +10,8 @@ services:
       - ./posters:/app/posters
       # Persist map data cache
       - ./cache:/app/cache
+      # Persist starred fonts/themes
+      - ./starred:/app/starred
     environment:
       - FLASK_ENV=production
     restart: unless-stopped

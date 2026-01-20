@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Font Samples - Chikai Maps</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+    <link rel="stylesheet" href="/static/samples.css" />
+  </head>
+  <body class="samples-page">
+    <header class="samples-header">
+      <div class="samples-brand">
+        <a href="/" class="back-link">
+          <svg viewBox="0 0 24 24" width="20" height="20">
+            <path fill="currentColor" d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+          </svg>
+        </a>
+        <h1>Font Samples</h1>
+      </div>
+      <p class="samples-subtitle">Generate exportable font charts for your starred fonts</p>
+    </header>
+
+    <main class="samples-main">
+      <!-- Configuration Panel -->
+      <section class="samples-config">
+        <div class="config-row">
+          <div class="config-field">
+            <label class="config-label" for="sample-text">Sample Text</label>
+            <input type="text" id="sample-text" value="LONDON" placeholder="Enter sample text..." />
+          </div>
+          <div class="config-field">
+            <label class="config-label" for="font-size">Font Size</label>
+            <input type="number" id="font-size" value="72" min="12" max="200" />
+          </div>
+          <div class="config-field">
+            <label class="config-label" for="text-color">Text Color</label>
+            <input type="color" id="text-color" value="#1a1a1a" />
+          </div>
+        </div>
+        <div class="config-row">
+          <div class="config-field">
+            <label class="config-label" for="secondary-text">Secondary Text (optional)</label>
+            <input type="text" id="secondary-text" value="UNITED KINGDOM" placeholder="Country, subtitle..." />
+          </div>
+          <div class="config-field">
+            <label class="config-label" for="secondary-size">Secondary Size</label>
+            <input type="number" id="secondary-size" value="24" min="8" max="100" />
+          </div>
+        </div>
+        <div class="config-row">
+          <div class="config-field">
+            <label class="config-label" for="tertiary-text">Tagline (optional)</label>
+            <input type="text" id="tertiary-text" value="" placeholder="Coordinates, tagline..." />
+          </div>
+          <div class="config-field">
+            <label class="config-label" for="tertiary-size">Tagline Size</label>
+            <input type="number" id="tertiary-size" value="18" min="8" max="100" />
+          </div>
+          <div class="config-field config-checkbox">
+            <label>
+              <input type="checkbox" id="show-font-name" checked />
+              Show font name
+            </label>
+          </div>
+        </div>
+        <div class="config-actions">
+          <button id="refresh-preview" class="btn-secondary" type="button">
+            <svg viewBox="0 0 24 24" width="16" height="16">
+              <path fill="currentColor" d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+            </svg>
+            Refresh Preview
+          </button>
+          <button id="export-all" class="btn-primary" type="button">
+            <svg viewBox="0 0 24 24" width="16" height="16">
+              <path fill="currentColor" d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+            </svg>
+            Export All (PNG)
+          </button>
+          <button id="export-grid" class="btn-primary" type="button">
+            <svg viewBox="0 0 24 24" width="16" height="16">
+              <path fill="currentColor" d="M3 3v8h8V3H3zm6 6H5V5h4v4zm-6 4v8h8v-8H3zm6 6H5v-4h4v4zm4-16v8h8V3h-8zm6 6h-4V5h4v4zm-6 4v8h8v-8h-8zm6 6h-4v-4h4v4z"/>
+            </svg>
+            Export Grid
+          </button>
+        </div>
+      </section>
+
+      <!-- Font Samples Grid -->
+      <section class="samples-grid" id="font-samples-grid">
+        <div class="loading-message">Loading starred fonts...</div>
+      </section>
+
+      <!-- Empty State -->
+      <section class="empty-state" id="empty-state" style="display: none;">
+        <svg viewBox="0 0 24 24" width="48" height="48">
+          <path fill="currentColor" d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+        </svg>
+        <h3>No Starred Fonts</h3>
+        <p>Star some fonts from the main poster generator to see them here.</p>
+        <a href="/" class="btn-secondary">Go to Poster Generator</a>
+      </section>
+    </main>
+
+    <!-- Hidden canvas for export -->
+    <canvas id="export-canvas" style="display: none;"></canvas>
+
+    <script src="/static/font-samples.js"></script>
+  </body>
+</html>

@@ -576,10 +576,55 @@ select:focus {
   letter-spacing: 0.02em;
 }
 
+.font-picker-option-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
 .font-picker-option-preview {
   font-size: 1.1rem;
   color: var(--ink);
   line-height: 1.3;
+}
+
+/* === STAR BUTTONS === */
+.star-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--ink-soft);
+  opacity: 0.4;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.star-btn:hover {
+  opacity: 1;
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.star-btn.starred {
+  opacity: 1;
+  color: #f59e0b;
+}
+
+.star-btn.starred:hover {
+  color: #d97706;
+}
+
+.star-btn-sm {
+  width: 18px;
+  height: 18px;
 }
 
 /* === THEME SECTION === */
@@ -714,10 +759,28 @@ select:focus {
   font-size: 0.7rem;
   font-weight: 500;
   color: var(--ink);
-  text-align: center;
+  text-align: left;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
+}
+
+.theme-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.theme-card-footer .star-btn {
+  opacity: 0;
+}
+
+.theme-carousel-card:hover .theme-card-footer .star-btn,
+.theme-card-footer .star-btn.starred {
+  opacity: 1;
 }
 
 /* Carousel Scroll Indicators */
@@ -884,6 +947,45 @@ select:focus {
   color: var(--ink);
 }
 
+/* === SAMPLES LINKS === */
+.samples-links-section {
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  padding-top: 12px;
+  margin-top: 4px;
+}
+
+.samples-links {
+  display: flex;
+  gap: 8px;
+}
+
+.samples-link {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 12px;
+  background: transparent;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: var(--radius-md);
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--ink-soft);
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.samples-link:hover {
+  background: var(--paper);
+  border-color: rgba(0, 0, 0, 0.12);
+  color: var(--accent);
+}
+
+.samples-link svg {
+  flex-shrink: 0;
+}
+
 /* === PROGRESS WIDGET === */
 .progress-widget {
   background: rgba(246, 241, 233, 0.9);
@@ -1011,7 +1113,7 @@ select:focus {
   background: white;
   border-radius: var(--radius-lg);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
-  z-index: 500;
+  z-index: 150;
   overflow: hidden;
   transition: opacity 0.2s ease, transform 0.2s ease;
 }
@@ -1040,7 +1142,7 @@ select:focus {
 .widget-preview.dragging {
   opacity: 0.95;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
-  z-index: 1000;
+  z-index: 200;
 }
 
 .widget-preview.dragging .preview-header {
@@ -1409,10 +1511,31 @@ select:focus {
   flex: 1;
 }
 
+.theme-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+
+.theme-card-header .star-btn {
+  opacity: 0;
+}
+
+.theme-card-expanded:hover .theme-card-header .star-btn,
+.theme-card-header .star-btn.starred {
+  opacity: 1;
+}
+
 .theme-card-name {
   font-weight: 600;
   font-size: 0.9rem;
-  margin-bottom: 2px;
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .theme-card-desc {

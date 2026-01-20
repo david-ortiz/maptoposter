@@ -16,6 +16,7 @@ const state = {
   // Poster text (user-editable, independent from map)
   posterCity: "",
   posterCountry: "",
+  posterTagline: "",
 
   // Settings
   radius: 29000,
@@ -33,6 +34,10 @@ let currentCategory = "all";
 
 // ===== FONT LIST =====
 let fontList = [];
+
+// ===== STARRED ITEMS =====
+let starredFonts = [];
+let starredThemes = [];
 
 // ===== MAP VARIABLES =====
 let leafletMap = null;
@@ -80,8 +85,10 @@ const elements = {
   // Poster text
   posterCity: document.getElementById("poster-city"),
   posterCountry: document.getElementById("poster-country"),
+  posterTagline: document.getElementById("poster-tagline"),
   syncCity: document.getElementById("sync-city"),
   syncCountry: document.getElementById("sync-country"),
+  syncTagline: document.getElementById("sync-tagline"),
 
   // Sliders
   radiusSlider: document.getElementById("radius-slider"),
@@ -206,12 +213,64 @@ const stageLabels = {
 
 // ===== INITIALIZATION =====
 
-function initApp() {
+async function initApp() {
   initLeafletMap();
+  await loadStarred();
   loadThemes();
   loadFonts();
   initEventListeners();
   initPreviewWidget();
+}
+
+// ===== STARRED SYSTEM =====
+
+async function loadStarred() {
+  try {
+    const [fontsRes, themesRes] = await Promise.all([
+      fetch("/api/starred/fonts"),
+      fetch("/api/starred/themes"),
+    ]);
+    starredFonts = await fontsRes.json();
+    starredThemes = await themesRes.json();
+  } catch (err) {
+    console.error("Failed to load starred items:", err);
+    starredFonts = [];
+    starredThemes = [];
+  }
+}
+
+async function toggleStarFont(fontName, e) {
+  e?.stopPropagation();
+  const isStarred = starredFonts.includes(fontName);
+  try {
+    const response = await fetch(`/api/starred/fonts/${encodeURIComponent(fontName)}`, {
+      method: isStarred ? "DELETE" : "POST",
+    });
+    const data = await response.json();
+    starredFonts = data.starred || [];
+    renderFontSelector(fontList);
+  } catch (err) {
+    console.error("Failed to toggle star:", err);
+  }
+}
+
+async function toggleStarTheme(themeId, e) {
+  e?.stopPropagation();
+  const isStarred = starredThemes.includes(themeId);
+  try {
+    const response = await fetch(`/api/starred/themes/${encodeURIComponent(themeId)}`, {
+      method: isStarred ? "DELETE" : "POST",
+    });
+    const data = await response.json();
+    starredThemes = data.starred || [];
+    // Re-render theme UIs
+    const themes = themesByCategory[currentCategory] || themeList;
+    renderThemeCarousel(themes);
+    renderThemeDrawer(themeList);
+    initCarouselDrag();
+  } catch (err) {
+    console.error("Failed to toggle star:", err);
+  }
 }
 
 // ===== LEAFLET MAP =====
@@ -580,12 +639,22 @@ function renderFontSelector(fonts) {
 
   // Default option
   const defaultFont = fonts.length > 0 ? fonts[0] : "Roboto";
-  const defaultOpt = createFontOption("", `Default (${defaultFont})`, defaultFont);
+  const defaultOpt = createFontOption("", `Default (${defaultFont})`, defaultFont, false);
   elements.fontPickerOptions.appendChild(defaultOpt);
 
-  // Add each available font with preview
-  fonts.forEach((font) => {
-    const opt = createFontOption(font, font, font);
+  // Sort fonts: starred first, then alphabetically
+  const sortedFonts = [...fonts].sort((a, b) => {
+    const aStarred = starredFonts.includes(a);
+    const bStarred = starredFonts.includes(b);
+    if (aStarred && !bStarred) return -1;
+    if (!aStarred && bStarred) return 1;
+    return a.localeCompare(b);
+  });
+
+  // Add each available font with preview and star button
+  sortedFonts.forEach((font) => {
+    const isStarred = starredFonts.includes(font);
+    const opt = createFontOption(font, font, font, isStarred);
     elements.fontPickerOptions.appendChild(opt);
   });
 
@@ -593,7 +662,7 @@ function renderFontSelector(fonts) {
   updateFontPickerLabel();
 }
 
-function createFontOption(value, name, previewFont) {
+function createFontOption(value, name, previewFont, isStarred = false) {
   const opt = document.createElement("div");
   opt.className = "font-picker-option";
   opt.dataset.value = value;
@@ -601,19 +670,36 @@ function createFontOption(value, name, previewFont) {
     opt.classList.add("selected");
   }
 
+  const header = document.createElement("div");
+  header.className = "font-picker-option-header";
+
   const nameEl = document.createElement("div");
   nameEl.className = "font-picker-option-name";
   nameEl.textContent = name;
+
+  header.appendChild(nameEl);
+
+  // Add star button (only for non-default options)
+  if (value) {
+    const starBtn = document.createElement("button");
+    starBtn.type = "button";
+    starBtn.className = `star-btn ${isStarred ? "starred" : ""}`;
+    starBtn.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="${isStarred ? "M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" : "M22 9.24l-7.19-.62L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27 18.18 21l-1.63-7.03L22 9.24zM12 15.4l-3.76 2.27 1-4.28-3.32-2.88 4.38-.38L12 6.1l1.71 4.04 4.38.38-3.32 2.88 1 4.28L12 15.4z"}"/></svg>`;
+    starBtn.title = isStarred ? "Remove from favorites" : "Add to favorites";
+    starBtn.addEventListener("click", (e) => toggleStarFont(value, e));
+    header.appendChild(starBtn);
+  }
 
   const previewEl = document.createElement("div");
   previewEl.className = "font-picker-option-preview";
   previewEl.style.fontFamily = `"${previewFont}", sans-serif`;
   previewEl.textContent = "The quick brown fox";
 
-  opt.appendChild(nameEl);
+  opt.appendChild(header);
   opt.appendChild(previewEl);
 
-  opt.addEventListener("click", () => {
+  opt.addEventListener("click", (e) => {
+    if (e.target.closest(".star-btn")) return;
     selectFont(value);
     closeFontPicker();
   });
@@ -796,6 +882,18 @@ function updatePreview() {
   if (coordsText) {
     coordsText.setAttribute("fill", adjustBrightness(textColor, 40));
     coordsText.setAttribute("font-family", `"${selectedFont}", sans-serif`);
+    // Show tagline if provided, otherwise show coordinates
+    if (state.posterTagline) {
+      coordsText.textContent = state.posterTagline;
+    } else if (state.selectedLat !== null && state.selectedLng !== null) {
+      const lat = state.selectedLat;
+      const lng = state.selectedLng;
+      const latStr = lat >= 0 ? `${lat.toFixed(4)}° N` : `${Math.abs(lat).toFixed(4)}° S`;
+      const lngStr = lng >= 0 ? `${lng.toFixed(4)}° E` : `${Math.abs(lng).toFixed(4)}° W`;
+      coordsText.textContent = `${latStr} / ${lngStr}`;
+    } else {
+      coordsText.textContent = "51.5074° N / 0.1278° W";
+    }
   }
 
   // Update theme name in footer
@@ -847,6 +945,7 @@ function initPreviewWidget() {
   // Update preview when poster text changes
   elements.posterCity?.addEventListener("input", debounce(updatePreview, 150));
   elements.posterCountry?.addEventListener("input", debounce(updatePreview, 150));
+  elements.posterTagline?.addEventListener("input", debounce(updatePreview, 150));
 
   // Initialize drag and resize functionality
   initPreviewDrag();
@@ -1096,7 +1195,17 @@ function renderThemeCarousel(themes) {
 
   elements.themeCarousel.innerHTML = "";
 
-  themes.forEach((theme) => {
+  // Sort themes: starred first, then by name
+  const sortedThemes = [...themes].sort((a, b) => {
+    const aStarred = starredThemes.includes(a.id);
+    const bStarred = starredThemes.includes(b.id);
+    if (aStarred && !bStarred) return -1;
+    if (!aStarred && bStarred) return 1;
+    return a.name.localeCompare(b.name);
+  });
+
+  sortedThemes.forEach((theme) => {
+    const isStarred = starredThemes.includes(theme.id);
     const card = document.createElement("div");
     card.className = "theme-carousel-card";
     card.dataset.themeId = theme.id;
@@ -1114,16 +1223,29 @@ function renderThemeCarousel(themes) {
       swatches.appendChild(swatch);
     });
 
+    const footer = document.createElement("div");
+    footer.className = "theme-card-footer";
+
     const title = document.createElement("div");
     title.className = "theme-title";
     title.textContent = theme.name;
 
+    const starBtn = document.createElement("button");
+    starBtn.type = "button";
+    starBtn.className = `star-btn star-btn-sm ${isStarred ? "starred" : ""}`;
+    starBtn.innerHTML = `<svg viewBox="0 0 24 24" width="12" height="12"><path fill="currentColor" d="${isStarred ? "M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" : "M22 9.24l-7.19-.62L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27 18.18 21l-1.63-7.03L22 9.24zM12 15.4l-3.76 2.27 1-4.28-3.32-2.88 4.38-.38L12 6.1l1.71 4.04 4.38.38-3.32 2.88 1 4.28L12 15.4z"}"/></svg>`;
+    starBtn.title = isStarred ? "Remove from favorites" : "Add to favorites";
+    starBtn.addEventListener("click", (e) => toggleStarTheme(theme.id, e));
+
+    footer.appendChild(title);
+    footer.appendChild(starBtn);
+
     card.appendChild(swatches);
-    card.appendChild(title);
+    card.appendChild(footer);
 
     card.addEventListener("click", (e) => {
-      // Prevent click during drag
-      if (elements.themeCarousel.classList.contains("dragging")) {
+      // Prevent click during drag or on star button
+      if (elements.themeCarousel.classList.contains("dragging") || e.target.closest(".star-btn")) {
         e.preventDefault();
         return;
       }
@@ -1252,6 +1374,7 @@ function renderThemeDrawer(themes) {
 }
 
 function createThemeCardForDrawer(theme) {
+  const isStarred = starredThemes.includes(theme.id);
   const card = document.createElement("div");
   card.className = "theme-card-expanded";
   card.dataset.themeId = theme.id;
@@ -1268,19 +1391,33 @@ function createThemeCardForDrawer(theme) {
     preview.appendChild(swatch);
   });
 
+  const header = document.createElement("div");
+  header.className = "theme-card-header";
+
   const name = document.createElement("div");
   name.className = "theme-card-name";
   name.textContent = theme.name;
+
+  const starBtn = document.createElement("button");
+  starBtn.type = "button";
+  starBtn.className = `star-btn ${isStarred ? "starred" : ""}`;
+  starBtn.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="${isStarred ? "M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" : "M22 9.24l-7.19-.62L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27 18.18 21l-1.63-7.03L22 9.24zM12 15.4l-3.76 2.27 1-4.28-3.32-2.88 4.38-.38L12 6.1l1.71 4.04 4.38.38-3.32 2.88 1 4.28L12 15.4z"}"/></svg>`;
+  starBtn.title = isStarred ? "Remove from favorites" : "Add to favorites";
+  starBtn.addEventListener("click", (e) => toggleStarTheme(theme.id, e));
+
+  header.appendChild(name);
+  header.appendChild(starBtn);
 
   const desc = document.createElement("div");
   desc.className = "theme-card-desc";
   desc.textContent = theme.description || "Custom palette";
 
   card.appendChild(preview);
-  card.appendChild(name);
+  card.appendChild(header);
   card.appendChild(desc);
 
-  card.addEventListener("click", () => {
+  card.addEventListener("click", (e) => {
+    if (e.target.closest(".star-btn")) return;
     selectTheme(theme.id);
     closeThemeDrawer();
   });
@@ -1755,6 +1892,7 @@ async function generatePoster() {
   const payload = {
     city: state.posterCity,
     country: state.posterCountry,
+    tagline: state.posterTagline || null,
     lat: state.selectedLat,
     lng: state.selectedLng,
     distance: state.radius,
@@ -1823,6 +1961,11 @@ function initEventListeners() {
   // Sync buttons
   elements.syncCity?.addEventListener("click", syncCityFromSuggestion);
   elements.syncCountry?.addEventListener("click", syncCountryFromSuggestion);
+  elements.syncTagline?.addEventListener("click", () => {
+    state.posterTagline = "";
+    elements.posterTagline.value = "";
+    updatePreview();
+  });
 
   // Poster text inputs
   elements.posterCity?.addEventListener("input", (e) => {
@@ -1833,6 +1976,11 @@ function initEventListeners() {
   elements.posterCountry?.addEventListener("input", (e) => {
     state.posterCountry = e.target.value;
     updateGenerateButton();
+  });
+
+  elements.posterTagline?.addEventListener("input", (e) => {
+    state.posterTagline = e.target.value;
+    updatePreview();
   });
 
   // Sliders
