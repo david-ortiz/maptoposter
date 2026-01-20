@@ -1,0 +1,16 @@
+.git
+.gitignore
+.claude
+.playwright-mcp
+__pycache__
+*.pyc
+*.pyo
+posters/*
+cache/*
+env/
+.env/
+.venv/
+*.md
+.DS_Store
+.idea
+nul

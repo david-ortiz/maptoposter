@@ -222,6 +222,11 @@ def api_jobs():
     if lng is not None:
         try:
             lng = float(lng)
+            # Normalize longitude to -180 to 180 range (Leaflet can send wrapped values)
+            while lng > 180:
+                lng -= 360
+            while lng < -180:
+                lng += 360
         except (TypeError, ValueError):
             return jsonify({"error": "Longitude must be a number."}), 400
 

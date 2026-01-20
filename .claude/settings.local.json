@@ -34,7 +34,8 @@
       "Bash(cmd /c \"taskkill /F /PID 48152\")",
       "Bash(powershell -Command \"Stop-Process -Id 48176 -Force; Stop-Process -Id 48152 -Force\")",
       "Bash(powershell -Command \"if \\(Test-Path ''__pycache__''\\) { Remove-Item -Recurse -Force ''__pycache__'' }\")",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(file:*)"
     ]
   }
 }

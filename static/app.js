@@ -97,6 +97,14 @@ const elements = {
   fontPickerDropdown: document.getElementById("font-picker-dropdown"),
   fontPickerOptions: document.getElementById("font-picker-options"),
   themeQuickPicker: document.getElementById("theme-quick-picker"),
+
+  // Preview Widget
+  previewWidget: document.getElementById("preview-widget"),
+  previewContainer: document.getElementById("preview-container"),
+  previewClose: document.getElementById("preview-close"),
+  previewThemeName: document.getElementById("preview-theme-name"),
+
+  // Theme elements
   themeCategoryTabs: document.getElementById("theme-category-tabs"),
   themeCarousel: document.getElementById("theme-carousel"),
   themeCarouselWrap: document.getElementById("theme-carousel-wrap"),
@@ -203,6 +211,7 @@ function initApp() {
   loadThemes();
   loadFonts();
   initEventListeners();
+  initPreviewWidget();
 }
 
 // ===== LEAFLET MAP =====
@@ -262,12 +271,19 @@ function setTileLayer(providerId) {
   }).addTo(leafletMap);
 }
 
+// Normalize longitude to -180 to 180 range (Leaflet can return wrapped values)
+function normalizeLng(lng) {
+  while (lng > 180) lng -= 360;
+  while (lng < -180) lng += 360;
+  return lng;
+}
+
 async function handleMapClick(e) {
   const { lat, lng } = e.latlng;
 
-  // Update state
+  // Update state (normalize longitude for wrapped maps)
   state.selectedLat = lat;
-  state.selectedLng = lng;
+  state.selectedLng = normalizeLng(lng);
 
   // Show/update circle and marker
   if (!leafletMap.hasLayer(radiusCircle)) {
@@ -512,8 +528,9 @@ async function loadThemes() {
     renderThemeDrawer(themes);
     initCarouselDrag();
 
-    // Set initial theme name
+    // Set initial theme name and update preview
     updateSelectedThemeName();
+    updatePreview();
   } catch (err) {
     console.error("Failed to load themes:", err);
   }
@@ -613,6 +630,7 @@ function selectFont(fontValue) {
   });
 
   updateFontPickerLabel();
+  updatePreview();
 }
 
 function updateFontPickerLabel() {
@@ -658,6 +676,375 @@ function openFontPicker() {
 function closeFontPicker() {
   elements.fontPicker?.classList.remove("open");
   elements.fontPickerDropdown?.setAttribute("aria-hidden", "true");
+}
+
+// ============================================================
+// PREVIEW WIDGET
+// ============================================================
+
+let previewSvgLoaded = false;
+
+async function loadPreviewSvg() {
+  if (!elements.previewContainer) return;
+
+  try {
+    const response = await fetch("/static/preview-map.svg");
+    const svgText = await response.text();
+    elements.previewContainer.innerHTML = svgText;
+    previewSvgLoaded = true;
+    updatePreview();
+  } catch (err) {
+    console.error("Failed to load preview SVG:", err);
+  }
+}
+
+function updatePreview() {
+  if (!previewSvgLoaded || !elements.previewContainer) return;
+
+  const theme = getSelectedTheme();
+  if (!theme) return;
+
+  const svg = elements.previewContainer.querySelector("svg");
+  if (!svg) return;
+
+  // Update background
+  const bg = svg.querySelector("#preview-bg");
+  if (bg) bg.setAttribute("fill", theme.colors.bg || "#FAFAF8");
+
+  // Update water
+  const water = svg.querySelector("#preview-water");
+  if (water) {
+    water.querySelectorAll("path, ellipse, rect, circle").forEach((el) => {
+      el.setAttribute("fill", theme.colors.water || "#B8D4E3");
+    });
+  }
+
+  // Update parks
+  const parks = svg.querySelector("#preview-parks");
+  if (parks) {
+    parks.querySelectorAll("path, ellipse, rect, circle").forEach((el) => {
+      el.setAttribute("fill", theme.colors.parks || "#C5DEB8");
+    });
+  }
+
+  // Update buildings (if theme has building color)
+  const buildings = svg.querySelector("#preview-buildings");
+  if (buildings) {
+    const buildingColor = theme.colors.buildings || theme.colors.bg || "#E8E4DE";
+    // Make buildings slightly different from background
+    buildings.querySelectorAll("rect").forEach((el) => {
+      el.setAttribute("fill", adjustBrightness(buildingColor, -10));
+    });
+  }
+
+  // Update roads
+  const roadMotorway = svg.querySelector("#preview-roads-motorway");
+  if (roadMotorway) {
+    roadMotorway.querySelectorAll("path").forEach((el) => {
+      el.setAttribute("stroke", theme.colors.road_motorway || theme.colors.road_primary || "#1A1A1A");
+    });
+  }
+
+  const roadPrimary = svg.querySelector("#preview-roads-primary");
+  if (roadPrimary) {
+    roadPrimary.querySelectorAll("path").forEach((el) => {
+      el.setAttribute("stroke", theme.colors.road_primary || "#2A2A2A");
+    });
+  }
+
+  const roadSecondary = svg.querySelector("#preview-roads-secondary");
+  if (roadSecondary) {
+    roadSecondary.querySelectorAll("path").forEach((el) => {
+      el.setAttribute("stroke", theme.colors.road_secondary || "#4A4A4A");
+    });
+  }
+
+  const roadTertiary = svg.querySelector("#preview-roads-tertiary");
+  if (roadTertiary) {
+    roadTertiary.querySelectorAll("path").forEach((el) => {
+      el.setAttribute("stroke", theme.colors.road_tertiary || "#6A6A6A");
+    });
+  }
+
+  // Update border
+  const border = svg.querySelector("#preview-border");
+  if (border) {
+    border.setAttribute("stroke", theme.colors.text || "#1A1A1A");
+  }
+
+  // Update text colors and fonts
+  const selectedFont = state.font || fontList[0] || "Roboto";
+  const textColor = theme.colors.text || "#1A1A1A";
+
+  const cityText = svg.querySelector("#preview-city");
+  if (cityText) {
+    cityText.setAttribute("fill", textColor);
+    cityText.setAttribute("font-family", `"${selectedFont}", sans-serif`);
+    // Update city name based on poster text
+    cityText.textContent = elements.posterCity?.value?.toUpperCase() || "LONDON";
+  }
+
+  const countryText = svg.querySelector("#preview-country");
+  if (countryText) {
+    countryText.setAttribute("fill", textColor);
+    countryText.setAttribute("font-family", `"${selectedFont}", sans-serif`);
+    // Update country based on poster text
+    countryText.textContent = elements.posterCountry?.value?.toUpperCase() || "UNITED KINGDOM";
+  }
+
+  const coordsText = svg.querySelector("#preview-coords");
+  if (coordsText) {
+    coordsText.setAttribute("fill", adjustBrightness(textColor, 40));
+    coordsText.setAttribute("font-family", `"${selectedFont}", sans-serif`);
+  }
+
+  // Update theme name in footer
+  if (elements.previewThemeName) {
+    elements.previewThemeName.textContent = theme.name || theme.id || "Theme";
+  }
+}
+
+function getSelectedTheme() {
+  // Find the currently selected theme from themeList
+  if (!themeList || themeList.length === 0) return null;
+  return themeList.find((t) => t.id === state.theme) || themeList[0];
+}
+
+function adjustBrightness(hex, percent) {
+  // Adjust hex color brightness
+  if (!hex || hex.length < 4) return hex;
+
+  // Remove # if present
+  hex = hex.replace(/^#/, "");
+
+  // Parse RGB
+  let r, g, b;
+  if (hex.length === 3) {
+    r = parseInt(hex[0] + hex[0], 16);
+    g = parseInt(hex[1] + hex[1], 16);
+    b = parseInt(hex[2] + hex[2], 16);
+  } else {
+    r = parseInt(hex.substring(0, 2), 16);
+    g = parseInt(hex.substring(2, 4), 16);
+    b = parseInt(hex.substring(4, 6), 16);
+  }
+
+  // Adjust brightness
+  r = Math.max(0, Math.min(255, r + (percent * 255) / 100));
+  g = Math.max(0, Math.min(255, g + (percent * 255) / 100));
+  b = Math.max(0, Math.min(255, b + (percent * 255) / 100));
+
+  // Convert back to hex
+  return `#${Math.round(r).toString(16).padStart(2, "0")}${Math.round(g).toString(16).padStart(2, "0")}${Math.round(b).toString(16).padStart(2, "0")}`;
+}
+
+function initPreviewWidget() {
+  // Close button
+  elements.previewClose?.addEventListener("click", () => {
+    elements.previewWidget?.classList.add("hidden");
+  });
+
+  // Update preview when poster text changes
+  elements.posterCity?.addEventListener("input", debounce(updatePreview, 150));
+  elements.posterCountry?.addEventListener("input", debounce(updatePreview, 150));
+
+  // Initialize drag and resize functionality
+  initPreviewDrag();
+  initPreviewResize();
+
+  // Load the SVG
+  loadPreviewSvg();
+}
+
+function initPreviewDrag() {
+  const widget = elements.previewWidget;
+  const header = widget?.querySelector(".preview-header");
+  if (!widget || !header) return;
+
+  let isDragging = false;
+  let startX, startY;
+  let initialLeft, initialTop;
+
+  function onMouseDown(e) {
+    // Don't drag if clicking close button
+    if (e.target.closest(".preview-close")) return;
+
+    isDragging = true;
+    widget.classList.add("dragging");
+
+    // Get current position
+    const rect = widget.getBoundingClientRect();
+    initialLeft = rect.left;
+    initialTop = rect.top;
+
+    startX = e.clientX;
+    startY = e.clientY;
+
+    // Switch to fixed positioning based on current location
+    widget.style.left = `${initialLeft}px`;
+    widget.style.top = `${initialTop}px`;
+    widget.style.right = "auto";
+
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", onMouseUp);
+
+    e.preventDefault();
+  }
+
+  function onMouseMove(e) {
+    if (!isDragging) return;
+
+    const deltaX = e.clientX - startX;
+    const deltaY = e.clientY - startY;
+
+    let newLeft = initialLeft + deltaX;
+    let newTop = initialTop + deltaY;
+
+    // Constrain to viewport
+    const widgetRect = widget.getBoundingClientRect();
+    const maxLeft = window.innerWidth - widgetRect.width;
+    const maxTop = window.innerHeight - widgetRect.height;
+
+    newLeft = Math.max(0, Math.min(newLeft, maxLeft));
+    newTop = Math.max(0, Math.min(newTop, maxTop));
+
+    widget.style.left = `${newLeft}px`;
+    widget.style.top = `${newTop}px`;
+  }
+
+  function onMouseUp() {
+    isDragging = false;
+    widget.classList.remove("dragging");
+
+    document.removeEventListener("mousemove", onMouseMove);
+    document.removeEventListener("mouseup", onMouseUp);
+  }
+
+  header.addEventListener("mousedown", onMouseDown);
+
+  // Touch support for mobile
+  header.addEventListener("touchstart", (e) => {
+    if (e.target.closest(".preview-close")) return;
+
+    const touch = e.touches[0];
+    const mouseEvent = new MouseEvent("mousedown", {
+      clientX: touch.clientX,
+      clientY: touch.clientY,
+    });
+    onMouseDown(mouseEvent);
+  }, { passive: false });
+
+  document.addEventListener("touchmove", (e) => {
+    if (!isDragging) return;
+    const touch = e.touches[0];
+    const mouseEvent = new MouseEvent("mousemove", {
+      clientX: touch.clientX,
+      clientY: touch.clientY,
+    });
+    onMouseMove(mouseEvent);
+    e.preventDefault();
+  }, { passive: false });
+
+  document.addEventListener("touchend", () => {
+    if (isDragging) onMouseUp();
+  });
+}
+
+function initPreviewResize() {
+  const widget = elements.previewWidget;
+  const resizeHandle = document.getElementById("preview-resize-handle");
+  if (!widget || !resizeHandle) return;
+
+  let isResizing = false;
+  let startX, startY;
+  let initialWidth, initialHeight;
+
+  const MIN_WIDTH = 150;
+  const MAX_WIDTH = 400;
+  const MIN_HEIGHT = 200;
+  const MAX_HEIGHT = 600;
+
+  function onMouseDown(e) {
+    isResizing = true;
+    widget.classList.add("resizing");
+
+    startX = e.clientX;
+    startY = e.clientY;
+
+    const rect = widget.getBoundingClientRect();
+    initialWidth = rect.width;
+    initialHeight = rect.height;
+
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", onMouseUp);
+
+    e.preventDefault();
+    e.stopPropagation();
+  }
+
+  function onMouseMove(e) {
+    if (!isResizing) return;
+
+    const deltaX = e.clientX - startX;
+    const deltaY = e.clientY - startY;
+
+    let newWidth = initialWidth + deltaX;
+    let newHeight = initialHeight + deltaY;
+
+    // Constrain to min/max
+    newWidth = Math.max(MIN_WIDTH, Math.min(newWidth, MAX_WIDTH));
+    newHeight = Math.max(MIN_HEIGHT, Math.min(newHeight, MAX_HEIGHT));
+
+    widget.style.width = `${newWidth}px`;
+    widget.style.height = `${newHeight}px`;
+  }
+
+  function onMouseUp() {
+    isResizing = false;
+    widget.classList.remove("resizing");
+
+    document.removeEventListener("mousemove", onMouseMove);
+    document.removeEventListener("mouseup", onMouseUp);
+  }
+
+  resizeHandle.addEventListener("mousedown", onMouseDown);
+
+  // Touch support
+  resizeHandle.addEventListener("touchstart", (e) => {
+    const touch = e.touches[0];
+    const mouseEvent = new MouseEvent("mousedown", {
+      clientX: touch.clientX,
+      clientY: touch.clientY,
+    });
+    onMouseDown(mouseEvent);
+  }, { passive: false });
+
+  document.addEventListener("touchmove", (e) => {
+    if (!isResizing) return;
+    const touch = e.touches[0];
+    const mouseEvent = new MouseEvent("mousemove", {
+      clientX: touch.clientX,
+      clientY: touch.clientY,
+    });
+    onMouseMove(mouseEvent);
+    e.preventDefault();
+  }, { passive: false });
+
+  document.addEventListener("touchend", () => {
+    if (isResizing) onMouseUp();
+  });
+}
+
+function debounce(func, wait) {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
 }
 
 function renderCategoryTabs() {
@@ -915,6 +1302,7 @@ function selectTheme(themeId) {
   });
 
   updateSelectedThemeName();
+  updatePreview();
 
   // Scroll selected into view in carousel
   const selectedCard = elements.themeCarousel?.querySelector(`.theme-carousel-card[data-theme-id="${themeId}"]`);
