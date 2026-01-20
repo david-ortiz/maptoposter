@@ -14,14 +14,76 @@ from datetime import datetime
 import argparse
 import asyncio
 import threading
+import pickle
+import hashlib
 
 # Enable osmnx caching - downloaded data is saved locally for faster repeat requests
 # Use absolute path so cache works regardless of working directory
 CACHE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cache")
+MAP_CACHE_DIR = os.path.join(CACHE_DIR, "map_data")
 os.makedirs(CACHE_DIR, exist_ok=True)
+os.makedirs(MAP_CACHE_DIR, exist_ok=True)
 ox.settings.use_cache = True
 ox.settings.cache_folder = CACHE_DIR
 ox.settings.log_console = True  # Show cache hits/misses in console
+
+
+def get_cache_key(lat, lon, dist):
+    """
+    Generate a cache key from coordinates and distance.
+    Coordinates are rounded to 4 decimal places (~11m precision).
+    """
+    # Round coordinates to avoid floating point issues
+    lat_r = round(lat, 4)
+    lon_r = round(lon, 4)
+    key_str = f"{lat_r}_{lon_r}_{dist}"
+    # Create a short hash for the filename
+    key_hash = hashlib.md5(key_str.encode()).hexdigest()[:12]
+    return f"map_{lat_r}_{lon_r}_{dist}_{key_hash}"
+
+
+def save_map_cache(cache_key, graph, water, parks):
+    """Save downloaded map data to cache."""
+    cache_file = os.path.join(MAP_CACHE_DIR, f"{cache_key}.pkl")
+    data = {
+        "graph": graph,
+        "water": water,
+        "parks": parks,
+        "cached_at": datetime.now().isoformat()
+    }
+    with open(cache_file, "wb") as f:
+        pickle.dump(data, f)
+    log(f"  [Cache] Saved map data to {cache_key}.pkl")
+
+
+def load_map_cache(cache_key):
+    """
+    Load map data from cache if available.
+    Returns (graph, water, parks) tuple or None if not cached.
+    """
+    cache_file = os.path.join(MAP_CACHE_DIR, f"{cache_key}.pkl")
+    if not os.path.exists(cache_file):
+        return None
+    try:
+        with open(cache_file, "rb") as f:
+            data = pickle.load(f)
+        log(f"  [Cache] Loaded map data from {cache_key}.pkl")
+        if "cached_at" in data:
+            log(f"  [Cache] Data cached at: {data['cached_at']}")
+        return data["graph"], data["water"], data["parks"]
+    except Exception as e:
+        log(f"  [Cache] Failed to load cache: {e}")
+        return None
+
+
+def clear_map_cache():
+    """Clear all cached map data."""
+    count = 0
+    for f in os.listdir(MAP_CACHE_DIR):
+        if f.endswith(".pkl"):
+            os.remove(os.path.join(MAP_CACHE_DIR, f))
+            count += 1
+    log(f"Cleared {count} cached map files.")
 
 def log(message, end='\n'):
     """Print with immediate flush for better Windows terminal compatibility."""
@@ -351,52 +413,70 @@ def get_crop_limits(G: MultiDiGraph, fig: Figure) -> tuple[tuple[float, float], 
     
     return crop_xlim, crop_ylim
 
-def create_poster(city, country, point, dist, output_file, output_format='png', dpi=300, progress=None):
+def create_poster(city, country, point, dist, output_file, output_format='png', dpi=300, progress=None, use_cache=True):
     log(f"\nGenerating map for {city}, {country}...")
     log("")
 
-    # 1. Fetch Street Network
-    if progress:
-        progress({"stage": "network", "percent": 20, "message": "Downloading street network"})
-    G = run_with_spinner(
-        "[1/3] Downloading street network...",
-        ox.graph_from_point,
-        point, dist=dist, dist_type='bbox', network_type='all'
-    )
-    if progress:
-        progress({"stage": "network", "percent": 30, "message": "Street network downloaded"})
-    time.sleep(0.5)  # Rate limit between requests
+    # Check for cached map data first
+    cache_key = get_cache_key(point[0], point[1], dist)
+    cached_data = load_map_cache(cache_key) if use_cache else None
 
-    # 2. Fetch Water Features
-    if progress:
-        progress({"stage": "water", "percent": 38, "message": "Downloading water features"})
-    water = None
-    spinner = Spinner("[2/3] Downloading water features...")
-    spinner.start()
-    try:
-        water = ox.features_from_point(point, tags={'natural': 'water', 'waterway': 'riverbank'}, dist=dist)
-        spinner.stop("✓ done")
-    except Exception as e:
-        spinner.stop(f"⚠ skipped (no data)")
-    if progress:
-        progress({"stage": "water", "percent": 45, "message": "Water features downloaded"})
-    time.sleep(0.3)
+    if cached_data:
+        # Use cached data - skip all API calls
+        G, water, parks = cached_data
+        log("✓ Using cached map data (no API calls needed)\n")
+        if progress:
+            progress({"stage": "network", "percent": 20, "message": "Loading from cache"})
+            progress({"stage": "water", "percent": 40, "message": "Loading from cache"})
+            progress({"stage": "parks", "percent": 60, "message": "Loaded from cache"})
+    else:
+        # Fetch fresh data from API
+        log("No cache found, downloading from OpenStreetMap...\n")
 
-    # 3. Fetch Parks
-    if progress:
-        progress({"stage": "parks", "percent": 50, "message": "Downloading parks/green spaces"})
-    parks = None
-    spinner = Spinner("[3/3] Downloading parks/green spaces...")
-    spinner.start()
-    try:
-        parks = ox.features_from_point(point, tags={'leisure': 'park', 'landuse': 'grass'}, dist=dist)
-        spinner.stop("✓ done")
-    except Exception as e:
-        spinner.stop(f"⚠ skipped (no data)")
-    if progress:
-        progress({"stage": "parks", "percent": 60, "message": "Parks downloaded"})
+        # 1. Fetch Street Network
+        if progress:
+            progress({"stage": "network", "percent": 20, "message": "Downloading street network"})
+        G = run_with_spinner(
+            "[1/3] Downloading street network...",
+            ox.graph_from_point,
+            point, dist=dist, dist_type='bbox', network_type='all'
+        )
+        if progress:
+            progress({"stage": "network", "percent": 30, "message": "Street network downloaded"})
+        time.sleep(0.5)  # Rate limit between requests
 
-    log("\n✓ All data downloaded successfully!\n")
+        # 2. Fetch Water Features
+        if progress:
+            progress({"stage": "water", "percent": 38, "message": "Downloading water features"})
+        water = None
+        spinner = Spinner("[2/3] Downloading water features...")
+        spinner.start()
+        try:
+            water = ox.features_from_point(point, tags={'natural': 'water', 'waterway': 'riverbank'}, dist=dist)
+            spinner.stop("✓ done")
+        except Exception as e:
+            spinner.stop(f"⚠ skipped (no data)")
+        if progress:
+            progress({"stage": "water", "percent": 45, "message": "Water features downloaded"})
+        time.sleep(0.3)
+
+        # 3. Fetch Parks
+        if progress:
+            progress({"stage": "parks", "percent": 50, "message": "Downloading parks/green spaces"})
+        parks = None
+        spinner = Spinner("[3/3] Downloading parks/green spaces...")
+        spinner.start()
+        try:
+            parks = ox.features_from_point(point, tags={'leisure': 'park', 'landuse': 'grass'}, dist=dist)
+            spinner.stop("✓ done")
+        except Exception as e:
+            spinner.stop(f"⚠ skipped (no data)")
+        if progress:
+            progress({"stage": "parks", "percent": 60, "message": "Parks downloaded"})
+
+        # Save to cache for next time
+        save_map_cache(cache_key, G, water, parks)
+        log("\n✓ All data downloaded and cached!\n")
 
     # 2. Setup Plot
     if progress:
@@ -638,14 +718,21 @@ Examples:
     parser.add_argument('--dpi', type=int, default=300, help='Output resolution in DPI (default: 300). Use 150 for smaller files, 72 for preview.')
     parser.add_argument('--list-themes', action='store_true', help='List all available themes')
     parser.add_argument('--format', '-f', default='png', choices=['png', 'svg', 'pdf'],help='Output format for the poster (default: png)')
-    
+    parser.add_argument('--clear-cache', action='store_true', help='Clear all cached map data')
+    parser.add_argument('--no-cache', action='store_true', help='Skip cache and always download fresh data')
+
     args = parser.parse_args()
-    
+
     # If no arguments provided, show examples
     if len(sys.argv) == 1:
         print_examples()
         sys.exit(0)
-    
+
+    # Clear cache if requested
+    if args.clear_cache:
+        clear_map_cache()
+        sys.exit(0)
+
     # List themes if requested
     if args.list_themes:
         list_themes()
@@ -675,7 +762,7 @@ Examples:
     try:
         coords = get_coordinates(args.city, args.country)
         output_file = generate_output_filename(args.city, args.theme, args.format)
-        create_poster(args.city, args.country, coords, args.distance, output_file, args.format, dpi=args.dpi)
+        create_poster(args.city, args.country, coords, args.distance, output_file, args.format, dpi=args.dpi, use_cache=not args.no_cache)
         
         print("\n" + "=" * 50)
         print("✓ Poster generation complete!")
