@@ -349,26 +349,29 @@ def draw_center_pin(ax, crop_xlim, crop_ylim, pin_type, theme):
 
     if pin_type == 'marker':
         # Classic map marker (teardrop shape pointing down)
-        # Draw using a path
         marker_height = scale * 2.5
         marker_width = scale * 1.5
 
-        # Create teardrop path (pointing down)
-        verts = [
-            (center_x, center_y - marker_height * 0.4),  # bottom point
-            (center_x - marker_width/2, center_y + marker_height * 0.2),  # left curve
-            (center_x - marker_width/2, center_y + marker_height * 0.5),  # left top
-            (center_x, center_y + marker_height * 0.6),  # top center
-            (center_x + marker_width/2, center_y + marker_height * 0.5),  # right top
-            (center_x + marker_width/2, center_y + marker_height * 0.2),  # right curve
-            (center_x, center_y - marker_height * 0.4),  # back to bottom
-        ]
-        codes = [Path.MOVETO, Path.CURVE4, Path.CURVE4, Path.CURVE4,
-                 Path.CURVE4, Path.CURVE4, Path.CLOSEPOLY]
-        path = Path(verts, codes)
-        patch = PathPatch(path, facecolor=pin_color, edgecolor='white',
-                         linewidth=scale * 0.05, zorder=15, alpha=0.9)
-        ax.add_patch(patch)
+        # Create teardrop using parametric approach for smooth curves
+        # Generate points along a teardrop shape
+        t = np.linspace(0, 2 * np.pi, 50)
+
+        # Teardrop parametric equations (pointing down)
+        x = marker_width * 0.5 * np.sin(t)
+        y = marker_height * 0.5 * (np.cos(t) - 0.5 * np.cos(2*t))
+
+        # Shift y so the point is at bottom and center properly
+        y = y - np.min(y)  # move so bottom is at 0
+        y = y - marker_height * 0.4  # offset downward
+
+        # Center on map
+        x = x + center_x
+        y = y + center_y
+
+        teardrop = Polygon(np.column_stack([x, y]), closed=True,
+                          facecolor=pin_color, edgecolor='white',
+                          linewidth=scale * 0.05, zorder=15, alpha=0.9)
+        ax.add_patch(teardrop)
 
         # Add inner circle (white dot)
         inner_circle = Circle((center_x, center_y + marker_height * 0.25),
