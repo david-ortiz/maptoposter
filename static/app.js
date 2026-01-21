@@ -25,6 +25,7 @@ const state = {
   theme: "feature_based",
   font: "",  // Empty means default (Roboto)
   pin: "none",  // Center pin icon: none, marker, heart, star, home, circle
+  pinColor: null,  // Hex color for pin (null = use theme text color)
 };
 
 // ===== THEME CATALOG =====
@@ -105,6 +106,8 @@ const elements = {
   fontPickerDropdown: document.getElementById("font-picker-dropdown"),
   fontPickerOptions: document.getElementById("font-picker-options"),
   pinSelector: document.getElementById("pin-selector"),
+  pinColorSelector: document.getElementById("pin-color-selector"),
+  pinColorSwatches: document.getElementById("pin-color-swatches"),
   themeQuickPicker: document.getElementById("theme-quick-picker"),
 
   // Preview Widget
@@ -112,6 +115,11 @@ const elements = {
   previewContainer: document.getElementById("preview-container"),
   previewClose: document.getElementById("preview-close"),
   previewThemeName: document.getElementById("preview-theme-name"),
+
+  // Header action buttons
+  headerFontBtn: document.getElementById("header-font-btn"),
+  headerThemeBtn: document.getElementById("header-theme-btn"),
+  headerGalleryBtn: document.getElementById("header-gallery-btn"),
 
   // Theme elements
   themeCategoryTabs: document.getElementById("theme-category-tabs"),
@@ -933,6 +941,52 @@ function getSelectedTheme() {
   return themeList.find((t) => t.id === state.theme) || themeList[0];
 }
 
+function updatePinColorSwatches() {
+  // Populate pin color swatches from current theme colors
+  const theme = getSelectedTheme();
+  if (!theme || !elements.pinColorSwatches) return;
+
+  const colors = theme.colors || {};
+  // Collect unique colors from theme (excluding bg which is usually white/light)
+  const colorSet = new Set();
+  const colorOrder = ["text", "roads_primary", "roads_secondary", "roads_tertiary", "water", "parks", "accent"];
+
+  colorOrder.forEach((key) => {
+    if (colors[key] && colors[key] !== colors.bg) {
+      colorSet.add(colors[key]);
+    }
+  });
+
+  // Add any remaining colors not in standard order
+  Object.values(colors).forEach((c) => {
+    if (c && c !== colors.bg) colorSet.add(c);
+  });
+
+  const uniqueColors = Array.from(colorSet);
+  elements.pinColorSwatches.innerHTML = "";
+
+  uniqueColors.forEach((color, idx) => {
+    const swatch = document.createElement("button");
+    swatch.type = "button";
+    swatch.className = "pin-color-swatch";
+    if (idx === 0 && !state.pinColor) {
+      swatch.classList.add("selected");
+      state.pinColor = color;
+    } else if (state.pinColor === color) {
+      swatch.classList.add("selected");
+    }
+    swatch.style.backgroundColor = color;
+    swatch.title = color;
+    swatch.addEventListener("click", () => {
+      elements.pinColorSwatches.querySelectorAll(".pin-color-swatch").forEach((s) => s.classList.remove("selected"));
+      swatch.classList.add("selected");
+      state.pinColor = color;
+      updatePreview();
+    });
+    elements.pinColorSwatches.appendChild(swatch);
+  });
+}
+
 function adjustBrightness(hex, percent) {
   // Adjust hex color brightness
   if (!hex || hex.length < 4) return hex;
@@ -1466,6 +1520,11 @@ function selectTheme(themeId) {
   updateSelectedThemeName();
   updatePreview();
 
+  // Update pin color swatches with new theme colors
+  if (state.pin && state.pin !== "none") {
+    updatePinColorSwatches();
+  }
+
   // Scroll selected into view in carousel
   const selectedCard = elements.themeCarousel?.querySelector(`.theme-carousel-card[data-theme-id="${themeId}"]`);
   if (selectedCard) {
@@ -1591,31 +1650,191 @@ function applyGalleryPayload(payload, force = false) {
   }
 }
 
+function loadConfigFromGallery(config) {
+  // Load saved configuration to reuse cached map data
+
+  // Set coordinates (critical for cache matching)
+  if (config.lat != null && config.lng != null) {
+    state.selectedLat = config.lat;
+    state.selectedLng = config.lng;
+
+    // Update map view
+    if (leafletMap) {
+      leafletMap.setView([config.lat, config.lng], 12);
+
+      // Update circle and marker
+      if (!leafletMap.hasLayer(radiusCircle)) {
+        radiusCircle.addTo(leafletMap);
+        centerMarker.addTo(leafletMap);
+      }
+      radiusCircle.setLatLng([config.lat, config.lng]);
+      centerMarker.setLatLng([config.lat, config.lng]);
+    }
+  }
+
+  // Set radius (critical for cache matching)
+  if (config.distance) {
+    state.radius = config.distance;
+    if (elements.radiusSlider) {
+      elements.radiusSlider.value = config.distance;
+    }
+    if (elements.radiusValue) {
+      elements.radiusValue.textContent = `${(config.distance / 1000).toFixed(1)} km`;
+    }
+    if (radiusCircle) {
+      radiusCircle.setRadius(config.distance);
+    }
+  }
+
+  // Set poster text
+  if (config.city) {
+    state.posterCity = config.city;
+    if (elements.posterCity) elements.posterCity.value = config.city;
+  }
+  if (config.country) {
+    state.posterCountry = config.country;
+    if (elements.posterCountry) elements.posterCountry.value = config.country;
+  }
+  if (config.tagline) {
+    state.posterTagline = config.tagline;
+    if (elements.posterTagline) elements.posterTagline.value = config.tagline;
+  }
+
+  // Set theme
+  if (config.theme) {
+    selectTheme(config.theme);
+  }
+
+  // Set font
+  if (config.font) {
+    state.font = config.font;
+    if (elements.fontPickerLabel) {
+      elements.fontPickerLabel.textContent = config.font || "Default";
+    }
+  }
+
+  // Set format
+  if (config.format) {
+    state.format = config.format;
+    if (elements.formatSelect) {
+      elements.formatSelect.value = config.format;
+    }
+  }
+
+  // Set DPI
+  if (config.dpi) {
+    state.dpi = config.dpi;
+    if (elements.dpiSlider) {
+      elements.dpiSlider.value = config.dpi;
+    }
+  }
+
+  // Set pin
+  if (config.pin) {
+    state.pin = config.pin;
+    // Update pin selector UI
+    elements.pinSelector?.querySelectorAll(".pin-option").forEach((btn) => {
+      btn.classList.toggle("selected", btn.dataset.pin === config.pin);
+    });
+    // Show color selector if pin is set
+    if (elements.pinColorSelector && config.pin !== "none") {
+      elements.pinColorSelector.style.display = "flex";
+      updatePinColorSwatches();
+    }
+  }
+
+  // Set pin color
+  if (config.pin_color) {
+    state.pinColor = config.pin_color;
+  }
+
+  // Update coordinates display
+  updateCoordsDisplay();
+
+  // Update generate button
+  updateGenerateButton();
+
+  // Update preview
+  updatePreview();
+
+  // Close gallery
+  closeGallery();
+
+  // Show confirmation
+  console.log("Settings loaded from:", config.city, config.country);
+}
+
 function renderGallery(items) {
   elements.galleryGrid.innerHTML = "";
 
-  if (!items.length) {
+  // Filter to only show items with thumbnails
+  const itemsWithThumbs = items.filter(item => item.has_thumb && item.thumb_url);
+
+  if (!itemsWithThumbs.length) {
     elements.galleryGrid.innerHTML = '<div class="gallery-placeholder">No posters yet. Generate one!</div>';
     return;
   }
 
+  // Store filtered items for lightbox
+  window.galleryItems = itemsWithThumbs;
+
   const fragment = document.createDocumentFragment();
 
-  items.forEach((item, index) => {
-    const card = document.createElement("button");
+  itemsWithThumbs.forEach((item, index) => {
+    const card = document.createElement("div");
     card.className = "gallery-item";
-    card.type = "button";
 
+    // Thumbnail image
     const img = document.createElement("img");
-    img.dataset.src = `${item.url}?t=${item.mtime}`;
+    img.dataset.src = `${item.thumb_url}?t=${item.mtime}`;
     img.alt = item.filename;
     img.loading = "lazy";
     card.appendChild(img);
 
+    // Info overlay with config data
+    const info = document.createElement("div");
+    info.className = "gallery-item-info";
+    if (item.config) {
+      info.innerHTML = `<span class="gallery-item-city">${item.config.city || ''}</span>`;
+    } else {
+      info.innerHTML = `<span class="gallery-item-city">${item.filename.split('_')[0]}</span>`;
+    }
+    card.appendChild(info);
+
+    // Action buttons
+    const actions = document.createElement("div");
+    actions.className = "gallery-item-actions";
+
+    // Load settings button (only if config exists)
+    if (item.config) {
+      const loadBtn = document.createElement("button");
+      loadBtn.className = "gallery-action-btn gallery-load";
+      loadBtn.type = "button";
+      loadBtn.title = "Load settings (reuse cache)";
+      loadBtn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>';
+      loadBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        loadConfigFromGallery(item.config);
+      });
+      actions.appendChild(loadBtn);
+    }
+
+    // Download button
+    const downloadBtn = document.createElement("a");
+    downloadBtn.className = "gallery-action-btn";
+    downloadBtn.href = item.url;
+    downloadBtn.download = item.filename;
+    downloadBtn.title = "Download full size";
+    downloadBtn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>';
+    downloadBtn.addEventListener("click", (e) => e.stopPropagation());
+    actions.appendChild(downloadBtn);
+
+    // Delete button
     const deleteBtn = document.createElement("button");
-    deleteBtn.className = "gallery-delete";
+    deleteBtn.className = "gallery-action-btn gallery-delete";
     deleteBtn.type = "button";
-    deleteBtn.innerHTML = "&times;";
+    deleteBtn.title = "Delete";
+    deleteBtn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>';
     deleteBtn.addEventListener("click", async (e) => {
       e.stopPropagation();
       if (confirm(`Delete ${item.filename}?`)) {
@@ -1623,9 +1842,12 @@ function renderGallery(items) {
         loadGallery(true);
       }
     });
-    card.appendChild(deleteBtn);
+    actions.appendChild(deleteBtn);
 
-    card.addEventListener("click", () => openLightbox(index));
+    card.appendChild(actions);
+
+    // Click to view full size
+    card.addEventListener("click", () => window.open(item.url, "_blank"));
     fragment.appendChild(card);
   });
 
@@ -1925,6 +2147,7 @@ async function generatePoster() {
     format: state.format,
     font: state.font,
     pin: state.pin !== "none" ? state.pin : null,
+    pin_color: state.pin !== "none" ? state.pinColor : null,
     dpi: state.dpi,
   };
 
@@ -2024,14 +2247,32 @@ function initEventListeners() {
       elements.pinSelector.querySelectorAll(".pin-option").forEach((b) => b.classList.remove("selected"));
       btn.classList.add("selected");
       state.pin = btn.dataset.pin;
+
+      // Show/hide color selector based on pin selection
+      if (state.pin && state.pin !== "none") {
+        elements.pinColorSelector.style.display = "flex";
+        updatePinColorSwatches();
+      } else {
+        elements.pinColorSelector.style.display = "none";
+        state.pinColor = null;
+      }
+
       updatePreview();
     });
   });
 
   // Font picker is initialized in loadFonts()
 
+  // Header action buttons - open in new tabs
+  elements.headerFontBtn?.addEventListener("click", () => {
+    window.open("/font-samples", "_blank");
+  });
+  elements.headerThemeBtn?.addEventListener("click", () => {
+    window.open("/theme-samples", "_blank");
+  });
+  elements.headerGalleryBtn?.addEventListener("click", openGallery);
+
   // Theme drawer
-  elements.themeBrowseBtn?.addEventListener("click", openThemeDrawer);
   elements.drawerClose?.addEventListener("click", closeThemeDrawer);
   elements.themeSearch?.addEventListener("input", (e) => filterThemes(e.target.value));
 

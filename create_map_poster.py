@@ -326,11 +326,12 @@ def create_gradient_fade(ax, color, location='bottom', zorder=10):
     ax.imshow(gradient, extent=[xlim[0], xlim[1], y_bottom, y_top],
               aspect='auto', cmap=custom_cmap, zorder=zorder, origin='lower')
 
-def draw_center_pin(ax, crop_xlim, crop_ylim, pin_type, theme):
+def draw_center_pin(ax, crop_xlim, crop_ylim, pin_type, theme, pin_color=None):
     """
     Draws a center pin/marker icon on the map.
 
     pin_type: 'marker', 'heart', 'star', 'home', 'circle'
+    pin_color: hex color string, or None to use theme text color
     """
     from matplotlib.patches import Circle, Polygon, FancyBboxPatch, PathPatch
     from matplotlib.path import Path
@@ -344,57 +345,68 @@ def draw_center_pin(ax, crop_xlim, crop_ylim, pin_type, theme):
     map_width = crop_xlim[1] - crop_xlim[0]
     scale = map_width * 0.025
 
-    # Get pin color from theme (use text color with slight transparency)
-    pin_color = theme.get('text', '#1A1A1A')
+    # Use provided color or fall back to theme text color
+    if pin_color is None:
+        pin_color = theme.get('text', '#1A1A1A')
 
     if pin_type == 'marker':
-        # Classic map marker (teardrop shape pointing down)
-        marker_height = scale * 2.5
-        marker_width = scale * 1.5
+        # Google Maps style pin - teardrop with hollow circle
+        pin_size = scale * 1.5
 
-        # Create teardrop using parametric approach for smooth curves
-        # Generate points along a teardrop shape
-        t = np.linspace(0, 2 * np.pi, 50)
+        # Teardrop: circle on top, point at bottom
+        n_pts = 50
 
-        # Teardrop parametric equations (pointing down)
-        x = marker_width * 0.5 * np.sin(t)
-        y = marker_height * 0.5 * (np.cos(t) - 0.5 * np.cos(2*t))
+        # Top semicircle (from left to right)
+        t_top = np.linspace(np.pi, 0, n_pts)
+        x_top = pin_size * 0.6 * np.cos(t_top)
+        y_top = pin_size * 0.6 * np.sin(t_top) + pin_size * 0.4
 
-        # Shift y so the point is at bottom and center properly
-        y = y - np.min(y)  # move so bottom is at 0
-        y = y - marker_height * 0.4  # offset downward
+        # Bottom curves tapering to point
+        t_right = np.linspace(0, 1, n_pts//2)
+        x_right = pin_size * 0.6 * (1 - t_right)**1.5
+        y_right = pin_size * 0.4 * (1 - t_right) - pin_size * 0.8 * t_right
+
+        t_left = np.linspace(0, 1, n_pts//2)
+        x_left = -pin_size * 0.6 * t_left**1.5
+        y_left = -pin_size * 0.8 * (1 - t_left) + pin_size * 0.4 * t_left
+
+        # Combine outer shape
+        x_outer = np.concatenate([x_top, x_right, x_left])
+        y_outer = np.concatenate([y_top, y_right, y_left])
+
+        # Draw teardrop shape
+        teardrop = Polygon(np.column_stack([x_outer + center_x, y_outer + center_y]),
+                          closed=True, facecolor=pin_color, edgecolor='none', zorder=15)
+        ax.add_patch(teardrop)
+
+        # Draw hollow circle on top using background color
+        bg_color = theme.get('bg', '#FFFFFF')
+        circle_radius = pin_size * 0.25
+        circle_y = center_y + pin_size * 0.4
+        hollow_circle = Circle((center_x, circle_y), circle_radius,
+                               facecolor=bg_color, edgecolor='none', zorder=16)
+        ax.add_patch(hollow_circle)
+
+    elif pin_type == 'heart':
+        # Heart shape using classic parametric equation
+        heart_scale = scale * 0.08
+
+        # Classic heart parametric: x = 16sin³(t), y = 13cos(t) - 5cos(2t) - 2cos(3t) - cos(4t)
+        t = np.linspace(0, 2 * np.pi, 100)
+        x = heart_scale * 16 * np.sin(t)**3
+        y = heart_scale * (13 * np.cos(t) - 5 * np.cos(2*t) - 2 * np.cos(3*t) - np.cos(4*t))
 
         # Center on map
         x = x + center_x
         y = y + center_y
 
-        teardrop = Polygon(np.column_stack([x, y]), closed=True,
-                          facecolor=pin_color, edgecolor='white',
-                          linewidth=scale * 0.05, zorder=15, alpha=0.9)
-        ax.add_patch(teardrop)
-
-        # Add inner circle (white dot)
-        inner_circle = Circle((center_x, center_y + marker_height * 0.25),
-                              scale * 0.3, facecolor='white', edgecolor='none', zorder=16)
-        ax.add_patch(inner_circle)
-
-    elif pin_type == 'heart':
-        # Heart shape
-        heart_size = scale * 1.2
-        t = np.linspace(0, 2 * np.pi, 100)
-        x = heart_size * 0.8 * (16 * np.sin(t)**3)
-        y = heart_size * 0.8 * (13 * np.cos(t) - 5 * np.cos(2*t) - 2 * np.cos(3*t) - np.cos(4*t))
-        # Scale and center
-        x = x / 16 + center_x
-        y = y / 16 + center_y
-
         heart = Polygon(np.column_stack([x, y]), closed=True,
-                       facecolor=pin_color, edgecolor='white',
-                       linewidth=scale * 0.05, zorder=15, alpha=0.9)
+                       facecolor=pin_color, edgecolor='none',
+                       zorder=15)
         ax.add_patch(heart)
 
     elif pin_type == 'star':
-        # 5-pointed star
+        # 5-pointed star - single solid shape
         star_size = scale * 1.2
         n_points = 5
         outer_angles = np.linspace(np.pi/2, np.pi/2 + 2*np.pi, n_points, endpoint=False)
@@ -412,43 +424,40 @@ def draw_center_pin(ax, crop_xlim, crop_ylim, pin_type, theme):
             points.append([center_x + inner_radius * np.cos(inner_angles[i]),
                           center_y + inner_radius * np.sin(inner_angles[i])])
 
-        star = Polygon(points, closed=True, facecolor=pin_color, edgecolor='white',
-                      linewidth=scale * 0.05, zorder=15, alpha=0.9)
+        star = Polygon(points, closed=True, facecolor=pin_color, edgecolor='none',
+                      zorder=15)
         ax.add_patch(star)
 
     elif pin_type == 'home':
-        # House shape
+        # House shape - single unified polygon (body + roof combined)
         house_size = scale * 1.2
 
-        # House body (rectangle)
         body_width = house_size * 1.2
         body_height = house_size * 0.8
         body_bottom = center_y - house_size * 0.5
-
-        body = Polygon([
-            (center_x - body_width/2, body_bottom),
-            (center_x - body_width/2, body_bottom + body_height),
-            (center_x + body_width/2, body_bottom + body_height),
-            (center_x + body_width/2, body_bottom),
-        ], closed=True, facecolor=pin_color, edgecolor='white',
-           linewidth=scale * 0.05, zorder=15, alpha=0.9)
-        ax.add_patch(body)
-
-        # Roof (triangle)
         roof_height = house_size * 0.7
-        roof = Polygon([
-            (center_x - body_width/2 - house_size * 0.15, body_bottom + body_height),
-            (center_x, body_bottom + body_height + roof_height),
-            (center_x + body_width/2 + house_size * 0.15, body_bottom + body_height),
-        ], closed=True, facecolor=pin_color, edgecolor='white',
-           linewidth=scale * 0.05, zorder=16, alpha=0.9)
-        ax.add_patch(roof)
+        roof_overhang = house_size * 0.15
+
+        # Single polygon: bottom-left -> top-left -> roof-left -> roof-peak -> roof-right -> top-right -> bottom-right
+        house_points = [
+            (center_x - body_width/2, body_bottom),                           # bottom-left
+            (center_x - body_width/2, body_bottom + body_height),             # top-left
+            (center_x - body_width/2 - roof_overhang, body_bottom + body_height),  # roof-left
+            (center_x, body_bottom + body_height + roof_height),              # roof-peak
+            (center_x + body_width/2 + roof_overhang, body_bottom + body_height),  # roof-right
+            (center_x + body_width/2, body_bottom + body_height),             # top-right
+            (center_x + body_width/2, body_bottom),                           # bottom-right
+        ]
+
+        house = Polygon(house_points, closed=True, facecolor=pin_color, edgecolor='none',
+                       zorder=15)
+        ax.add_patch(house)
 
     elif pin_type == 'circle':
-        # Simple filled circle
+        # Simple filled circle - single solid shape
         circle = Circle((center_x, center_y), scale * 0.8,
-                        facecolor=pin_color, edgecolor='white',
-                        linewidth=scale * 0.08, zorder=15, alpha=0.9)
+                        facecolor=pin_color, edgecolor='none',
+                        zorder=15)
         ax.add_patch(circle)
 
 def get_edge_colors_by_type(G):
@@ -1084,7 +1093,7 @@ def get_crop_limits(G: MultiDiGraph, fig: Figure) -> tuple[tuple[float, float], 
     
     return crop_xlim, crop_ylim
 
-def create_poster(city, country, point, dist, output_file, output_format='png', dpi=300, progress=None, use_cache=True, font_family=None, tagline=None, pin=None):
+def create_poster(city, country, point, dist, output_file, output_format='png', dpi=300, progress=None, use_cache=True, font_family=None, tagline=None, pin=None, pin_color=None):
     log(f"\nGenerating map for {city}, {country}...")
     log("")
 
@@ -1306,7 +1315,7 @@ def create_poster(city, country, point, dist, output_file, output_format='png', 
 
     # 5. Center Pin Icon (if selected)
     if pin:
-        draw_center_pin(ax, crop_xlim, crop_ylim, pin, THEME)
+        draw_center_pin(ax, crop_xlim, crop_ylim, pin, THEME, pin_color=pin_color)
 
     spinner.stop("✓ done")
 
@@ -1339,6 +1348,12 @@ def create_poster(city, country, point, dist, output_file, output_format='png', 
             save_kwargs["dpi"] = dpi
 
         plt.savefig(output_file, format=fmt if fmt != "svg-laser" else "svg", **save_kwargs)
+
+        # Generate thumbnail for gallery (low DPI PNG)
+        thumb_file = output_file.rsplit('.', 1)[0] + '_thumb.png'
+        thumb_kwargs = dict(facecolor=THEME["bg"], bbox_inches="tight", pad_inches=0.02, dpi=72)
+        plt.savefig(thumb_file, format='png', **thumb_kwargs)
+
         plt.close()
         spinner.stop("✓ done")
 

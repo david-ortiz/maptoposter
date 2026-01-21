@@ -83,7 +83,7 @@ def push_event(job_id, payload):
         job["queue"].put(event)
 
 
-def run_job(job_id, city, country, theme, distance, dpi, output_format, lat=None, lng=None, font=None, tagline=None, pin=None):
+def run_job(job_id, city, country, theme, distance, dpi, output_format, lat=None, lng=None, font=None, tagline=None, pin=None, pin_color=None):
     def progress(info):
         payload = dict(info)
         payload["status"] = "running"
@@ -117,10 +117,31 @@ def run_job(job_id, city, country, theme, distance, dpi, output_format, lat=None
 
         output_file = poster.generate_output_filename(city, theme, output_format)
         poster.create_poster(
-            city, country, coords, distance, output_file, output_format, dpi=dpi, progress=progress, font_family=font, tagline=tagline, pin=pin
+            city, country, coords, distance, output_file, output_format, dpi=dpi, progress=progress, font_family=font, tagline=tagline, pin=pin, pin_color=pin_color
         )
 
+        # Save config JSON for this poster
+        config = {
+            "city": city,
+            "country": country,
+            "lat": coords[0],
+            "lng": coords[1],
+            "distance": distance,
+            "theme": theme,
+            "font": font,
+            "dpi": dpi,
+            "format": output_format,
+            "tagline": tagline,
+            "pin": pin,
+            "pin_color": pin_color,
+            "created_at": time.strftime("%Y-%m-%d %H:%M:%S"),
+        }
+        config_file = output_file.rsplit('.', 1)[0] + '_config.json'
+        with open(config_file, 'w') as f:
+            json.dump(config, f, indent=2)
+
         output_url = f"/posters/{os.path.basename(output_file)}"
+        thumb_url = f"/posters/{os.path.basename(output_file).rsplit('.', 1)[0]}_thumb.png"
         push_event(
             job_id,
             {
@@ -130,6 +151,7 @@ def run_job(job_id, city, country, theme, distance, dpi, output_format, lat=None
                 "message": "Poster ready",
                 "output": output_file,
                 "output_url": output_url,
+                "thumb_url": thumb_url,
             },
         )
     except Exception as exc:
@@ -168,6 +190,7 @@ def job_worker():
                 font=job.get("font"),
                 tagline=job.get("tagline"),
                 pin=job.get("pin"),
+                pin_color=job.get("pin_color"),
             )
         finally:
             JOB_QUEUE.task_done()
@@ -333,6 +356,9 @@ def api_jobs():
     if pin and pin not in valid_pins:
         return jsonify({"error": f"Pin must be one of: {', '.join(valid_pins)}"}), 400
 
+    # Optional pin color (hex color from theme)
+    pin_color = (payload.get("pin_color") or "").strip() or None
+
     if not city or not country:
         return jsonify({"error": "City and country are required."}), 400
 
@@ -358,6 +384,7 @@ def api_jobs():
         "lng": lng,
         "tagline": tagline,
         "pin": pin,
+        "pin_color": pin_color,
         "created_at": uuid.uuid1().time,
     }
 
@@ -447,7 +474,6 @@ def poster_file(filename):
     return send_from_directory(poster.POSTERS_DIR, filename, as_attachment=False)
 
 
-@app.route("/api/posters")
 def build_posters_payload():
     posters_dir = poster.POSTERS_DIR
     abs_dir = os.path.abspath(posters_dir)
@@ -456,6 +482,9 @@ def build_posters_payload():
     items = []
     valid_extensions = (".png", ".svg", ".pdf")
     for filename in os.listdir(posters_dir):
+        # Skip thumbnails and config files
+        if "_thumb.png" in filename or "_config.json" in filename:
+            continue
         if not filename.lower().endswith(valid_extensions):
             continue
         path = os.path.join(posters_dir, filename)
@@ -463,12 +492,33 @@ def build_posters_payload():
             mtime = os.path.getmtime(path)
         except OSError:
             mtime = 0
+
+        # Check for thumbnail
+        base_name = filename.rsplit('.', 1)[0]
+        thumb_filename = f"{base_name}_thumb.png"
+        thumb_path = os.path.join(posters_dir, thumb_filename)
+        has_thumb = os.path.exists(thumb_path)
+
+        # Check for config
+        config_filename = f"{base_name}_config.json"
+        config_path = os.path.join(posters_dir, config_filename)
+        config_data = None
+        if os.path.exists(config_path):
+            try:
+                with open(config_path, 'r') as f:
+                    config_data = json.load(f)
+            except:
+                pass
+
         items.append(
             {
                 "filename": filename,
                 "url": f"/posters/{filename}",
+                "thumb_url": f"/posters/{thumb_filename}" if has_thumb else None,
+                "config": config_data,
                 "path": os.path.abspath(path),
                 "mtime": mtime,
+                "has_thumb": has_thumb,
             }
         )
     items.sort(key=lambda item: item["mtime"], reverse=True)
@@ -624,6 +674,14 @@ def delete_poster(filename):
         return jsonify({"error": "File not found."}), 404
     try:
         os.remove(path)
+        # Also delete thumbnail and config if they exist
+        base_name = safe_name.rsplit('.', 1)[0]
+        thumb_path = os.path.join(posters_dir, f"{base_name}_thumb.png")
+        config_path = os.path.join(posters_dir, f"{base_name}_config.json")
+        if os.path.exists(thumb_path):
+            os.remove(thumb_path)
+        if os.path.exists(config_path):
+            os.remove(config_path)
     except OSError as exc:
         return jsonify({"error": str(exc)}), 500
     return jsonify({"ok": True})
