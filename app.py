@@ -1,3 +1,4 @@
+import glob
 import json
 import os
 import queue
@@ -450,13 +451,51 @@ def api_collections_create():
     return jsonify(collection)
 
 
-@app.route("/api/collections/<coll_id>", methods=["DELETE"])
-def api_collections_delete(coll_id):
-    """Delete a collection."""
-    collections = load_collections()
-    collections = [c for c in collections if c["id"] != coll_id]
-    save_collections(collections)
-    return jsonify({"ok": True})
+@app.route("/api/collections/<coll_id>", methods=["DELETE", "PATCH"])
+def api_collections_modify(coll_id):
+    """Delete or rename a collection."""
+    if request.method == "DELETE":
+        # Delete collection and unlink all posters
+        collections = load_collections()
+        collections = [c for c in collections if c["id"] != coll_id]
+        save_collections(collections)
+
+        # Unlink all posters from this collection
+        unlinked_count = 0
+        for config_file in glob.glob(os.path.join(poster.POSTERS_DIR, "*_config.json")):
+            try:
+                with open(config_file, "r") as f:
+                    config = json.load(f)
+                if config.get("collection") == coll_id:
+                    config["collection"] = None
+                    with open(config_file, "w") as f:
+                        json.dump(config, f, indent=2)
+                    unlinked_count += 1
+            except Exception:
+                continue
+
+        return jsonify({"ok": True, "unlinked": unlinked_count})
+
+    else:  # PATCH - Rename collection
+        payload = request.get_json(silent=True) or {}
+        new_name = (payload.get("name") or "").strip()
+
+        if not new_name:
+            return jsonify({"error": "Name is required."}), 400
+
+        collections = load_collections()
+        found = False
+        for coll in collections:
+            if coll["id"] == coll_id:
+                coll["name"] = new_name
+                found = True
+                break
+
+        if not found:
+            return jsonify({"error": "Collection not found."}), 404
+
+        save_collections(collections)
+        return jsonify({"ok": True, "id": coll_id, "name": new_name})
 
 
 @app.route("/api/posters/<path:filename>/collection", methods=["PATCH"])

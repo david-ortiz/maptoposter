@@ -16,5 +16,17 @@
     "name": "Cyber",
     "color": "#667eea",
     "created_at": "2026-01-22 10:21:36"
+  },
+  {
+    "id": "etsy---color-option-samples",
+    "name": "Etsy - Color Option Samples",
+    "color": "#667eea",
+    "created_at": "2026-01-22 14:03:45"
+  },
+  {
+    "id": "etsy---bw-samples-with-pins",
+    "name": "Etsy - B/W Samples With Pins",
+    "color": "#667eea",
+    "created_at": "2026-01-22 14:04:06"
   }
 ]

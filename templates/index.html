@@ -507,24 +507,80 @@
               <label>Scale</label>
               <div class="slider-row">
                 <input type="range" id="mockup-scale-slider" min="0.1" max="2" step="0.01" value="1">
-                <span class="slider-value" id="mockup-scale-value">100%</span>
+                <input type="text" class="slider-value-input" id="mockup-scale-value" value="100%" title="Type to edit">
               </div>
             </div>
             <div class="mockup-preview-field">
               <label>Horizontal Offset</label>
               <div class="slider-row">
                 <input type="range" id="mockup-x-slider" min="-500" max="500" step="1" value="0">
-                <span class="slider-value" id="mockup-x-value">0px</span>
+                <input type="text" class="slider-value-input" id="mockup-x-value" value="0px" title="Type to edit">
               </div>
             </div>
             <div class="mockup-preview-field">
               <label>Vertical Offset</label>
               <div class="slider-row">
                 <input type="range" id="mockup-y-slider" min="-500" max="500" step="1" value="0">
-                <span class="slider-value" id="mockup-y-value">0px</span>
+                <input type="text" class="slider-value-input" id="mockup-y-value" value="0px" title="Type to edit">
               </div>
             </div>
             <p class="field-hint">Tip: Click and drag on the preview to reposition the poster.</p>
+
+            <!-- Text Labels Section -->
+            <div class="mockup-labels-section">
+              <label>Text Labels</label>
+              <div class="mockup-labels-row">
+                <select id="mockup-label-font" class="mockup-label-select">
+                  <option value="Arial">Arial</option>
+                </select>
+                <input type="number" id="mockup-label-size" value="24" min="8" max="120" class="mockup-label-size" title="Font size">
+                <label class="mockup-shadow-toggle" title="Drop shadow">
+                  <input type="checkbox" id="mockup-label-shadow" checked>
+                  <span class="shadow-icon">
+                    <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M3 5h18v14H3V5zm2 2v10h14V7H5zm7 8l4-4h-3V8h-2v3H8l4 4z" opacity="0.6"/></svg>
+                  </span>
+                </label>
+              </div>
+              <div class="mockup-color-row">
+                <div class="color-swatches" id="mockup-color-swatches">
+                  <button type="button" class="swatch" data-color="#ffffff" style="background:#ffffff" title="White"></button>
+                  <button type="button" class="swatch" data-color="#000000" style="background:#000000" title="Black"></button>
+                  <button type="button" class="swatch" data-color="#f5f5f5" style="background:#f5f5f5" title="Off-white"></button>
+                  <button type="button" class="swatch" data-color="#333333" style="background:#333333" title="Dark gray"></button>
+                  <button type="button" class="swatch" data-color="#c86432" style="background:#c86432" title="Terracotta"></button>
+                  <button type="button" class="swatch" data-color="#e6c47a" style="background:#e6c47a" title="Gold"></button>
+                  <button type="button" class="swatch" data-color="#4a90a4" style="background:#4a90a4" title="Teal"></button>
+                  <button type="button" class="swatch" data-color="#8b4513" style="background:#8b4513" title="Brown"></button>
+                </div>
+                <input type="color" id="mockup-label-color" value="#ffffff" class="mockup-label-color" title="Custom color">
+              </div>
+              <div class="mockup-labels-buttons">
+                <button type="button" class="label-btn" id="add-theme-label" title="Add theme name">+ Theme</button>
+                <button type="button" class="label-btn" id="add-font-label" title="Add font name">+ Font</button>
+                <button type="button" class="label-btn" id="add-aspect-label" title="Add aspect ratio">+ Aspect</button>
+                <button type="button" class="label-btn" id="add-custom-label" title="Add custom text">+ Custom</button>
+              </div>
+              <div id="mockup-labels-list" class="mockup-labels-list"></div>
+
+              <!-- Guides Section -->
+              <div class="mockup-guides-section">
+                <div class="guides-header">
+                  <span>Guides</span>
+                  <div class="guides-buttons">
+                    <button type="button" class="guide-add-btn" id="add-h-guide" title="Add horizontal guide">H</button>
+                    <button type="button" class="guide-add-btn" id="add-v-guide" title="Add vertical guide">V</button>
+                    <button type="button" class="guide-clear-btn" id="clear-guides" title="Clear all guides">Clear</button>
+                  </div>
+                </div>
+                <div id="mockup-guides-list" class="mockup-guides-list"></div>
+                <label class="snap-toggle">
+                  <input type="checkbox" id="mockup-snap-enabled" checked>
+                  <span>Snap to guides</span>
+                </label>
+              </div>
+              <p class="field-hint">Click labels to select, drag to move. Press Delete to remove.</p>
+            </div>
+
             <div class="mockup-preview-actions">
               <button type="button" class="secondary-btn" id="mockup-preview-reset">Reset</button>
               <button type="button" class="primary-btn" id="mockup-preview-generate">Generate Mockup</button>

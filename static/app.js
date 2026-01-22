@@ -80,6 +80,19 @@ let mockupPreviewDragging = false;
 let mockupPreviewDragStartX = 0;
 let mockupPreviewDragStartY = 0;
 
+// Mockup Labels State
+let mockupLabels = [];  // Array of { id, text, x, y, font, size, color, shadow }
+let mockupLabelIdCounter = 0;
+let mockupSelectedLabel = null;
+let mockupLabelDragging = false;
+let mockupLabelDragStartX = 0;
+let mockupLabelDragStartY = 0;
+
+// Mockup Guides State
+let mockupGuides = [];  // Array of { id, type: 'h'|'v', position: 0-100 }
+let mockupGuideIdCounter = 0;
+const SNAP_THRESHOLD = 8;  // Pixels to snap within
+
 // ===== MAP VARIABLES =====
 let leafletMap = null;
 let radiusCircle = null;
@@ -264,6 +277,25 @@ const elements = {
   mockupYValue: document.getElementById("mockup-y-value"),
   mockupPreviewReset: document.getElementById("mockup-preview-reset"),
   mockupPreviewGenerate: document.getElementById("mockup-preview-generate"),
+
+  // Mockup Labels
+  mockupLabelFont: document.getElementById("mockup-label-font"),
+  mockupLabelSize: document.getElementById("mockup-label-size"),
+  mockupLabelColor: document.getElementById("mockup-label-color"),
+  mockupLabelShadow: document.getElementById("mockup-label-shadow"),
+  mockupColorSwatches: document.getElementById("mockup-color-swatches"),
+  addThemeLabel: document.getElementById("add-theme-label"),
+  addFontLabel: document.getElementById("add-font-label"),
+  addAspectLabel: document.getElementById("add-aspect-label"),
+  addCustomLabel: document.getElementById("add-custom-label"),
+  mockupLabelsList: document.getElementById("mockup-labels-list"),
+
+  // Mockup Guides
+  addHGuide: document.getElementById("add-h-guide"),
+  addVGuide: document.getElementById("add-v-guide"),
+  clearGuides: document.getElementById("clear-guides"),
+  mockupGuidesList: document.getElementById("mockup-guides-list"),
+  mockupSnapEnabled: document.getElementById("mockup-snap-enabled"),
 };
 
 // ===== MAP TILE PROVIDERS =====
@@ -609,6 +641,11 @@ let galleryLoadedForModal = false;
 async function openCollectionModal() {
   elements.collectionModal?.classList.add("open");
 
+  // Hide floating elements that should be behind the modal
+  document.getElementById("bottom-bar-float")?.classList.add("hidden-by-modal");
+  document.getElementById("coords-widget")?.classList.add("hidden-by-modal");
+  document.getElementById("style-widget")?.classList.add("hidden-by-modal");
+
   // Load gallery data if not already loaded
   if (!galleryLoadedForModal || !window.galleryItems?.length) {
     await loadGallery();
@@ -623,6 +660,11 @@ async function openCollectionModal() {
 
 function closeCollectionModal() {
   elements.collectionModal?.classList.remove("open");
+
+  // Show floating elements again
+  document.getElementById("bottom-bar-float")?.classList.remove("hidden-by-modal");
+  document.getElementById("coords-widget")?.classList.remove("hidden-by-modal");
+  document.getElementById("style-widget")?.classList.remove("hidden-by-modal");
 }
 
 function renderCollectionModalTabs() {
@@ -647,13 +689,24 @@ function renderCollectionModalTabs() {
     const count = window.galleryItems?.filter(item => item.config?.collection === coll.id).length || 0;
     const tab = document.createElement("button");
     tab.className = "collection-tab" + (modalCollectionFilter === coll.id ? " active" : "");
-    tab.innerHTML = `${coll.name} <span class="collection-tab-count">${count}</span>
-      <span class="collection-tab-delete" title="Delete collection">×</span>`;
+    tab.innerHTML = `${escapeHtml(coll.name)} <span class="collection-tab-count">${count}</span>
+      <span class="collection-tab-actions">
+        <span class="collection-tab-rename" title="Rename collection">✎</span>
+        <span class="collection-tab-delete" title="Delete collection">×</span>
+      </span>`;
     tab.addEventListener("click", (e) => {
       if (e.target.classList.contains("collection-tab-delete")) {
         e.stopPropagation();
-        if (confirm(`Delete collection "${coll.name}"? Posters won't be deleted.`)) {
+        if (confirm(`Delete collection "${coll.name}"? Posters will be unlinked but not deleted.`)) {
           deleteCollection(coll.id);
+        }
+        return;
+      }
+      if (e.target.classList.contains("collection-tab-rename")) {
+        e.stopPropagation();
+        const newName = prompt(`Rename collection "${coll.name}":`, coll.name);
+        if (newName && newName.trim() && newName.trim() !== coll.name) {
+          renameCollection(coll.id, newName.trim());
         }
         return;
       }
@@ -693,12 +746,21 @@ function renderCollectionModalGrid() {
       collectionOptions += `<option value="${coll.id}" ${selected}>${coll.name}</option>`;
     });
 
+    // Format theme name (remove underscores, capitalize)
+    const themeRaw = item.config?.theme || "";
+    const themeFormatted = themeRaw.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+    const fontName = item.config?.font || "";
+    const aspectRatio = item.config?.aspect_ratio || "2:3";
+    const format = (item.config?.format || "png").toUpperCase();
+    const dpi = item.config?.dpi || 300;
+
     card.innerHTML = `
       <div class="collection-poster-image">
         <img src="${item.thumb_url}?t=${item.mtime}" alt="${item.filename}" loading="lazy">
+        <div class="collection-poster-specs">${escapeHtml(aspectRatio)} · ${format} · ${dpi}</div>
         <div class="collection-poster-info">
-          <span class="collection-poster-city">${item.config?.city || item.filename.split('_')[0]}</span>
-          ${item.config?.theme ? `<span class="collection-poster-theme">${item.config.theme}</span>` : ''}
+          <span class="collection-poster-city">${escapeHtml(item.config?.city || item.filename.split('_')[0])}</span>
+          <span class="collection-poster-meta">${themeFormatted ? escapeHtml(themeFormatted) : ''}${themeFormatted && fontName ? ' · ' : ''}${fontName ? escapeHtml(fontName) : ''}</span>
         </div>
       </div>
       <div class="collection-poster-actions">
@@ -778,6 +840,7 @@ async function deleteCollection(collId) {
   try {
     const response = await fetch(`/api/collections/${collId}`, { method: "DELETE" });
     if (response.ok) {
+      const result = await response.json();
       collectionList = collectionList.filter(c => c.id !== collId);
       if (activeCollectionFilter === collId) {
         activeCollectionFilter = null;
@@ -785,12 +848,38 @@ async function deleteCollection(collId) {
       if (modalCollectionFilter === collId) {
         modalCollectionFilter = null;
       }
+      // Reload gallery to reflect unlinked posters
+      await loadGallery(true);
       renderCollectionSelector();
       renderCollectionModalTabs();
       renderCollectionModalGrid();
     }
   } catch (err) {
     console.error("Failed to delete collection:", err);
+  }
+}
+
+async function renameCollection(collId, newName) {
+  try {
+    const response = await fetch(`/api/collections/${collId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: newName }),
+    });
+    if (response.ok) {
+      // Update local collection list
+      const coll = collectionList.find(c => c.id === collId);
+      if (coll) {
+        coll.name = newName;
+      }
+      renderCollectionSelector();
+      renderCollectionModalTabs();
+    } else {
+      const err = await response.json();
+      alert(err.error || "Failed to rename collection");
+    }
+  } catch (err) {
+    console.error("Failed to rename collection:", err);
   }
 }
 
@@ -1675,10 +1764,12 @@ async function loadFonts() {
     loadFontFaces(fonts);
     renderFontSelector(fonts);
     initFontPicker();
+    populateMockupLabelFonts();
   } catch (err) {
     console.error("Failed to load fonts:", err);
     renderFontSelector([]);
     initFontPicker();
+    populateMockupLabelFonts();
   }
 }
 
@@ -2691,9 +2782,12 @@ function applyGalleryPayload(payload, force = false) {
   }
 
   lastGallerySignature = signature;
-  galleryItems = items;
-  window.galleryItems = items; // Make accessible for recent panel
-  renderGallery(items);
+
+  // Filter to only items with thumbnails (excludes SVG, PDF which don't have thumbs)
+  const itemsWithThumbs = items.filter(item => item.has_thumb && item.thumb_url);
+  galleryItems = itemsWithThumbs;
+  window.galleryItems = itemsWithThumbs; // Make accessible for recent panel and modal
+  renderGallery(itemsWithThumbs);
 
   // Update recent panel if open
   if (elements.recentPanel?.getAttribute("aria-hidden") === "false") {
@@ -2832,11 +2926,10 @@ function loadConfigFromGallery(config) {
 }
 
 function renderGallery(items) {
-  // Filter to only show items with thumbnails
-  const itemsWithThumbs = items.filter(item => item.has_thumb && item.thumb_url);
+  // Items are already filtered to those with thumbnails by applyGalleryPayload
 
-  // Store filtered items for modal and lightbox
-  window.galleryItems = itemsWithThumbs;
+  // Reset lightbox strip so it rebuilds with filtered items
+  lightboxBuiltCount = 0;
 
   // If modal is open, refresh it
   if (elements.collectionModal?.classList.contains("open")) {
@@ -2882,7 +2975,17 @@ function openLightbox(index) {
   const src = `${item.thumb_url}?t=${item.mtime}`;
 
   elements.lightboxImage.src = src;
-  elements.lightboxCaption.textContent = item.config?.city || item.filename;
+
+  // Build caption with details like quick load panel
+  const city = item.config?.city || item.filename;
+  const themeRaw = item.config?.theme || "";
+  const theme = themeRaw ? themeRaw.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()) : "";
+  const aspect = item.config?.aspect_ratio || "2:3";
+  const dpi = item.config?.dpi || 300;
+  const font = item.config?.font || "";
+
+  const details = [theme, aspect, `${dpi} DPI`, font].filter(Boolean).join(" · ");
+  elements.lightboxCaption.innerHTML = `<strong>${escapeHtml(city)}</strong>${details ? `<span class="lightbox-details">${escapeHtml(details)}</span>` : ""}`;
 
   // Set download link to full-size image
   if (elements.lightboxDownload) {
@@ -3326,7 +3429,7 @@ function initEventListeners() {
 
   // Lightbox
   elements.lightbox?.addEventListener("click", (e) => {
-    if (e.target.hasAttribute("data-lightbox-close")) {
+    if (e.target.hasAttribute("data-lightbox-close") || e.target.closest("[data-lightbox-close]")) {
       closeLightbox();
     }
     if (e.target.hasAttribute("data-lightbox-prev") || e.target.closest("[data-lightbox-prev]")) {
@@ -3382,18 +3485,61 @@ function initEventListeners() {
   elements.mockupPreviewCanvas?.addEventListener("mouseleave", handlePreviewCanvasMouseUp);
   elements.mockupCreatorCanvas?.addEventListener("mouseleave", handleMockupCanvasMouseUp);
 
+  // Mockup label buttons
+  elements.addThemeLabel?.addEventListener("click", () => {
+    const theme = mockupPreviewPoster?.config?.theme || "Theme";
+    const formattedTheme = theme.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+    addMockupLabel(formattedTheme, "theme");
+  });
+  elements.addFontLabel?.addEventListener("click", () => {
+    const font = mockupPreviewPoster?.config?.font || "Font";
+    addMockupLabel(font, "font");
+  });
+  elements.addAspectLabel?.addEventListener("click", () => {
+    const aspect = mockupPreviewPoster?.config?.aspect_ratio || "2:3";
+    addMockupLabel(aspect, "aspect");
+  });
+  elements.addCustomLabel?.addEventListener("click", () => {
+    const text = prompt("Enter custom label text:");
+    if (text && text.trim()) {
+      addMockupLabel(text.trim(), "custom");
+    }
+  });
+
+  // Label keyboard delete
+  document.addEventListener("keydown", handleLabelKeyDown);
+
+  // Color swatches
+  elements.mockupColorSwatches?.addEventListener("click", (e) => {
+    const swatch = e.target.closest(".swatch");
+    if (swatch && swatch.dataset.color) {
+      elements.mockupLabelColor.value = swatch.dataset.color;
+      // Highlight selected swatch
+      elements.mockupColorSwatches.querySelectorAll(".swatch").forEach(s => s.classList.remove("selected"));
+      swatch.classList.add("selected");
+    }
+  });
+
+  // Guides buttons
+  elements.addHGuide?.addEventListener("click", () => addMockupGuide("h"));
+  elements.addVGuide?.addEventListener("click", () => addMockupGuide("v"));
+  elements.clearGuides?.addEventListener("click", clearMockupGuides);
+
+  // Setup slider keyboard input
+  setupSliderKeyboardInput();
+
   // Keyboard navigation
   document.addEventListener("keydown", (e) => {
-    // Escape closes overlays
+    // Escape closes overlays (check lightbox first since it opens on top of gallery modal)
     if (e.key === "Escape") {
-      if (elements.mockupCreator?.classList.contains("open")) {
+      if (elements.lightbox?.classList.contains("open")) {
+        closeLightbox();
+      } else if (elements.mockupCreator?.classList.contains("open")) {
         closeMockupCreator();
       } else if (elements.mockupModal?.classList.contains("open")) {
         closeMockupModal();
       } else if (elements.collectionModal?.classList.contains("open")) {
         closeCollectionModal();
-      } else if (elements.lightbox?.classList.contains("open")) {
-        closeLightbox();
       } else if (elements.themeDrawer?.classList.contains("open")) {
         closeThemeDrawer();
       } else if (elements.styleDropdown?.classList.contains("open")) {
@@ -3553,16 +3699,20 @@ async function openMockupPreview(mockup) {
   // Reset sliders
   if (elements.mockupScaleSlider) {
     elements.mockupScaleSlider.value = 1;
-    elements.mockupScaleValue.textContent = "100%";
+    elements.mockupScaleValue.value = "100%";
   }
   if (elements.mockupXSlider) {
     elements.mockupXSlider.value = 0;
-    elements.mockupXValue.textContent = "0px";
+    elements.mockupXValue.value = "0px";
   }
   if (elements.mockupYSlider) {
     elements.mockupYSlider.value = 0;
-    elements.mockupYValue.textContent = "0px";
+    elements.mockupYValue.value = "0px";
   }
+
+  // Clear labels and guides
+  clearMockupLabels();
+  clearMockupGuides();
 
   // Close mockup modal and show preview
   closeMockupModal();
@@ -3644,16 +3794,20 @@ function resetMockupPreview() {
 
   if (elements.mockupScaleSlider) {
     elements.mockupScaleSlider.value = 1;
-    elements.mockupScaleValue.textContent = "100%";
+    elements.mockupScaleValue.value = "100%";
   }
   if (elements.mockupXSlider) {
     elements.mockupXSlider.value = 0;
-    elements.mockupXValue.textContent = "0px";
+    elements.mockupXValue.value = "0px";
   }
   if (elements.mockupYSlider) {
     elements.mockupYSlider.value = 0;
-    elements.mockupYValue.textContent = "0px";
+    elements.mockupYValue.value = "0px";
   }
+
+  // Clear labels and guides on reset
+  clearMockupLabels();
+  clearMockupGuides();
 
   renderMockupPreview();
 }
@@ -3709,12 +3863,70 @@ function renderMockupPreview() {
 
   // Draw poster on top of template
   ctx.drawImage(poster, finalX, finalY, scaledWidth, scaledHeight);
+
+  // Draw guides
+  mockupGuides.forEach(guide => {
+    ctx.strokeStyle = "rgba(0, 150, 255, 0.6)";
+    ctx.lineWidth = 1;
+    ctx.setLineDash([6, 4]);
+
+    if (guide.type === "h") {
+      const y = (guide.position / 100) * canvas.height;
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(canvas.width, y);
+      ctx.stroke();
+    } else {
+      const x = (guide.position / 100) * canvas.width;
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, canvas.height);
+      ctx.stroke();
+    }
+    ctx.setLineDash([]);
+  });
+
+  // Draw labels
+  mockupLabels.forEach(label => {
+    const x = (label.x / 100) * canvas.width;
+    const y = (label.y / 100) * canvas.height;
+
+    ctx.font = `${label.size}px "${label.font}"`;
+    ctx.fillStyle = label.color;
+    ctx.textBaseline = "alphabetic";
+
+    // Draw text shadow if enabled for this label
+    if (label.shadow) {
+      ctx.shadowColor = "rgba(0, 0, 0, 0.7)";
+      ctx.shadowBlur = 4;
+      ctx.shadowOffsetX = 2;
+      ctx.shadowOffsetY = 2;
+    }
+
+    ctx.fillText(label.text, x, y);
+
+    // Reset shadow
+    ctx.shadowColor = "transparent";
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
+
+    // Draw selection indicator
+    if (mockupSelectedLabel === label.id) {
+      const metrics = ctx.measureText(label.text);
+      ctx.strokeStyle = "#00aaff";
+      ctx.lineWidth = 2;
+      ctx.setLineDash([4, 4]);
+      ctx.strokeRect(x - 2, y - label.size, metrics.width + 4, label.size + 4);
+      ctx.setLineDash([]);
+    }
+  });
 }
 
 function handleMockupPreviewScale(e) {
   mockupPreviewScale = parseFloat(e.target.value);
   if (elements.mockupScaleValue) {
-    elements.mockupScaleValue.textContent = Math.round(mockupPreviewScale * 100) + "%";
+    elements.mockupScaleValue.value = Math.round(mockupPreviewScale * 100) + "%";
   }
   renderMockupPreview();
 }
@@ -3722,7 +3934,7 @@ function handleMockupPreviewScale(e) {
 function handleMockupPreviewOffsetX(e) {
   mockupPreviewOffsetX = parseInt(e.target.value, 10);
   if (elements.mockupXValue) {
-    elements.mockupXValue.textContent = mockupPreviewOffsetX + "px";
+    elements.mockupXValue.value = mockupPreviewOffsetX + "px";
   }
   renderMockupPreview();
 }
@@ -3730,13 +3942,19 @@ function handleMockupPreviewOffsetX(e) {
 function handleMockupPreviewOffsetY(e) {
   mockupPreviewOffsetY = parseInt(e.target.value, 10);
   if (elements.mockupYValue) {
-    elements.mockupYValue.textContent = mockupPreviewOffsetY + "px";
+    elements.mockupYValue.value = mockupPreviewOffsetY + "px";
   }
   renderMockupPreview();
 }
 
-// Drag to reposition poster
+// Drag to reposition poster or labels
 function handlePreviewCanvasMouseDown(e) {
+  // First check if clicking on a label
+  if (handleLabelCanvasMouseDown(e)) {
+    return;  // Label handling took over
+  }
+
+  // Otherwise, handle poster dragging
   mockupPreviewDragging = true;
   mockupPreviewDragStartX = e.clientX;
   mockupPreviewDragStartY = e.clientY;
@@ -3744,6 +3962,11 @@ function handlePreviewCanvasMouseDown(e) {
 }
 
 function handlePreviewCanvasMouseMove(e) {
+  // First check label dragging
+  if (handleLabelCanvasMouseMove(e)) {
+    return;
+  }
+
   if (!mockupPreviewDragging) return;
 
   const displayScale = parseFloat(elements.mockupPreviewCanvas?.dataset.displayScale) || 1;
@@ -3771,8 +3994,338 @@ function handlePreviewCanvasMouseMove(e) {
 
 function handlePreviewCanvasMouseUp() {
   mockupPreviewDragging = false;
+  mockupLabelDragging = false;
   if (elements.mockupPreviewCanvas) {
     elements.mockupPreviewCanvas.style.cursor = "grab";
+  }
+}
+
+// ===== MOCKUP LABELS =====
+
+function addMockupLabel(text, type = "custom") {
+  const font = elements.mockupLabelFont?.value || "Arial";
+  const size = parseInt(elements.mockupLabelSize?.value, 10) || 24;
+  const color = elements.mockupLabelColor?.value || "#ffffff";
+  const shadow = elements.mockupLabelShadow?.checked !== false;
+
+  const label = {
+    id: ++mockupLabelIdCounter,
+    text,
+    type,
+    x: 50,  // Default position (percentage of canvas)
+    y: 50,
+    font,
+    size,
+    color,
+    shadow,
+  };
+
+  mockupLabels.push(label);
+  renderMockupLabelsListUI();
+  renderMockupPreview();
+  selectMockupLabel(label.id);
+}
+
+function removeMockupLabel(labelId) {
+  mockupLabels = mockupLabels.filter(l => l.id !== labelId);
+  if (mockupSelectedLabel === labelId) {
+    mockupSelectedLabel = null;
+  }
+  renderMockupLabelsListUI();
+  renderMockupPreview();
+}
+
+function selectMockupLabel(labelId) {
+  mockupSelectedLabel = labelId;
+  renderMockupLabelsListUI();
+  renderMockupPreview();
+}
+
+function clearMockupLabels() {
+  mockupLabels = [];
+  mockupSelectedLabel = null;
+  mockupLabelIdCounter = 0;
+  renderMockupLabelsListUI();
+}
+
+function renderMockupLabelsListUI() {
+  const list = elements.mockupLabelsList;
+  if (!list) return;
+
+  list.innerHTML = "";
+
+  mockupLabels.forEach(label => {
+    const item = document.createElement("div");
+    item.className = "mockup-label-item" + (mockupSelectedLabel === label.id ? " selected" : "");
+    item.innerHTML = `
+      <span class="label-text" style="color: ${label.color}">${escapeHtml(label.text)}</span>
+      <button type="button" class="label-remove" title="Remove">×</button>
+    `;
+    item.addEventListener("click", (e) => {
+      if (!e.target.classList.contains("label-remove")) {
+        selectMockupLabel(label.id);
+      }
+    });
+    item.querySelector(".label-remove").addEventListener("click", (e) => {
+      e.stopPropagation();
+      removeMockupLabel(label.id);
+    });
+    list.appendChild(item);
+  });
+}
+
+function getLabelAtPosition(canvasX, canvasY) {
+  const canvas = elements.mockupPreviewCanvas;
+  if (!canvas) return null;
+
+  const ctx = canvas.getContext("2d");
+
+  // Check labels in reverse order (top-most first)
+  for (let i = mockupLabels.length - 1; i >= 0; i--) {
+    const label = mockupLabels[i];
+    const x = (label.x / 100) * canvas.width;
+    const y = (label.y / 100) * canvas.height;
+
+    ctx.font = `${label.size}px "${label.font}"`;
+    const metrics = ctx.measureText(label.text);
+    const width = metrics.width;
+    const height = label.size;
+
+    // Check if click is within label bounds
+    if (canvasX >= x && canvasX <= x + width &&
+        canvasY >= y - height && canvasY <= y) {
+      return label;
+    }
+  }
+  return null;
+}
+
+function handleLabelCanvasMouseDown(e) {
+  const canvas = elements.mockupPreviewCanvas;
+  if (!canvas) return;
+
+  const rect = canvas.getBoundingClientRect();
+  const canvasX = e.clientX - rect.left;
+  const canvasY = e.clientY - rect.top;
+
+  const label = getLabelAtPosition(canvasX, canvasY);
+
+  if (label) {
+    e.stopPropagation();
+    selectMockupLabel(label.id);
+    mockupLabelDragging = true;
+    mockupLabelDragStartX = e.clientX;
+    mockupLabelDragStartY = e.clientY;
+    canvas.style.cursor = "move";
+    return true;  // Indicate we handled the event
+  }
+  return false;  // Let poster dragging handle it
+}
+
+function handleLabelCanvasMouseMove(e) {
+  if (!mockupLabelDragging || !mockupSelectedLabel) return false;
+
+  const canvas = elements.mockupPreviewCanvas;
+  if (!canvas) return false;
+
+  const dx = e.clientX - mockupLabelDragStartX;
+  const dy = e.clientY - mockupLabelDragStartY;
+
+  const label = mockupLabels.find(l => l.id === mockupSelectedLabel);
+  if (label) {
+    // Convert pixel delta to percentage
+    label.x += (dx / canvas.width) * 100;
+    label.y += (dy / canvas.height) * 100;
+
+    // Clamp to canvas bounds
+    label.x = Math.max(0, Math.min(100, label.x));
+    label.y = Math.max(0, Math.min(100, label.y));
+
+    // Snap to guides if enabled
+    if (elements.mockupSnapEnabled?.checked) {
+      const snapThresholdPercent = (SNAP_THRESHOLD / canvas.width) * 100;
+
+      mockupGuides.forEach(guide => {
+        if (guide.type === "v") {
+          // Snap left edge of label to vertical guide
+          if (Math.abs(label.x - guide.position) < snapThresholdPercent) {
+            label.x = guide.position;
+          }
+        } else {
+          // Snap baseline of label to horizontal guide
+          if (Math.abs(label.y - guide.position) < snapThresholdPercent) {
+            label.y = guide.position;
+          }
+        }
+      });
+    }
+
+    mockupLabelDragStartX = e.clientX;
+    mockupLabelDragStartY = e.clientY;
+
+    renderMockupPreview();
+  }
+  return true;
+}
+
+function handleLabelKeyDown(e) {
+  if (e.key === "Delete" || e.key === "Backspace") {
+    if (mockupSelectedLabel && elements.mockupPreview?.classList.contains("open")) {
+      // Don't delete if user is typing in an input
+      if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
+      e.preventDefault();
+      removeMockupLabel(mockupSelectedLabel);
+    }
+  }
+}
+
+// ===== MOCKUP GUIDES =====
+
+function addMockupGuide(type) {
+  const guide = {
+    id: ++mockupGuideIdCounter,
+    type,  // 'h' or 'v'
+    position: 50,  // Default to center (percentage)
+  };
+  mockupGuides.push(guide);
+  renderMockupGuidesListUI();
+  renderMockupPreview();
+}
+
+function removeMockupGuide(guideId) {
+  mockupGuides = mockupGuides.filter(g => g.id !== guideId);
+  renderMockupGuidesListUI();
+  renderMockupPreview();
+}
+
+function clearMockupGuides() {
+  mockupGuides = [];
+  mockupGuideIdCounter = 0;
+  renderMockupGuidesListUI();
+  renderMockupPreview();
+}
+
+function updateGuidePosition(guideId, position) {
+  const guide = mockupGuides.find(g => g.id === guideId);
+  if (guide) {
+    guide.position = Math.max(0, Math.min(100, position));
+    renderMockupPreview();
+  }
+}
+
+function renderMockupGuidesListUI() {
+  const list = elements.mockupGuidesList;
+  if (!list) return;
+
+  list.innerHTML = "";
+
+  mockupGuides.forEach(guide => {
+    const item = document.createElement("div");
+    item.className = "mockup-guide-item";
+    item.innerHTML = `
+      <span class="guide-type">${guide.type === "h" ? "H" : "V"}</span>
+      <input type="number" class="guide-position" value="${Math.round(guide.position)}" min="0" max="100" title="Position %">
+      <span class="guide-unit">%</span>
+      <button type="button" class="guide-remove" title="Remove">×</button>
+    `;
+
+    const posInput = item.querySelector(".guide-position");
+    posInput.addEventListener("change", (e) => {
+      updateGuidePosition(guide.id, parseFloat(e.target.value) || 0);
+    });
+
+    item.querySelector(".guide-remove").addEventListener("click", () => {
+      removeMockupGuide(guide.id);
+    });
+
+    list.appendChild(item);
+  });
+}
+
+// ===== MOCKUP LABEL FONT SELECTOR =====
+
+function populateMockupLabelFonts() {
+  const select = elements.mockupLabelFont;
+  if (!select || fontList.length === 0) return;
+
+  select.innerHTML = "";
+
+  // Add system fonts first
+  const systemFonts = ["Arial", "Helvetica", "Georgia", "Times New Roman", "Verdana"];
+  const optgroupSystem = document.createElement("optgroup");
+  optgroupSystem.label = "System Fonts";
+  systemFonts.forEach(f => {
+    const opt = document.createElement("option");
+    opt.value = f;
+    opt.textContent = f;
+    optgroupSystem.appendChild(opt);
+  });
+  select.appendChild(optgroupSystem);
+
+  // Add app fonts
+  const optgroupApp = document.createElement("optgroup");
+  optgroupApp.label = "Poster Fonts";
+  fontList.forEach(f => {
+    const opt = document.createElement("option");
+    opt.value = f;
+    opt.textContent = f;
+    optgroupApp.appendChild(opt);
+  });
+  select.appendChild(optgroupApp);
+}
+
+// ===== SLIDER KEYBOARD INPUT HANDLERS =====
+
+function setupSliderKeyboardInput() {
+  // Scale slider
+  const scaleInput = elements.mockupScaleValue;
+  if (scaleInput) {
+    scaleInput.addEventListener("change", (e) => {
+      let val = e.target.value.replace("%", "").trim();
+      val = parseFloat(val);
+      if (!isNaN(val)) {
+        val = Math.max(10, Math.min(200, val)) / 100;
+        mockupPreviewScale = val;
+        elements.mockupScaleSlider.value = val;
+        e.target.value = Math.round(val * 100) + "%";
+        renderMockupPreview();
+      }
+    });
+    scaleInput.addEventListener("focus", (e) => e.target.select());
+  }
+
+  // X offset slider
+  const xInput = elements.mockupXValue;
+  if (xInput) {
+    xInput.addEventListener("change", (e) => {
+      let val = e.target.value.replace("px", "").trim();
+      val = parseInt(val, 10);
+      if (!isNaN(val)) {
+        val = Math.max(-500, Math.min(500, val));
+        mockupPreviewOffsetX = val;
+        elements.mockupXSlider.value = val;
+        e.target.value = val + "px";
+        renderMockupPreview();
+      }
+    });
+    xInput.addEventListener("focus", (e) => e.target.select());
+  }
+
+  // Y offset slider
+  const yInput = elements.mockupYValue;
+  if (yInput) {
+    yInput.addEventListener("change", (e) => {
+      let val = e.target.value.replace("px", "").trim();
+      val = parseInt(val, 10);
+      if (!isNaN(val)) {
+        val = Math.max(-500, Math.min(500, val));
+        mockupPreviewOffsetY = val;
+        elements.mockupYSlider.value = val;
+        e.target.value = val + "px";
+        renderMockupPreview();
+      }
+    });
+    yInput.addEventListener("focus", (e) => e.target.select());
   }
 }
 
