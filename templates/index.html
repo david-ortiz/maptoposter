@@ -37,7 +37,7 @@
                 <path fill="currentColor" d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
               </svg>
             </button>
-            <button id="header-gallery-btn" class="header-icon-btn" type="button" title="Theme Gallery">
+            <button id="header-gallery-btn" class="header-icon-btn" type="button" title="Your Posters">
               <svg viewBox="0 0 24 24" width="18" height="18">
                 <path fill="currentColor" d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"/>
               </svg>
@@ -227,7 +227,14 @@
         <section class="widget-section theme-section">
           <div class="theme-header">
             <label class="section-label">Theme</label>
-            <button id="browse-themes-btn" class="browse-link" type="button">Browse All</button>
+            <div class="theme-header-actions">
+              <button id="variation-mode-btn" class="variation-toggle" type="button" title="Multi-select themes for variations">
+                <svg viewBox="0 0 24 24" width="14" height="14">
+                  <path fill="currentColor" d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"/>
+                </svg>
+              </button>
+              <button id="browse-themes-btn" class="browse-link" type="button">Browse All</button>
+            </div>
           </div>
           <div id="theme-category-tabs" class="theme-category-tabs"></div>
           <div id="theme-carousel-wrap" class="theme-carousel-wrap">
@@ -240,16 +247,40 @@
         <!-- Collection -->
         <section class="widget-section inline-row">
           <label class="inline-label">Collection</label>
-          <select id="collection-select" class="inline-select">
-            <option value="">None</option>
-          </select>
+          <div class="collection-select-wrap">
+            <select id="collection-select" class="inline-select">
+              <option value="">None</option>
+            </select>
+            <button id="add-collection-btn" class="icon-btn" type="button" title="Create new collection">
+              <svg viewBox="0 0 24 24" width="16" height="16">
+                <path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+              </svg>
+            </button>
+          </div>
         </section>
 
         <!-- Generate Button -->
         <section class="widget-section generate-section">
-          <button id="generate-btn" class="primary-btn" type="button" disabled>
-            Select location to generate
-          </button>
+          <div class="generate-buttons">
+            <button id="generate-btn" class="primary-btn" type="button" disabled>
+              Select location to generate
+            </button>
+            <button id="add-queue-btn" class="secondary-btn queue-btn" type="button" disabled title="Add to queue">
+              <svg viewBox="0 0 24 24" width="16" height="16">
+                <path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+              </svg>
+            </button>
+          </div>
+        </section>
+
+        <!-- Queue Panel -->
+        <section id="queue-section" class="widget-section queue-section" style="display: none;">
+          <div class="queue-header">
+            <span class="queue-title">Queue</span>
+            <span id="queue-count" class="queue-count">0 jobs</span>
+            <button id="clear-queue-btn" class="ghost-btn queue-clear-btn" type="button" title="Clear queue">Clear</button>
+          </div>
+          <div id="queue-list" class="queue-list"></div>
         </section>
 
       </div>
@@ -374,30 +405,35 @@
       <div id="theme-grid-full" class="theme-grid-expanded"></div>
     </div>
 
-    <!-- GALLERY SIDEBAR -->
-    <div id="gallery-overlay" class="gallery-overlay" aria-hidden="true">
-      <div class="gallery-backdrop" data-close-gallery></div>
-      <div class="gallery-sidebar">
-        <div class="gallery-header">
-          <h2>Your Posters</h2>
-          <button id="gallery-close" class="drawer-close" type="button" aria-label="Close">
-            <svg viewBox="0 0 24 24" width="24" height="24">
-              <path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+    <!-- GALLERY / COLLECTIONS MODAL -->
+    <div class="collection-modal" id="collection-modal" aria-hidden="true">
+      <div class="collection-modal-backdrop"></div>
+      <div class="collection-modal-panel">
+        <div class="collection-modal-header">
+          <h3>Your Posters</h3>
+          <button id="add-collection-modal-btn" class="ghost-btn" type="button" title="Create new collection">
+            <svg viewBox="0 0 24 24" width="16" height="16">
+              <path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
             </svg>
+            New Collection
           </button>
-        </div>
-        <div class="gallery-actions">
-          <button id="open-folder-btn" class="ghost-btn" type="button">
+          <button id="open-folder-btn" class="ghost-btn" type="button" title="Open posters folder">
             <svg viewBox="0 0 24 24" width="16" height="16">
               <path fill="currentColor" d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/>
             </svg>
             Open Folder
           </button>
-          <span id="gallery-path" class="gallery-path"></span>
+          <button class="collection-modal-close" id="collection-modal-close" type="button">
+            <svg viewBox="0 0 24 24" width="24" height="24">
+              <path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+            </svg>
+          </button>
         </div>
-        <div id="collection-filter-tabs" class="collection-filter-tabs"></div>
-        <div id="gallery-grid" class="gallery-grid">
-          <div class="gallery-placeholder">No posters yet. Generate one!</div>
+        <div class="collection-modal-tabs" id="collection-modal-tabs">
+          <!-- Collection tabs will be rendered here -->
+        </div>
+        <div class="collection-modal-grid" id="collection-modal-grid">
+          <!-- Poster images will be rendered here -->
         </div>
       </div>
     </div>
@@ -426,6 +462,125 @@
         </button>
         <div class="lightbox-caption" id="lightbox-caption"></div>
         <div class="lightbox-strip" id="lightbox-strip"></div>
+      </div>
+    </div>
+
+    <!-- MOCKUP MODAL -->
+    <div class="mockup-modal" id="mockup-modal" aria-hidden="true">
+      <div class="mockup-modal-backdrop"></div>
+      <div class="mockup-modal-panel" role="dialog" aria-modal="true">
+        <div class="mockup-modal-header">
+          <h3>Choose Mockup Template</h3>
+          <button class="mockup-create-btn" id="mockup-create-btn" type="button" title="Create new template">
+            <svg viewBox="0 0 24 24" width="18" height="18">
+              <path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+            </svg>
+            New Template
+          </button>
+          <button class="mockup-modal-close" id="mockup-close" type="button">
+            <svg viewBox="0 0 24 24" width="24" height="24">
+              <path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+            </svg>
+          </button>
+        </div>
+        <div class="mockup-grid" id="mockup-grid">
+          <div class="mockup-placeholder">Loading mockup templates...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MOCKUP PREVIEW -->
+    <div class="mockup-preview" id="mockup-preview" aria-hidden="true">
+      <div class="mockup-preview-backdrop"></div>
+      <div class="mockup-preview-panel" role="dialog" aria-modal="true">
+        <div class="mockup-preview-header">
+          <h3>Adjust Mockup</h3>
+          <button class="mockup-preview-close" id="mockup-preview-close" type="button">
+            <svg viewBox="0 0 24 24" width="24" height="24">
+              <path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+            </svg>
+          </button>
+        </div>
+        <div class="mockup-preview-body">
+          <div class="mockup-preview-canvas-wrap">
+            <canvas id="mockup-preview-canvas"></canvas>
+          </div>
+          <div class="mockup-preview-sidebar">
+            <div class="mockup-preview-field">
+              <label>Scale</label>
+              <div class="slider-row">
+                <input type="range" id="mockup-scale-slider" min="0.1" max="2" step="0.01" value="1">
+                <span class="slider-value" id="mockup-scale-value">100%</span>
+              </div>
+            </div>
+            <div class="mockup-preview-field">
+              <label>Horizontal Offset</label>
+              <div class="slider-row">
+                <input type="range" id="mockup-x-slider" min="-500" max="500" step="1" value="0">
+                <span class="slider-value" id="mockup-x-value">0px</span>
+              </div>
+            </div>
+            <div class="mockup-preview-field">
+              <label>Vertical Offset</label>
+              <div class="slider-row">
+                <input type="range" id="mockup-y-slider" min="-500" max="500" step="1" value="0">
+                <span class="slider-value" id="mockup-y-value">0px</span>
+              </div>
+            </div>
+            <p class="field-hint">Tip: Click and drag on the preview to reposition the poster.</p>
+            <div class="mockup-preview-actions">
+              <button type="button" class="secondary-btn" id="mockup-preview-reset">Reset</button>
+              <button type="button" class="primary-btn" id="mockup-preview-generate">Generate Mockup</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MOCKUP TEMPLATE CREATOR -->
+    <div class="mockup-creator" id="mockup-creator" aria-hidden="true">
+      <div class="mockup-creator-backdrop"></div>
+      <div class="mockup-creator-panel" role="dialog" aria-modal="true">
+        <div class="mockup-creator-header">
+          <h3>Create Mockup Template</h3>
+          <button class="mockup-creator-close" id="mockup-creator-close" type="button">
+            <svg viewBox="0 0 24 24" width="24" height="24">
+              <path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+            </svg>
+          </button>
+        </div>
+        <div class="mockup-creator-body">
+          <div class="mockup-creator-sidebar">
+            <div class="mockup-creator-field">
+              <label>Template Name</label>
+              <input type="text" id="mockup-template-name" placeholder="e.g., White Frame on Wall">
+            </div>
+            <div class="mockup-creator-field">
+              <label>Upload Image</label>
+              <input type="file" id="mockup-template-file" accept="image/png,image/jpeg">
+              <p class="field-hint">Upload your mockup image (PNG or JPG)</p>
+            </div>
+            <div class="mockup-creator-field">
+              <label>Poster Area</label>
+              <p class="field-hint">Click and drag on the image to draw the rectangle where posters will be placed.</p>
+              <div class="mockup-rect-info" id="mockup-rect-info">
+                <span>X: <b id="rect-x">0</b></span>
+                <span>Y: <b id="rect-y">0</b></span>
+                <span>W: <b id="rect-w">0</b></span>
+                <span>H: <b id="rect-h">0</b></span>
+              </div>
+            </div>
+            <button type="button" class="primary-btn" id="mockup-save-btn" disabled>
+              Save Template
+            </button>
+          </div>
+          <div class="mockup-creator-canvas-wrap">
+            <div class="mockup-creator-placeholder" id="mockup-canvas-placeholder">
+              Upload an image to get started
+            </div>
+            <canvas id="mockup-creator-canvas" style="display: none;"></canvas>
+          </div>
+        </div>
       </div>
     </div>
 

@@ -1,0 +1,20 @@
+[
+  {
+    "id": "japan",
+    "name": "Japan",
+    "color": "#667eea",
+    "created_at": "2026-01-22 09:06:43"
+  },
+  {
+    "id": "industrial",
+    "name": "Industrial",
+    "color": "#667eea",
+    "created_at": "2026-01-22 09:54:35"
+  },
+  {
+    "id": "cyber",
+    "name": "Cyber",
+    "color": "#667eea",
+    "created_at": "2026-01-22 10:21:36"
+  }
+]

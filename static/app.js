@@ -50,9 +50,40 @@ let presetList = [];
 let collectionList = [];
 let activeCollectionFilter = null;
 
+// ===== BATCH QUEUE =====
+let queueRefreshInterval = null;
+
+// ===== QUICK VARIATIONS =====
+let variationMode = false;
+let selectedThemes = [];
+
+// ===== MOCKUPS =====
+let mockupList = [];
+let selectedPosterForMockup = null;
+
+// Mockup Creator State
+let mockupCreatorImage = null;
+let mockupCreatorRect = { x: 0, y: 0, width: 0, height: 0 };
+let mockupCreatorDrawing = false;
+let mockupCreatorStartX = 0;
+let mockupCreatorStartY = 0;
+
+// Mockup Preview State
+let mockupPreviewTemplate = null;  // { id, poster_rect, ... }
+let mockupPreviewPoster = null;    // Poster item
+let mockupPreviewTemplateImg = null;  // Loaded Image object for template
+let mockupPreviewPosterImg = null;    // Loaded Image object for poster
+let mockupPreviewScale = 1.0;
+let mockupPreviewOffsetX = 0;
+let mockupPreviewOffsetY = 0;
+let mockupPreviewDragging = false;
+let mockupPreviewDragStartX = 0;
+let mockupPreviewDragStartY = 0;
+
 // ===== MAP VARIABLES =====
 let leafletMap = null;
 let radiusCircle = null;
+let aspectRatioRect = null;
 let centerMarker = null;
 let currentTileLayer = null;
 
@@ -67,7 +98,6 @@ let lastKnownPercent = 0;
 // ===== GALLERY =====
 let galleryItems = [];
 let galleryIndex = 0;
-let galleryLoaded = false;
 let gallerySource = null;
 let lastGallerySignature = "";
 let lightboxBuiltCount = 0;
@@ -142,8 +172,16 @@ const elements = {
 
   // Generate
   generateBtn: document.getElementById("generate-btn"),
+  addQueueBtn: document.getElementById("add-queue-btn"),
   collectionSelect: document.getElementById("collection-select"),
+  addCollectionBtn: document.getElementById("add-collection-btn"),
   collectionFilterTabs: document.getElementById("collection-filter-tabs"),
+
+  // Queue
+  queueSection: document.getElementById("queue-section"),
+  queueList: document.getElementById("queue-list"),
+  queueCount: document.getElementById("queue-count"),
+  clearQueueBtn: document.getElementById("clear-queue-btn"),
 
   // Progress
   progressSection: document.getElementById("progress-section"),
@@ -162,13 +200,13 @@ const elements = {
   // Status widget (top-right container)
   statusWidget: document.getElementById("status-widget"),
 
-  // Gallery
-  galleryToggle: document.getElementById("gallery-toggle"),
-  galleryOverlay: document.getElementById("gallery-overlay"),
-  galleryClose: document.getElementById("gallery-close"),
-  galleryGrid: document.getElementById("gallery-grid"),
-  galleryPath: document.getElementById("gallery-path"),
+  // Gallery / Collection modal
   openFolderBtn: document.getElementById("open-folder-btn"),
+  collectionModal: document.getElementById("collection-modal"),
+  collectionModalClose: document.getElementById("collection-modal-close"),
+  collectionModalTabs: document.getElementById("collection-modal-tabs"),
+  collectionModalGrid: document.getElementById("collection-modal-grid"),
+  addCollectionModalBtn: document.getElementById("add-collection-modal-btn"),
 
   // Map style
   styleWidget: document.getElementById("style-widget"),
@@ -177,6 +215,7 @@ const elements = {
 
   // Theme drawer
   browseThemesBtn: document.getElementById("browse-themes-btn"),
+  variationModeBtn: document.getElementById("variation-mode-btn"),
   themeDrawer: document.getElementById("theme-drawer"),
   themeSearch: document.getElementById("theme-search"),
   themeGridFull: document.getElementById("theme-grid-full"),
@@ -187,6 +226,38 @@ const elements = {
   lightboxImage: document.getElementById("lightbox-image"),
   lightboxCaption: document.getElementById("lightbox-caption"),
   lightboxStrip: document.getElementById("lightbox-strip"),
+
+  // Mockup
+  mockupModal: document.getElementById("mockup-modal"),
+  mockupGrid: document.getElementById("mockup-grid"),
+  mockupClose: document.getElementById("mockup-close"),
+  mockupCreateBtn: document.getElementById("mockup-create-btn"),
+
+  // Mockup Creator
+  mockupCreator: document.getElementById("mockup-creator"),
+  mockupCreatorClose: document.getElementById("mockup-creator-close"),
+  mockupTemplateName: document.getElementById("mockup-template-name"),
+  mockupTemplateFile: document.getElementById("mockup-template-file"),
+  mockupCreatorCanvas: document.getElementById("mockup-creator-canvas"),
+  mockupCanvasPlaceholder: document.getElementById("mockup-canvas-placeholder"),
+  mockupSaveBtn: document.getElementById("mockup-save-btn"),
+  rectX: document.getElementById("rect-x"),
+  rectY: document.getElementById("rect-y"),
+  rectW: document.getElementById("rect-w"),
+  rectH: document.getElementById("rect-h"),
+
+  // Mockup Preview
+  mockupPreview: document.getElementById("mockup-preview"),
+  mockupPreviewClose: document.getElementById("mockup-preview-close"),
+  mockupPreviewCanvas: document.getElementById("mockup-preview-canvas"),
+  mockupScaleSlider: document.getElementById("mockup-scale-slider"),
+  mockupScaleValue: document.getElementById("mockup-scale-value"),
+  mockupXSlider: document.getElementById("mockup-x-slider"),
+  mockupXValue: document.getElementById("mockup-x-value"),
+  mockupYSlider: document.getElementById("mockup-y-slider"),
+  mockupYValue: document.getElementById("mockup-y-value"),
+  mockupPreviewReset: document.getElementById("mockup-preview-reset"),
+  mockupPreviewGenerate: document.getElementById("mockup-preview-generate"),
 };
 
 // ===== MAP TILE PROVIDERS =====
@@ -243,8 +314,11 @@ async function initApp() {
   await loadStarred();
   loadThemes();
   loadFonts();
-  loadPresets();
-  loadCollections();
+  await loadPresets();
+  await loadCollections();
+  await loadMockups();
+  refreshQueueDisplay();
+  startQueueRefresh();
   initEventListeners();
   initPreviewWidget();
 }
@@ -433,7 +507,6 @@ async function loadCollections() {
     const response = await fetch("/api/collections");
     collectionList = await response.json();
     renderCollectionSelector();
-    renderCollectionFilterTabs();
   } catch (err) {
     console.error("Failed to load collections:", err);
     collectionList = [];
@@ -453,72 +526,545 @@ function renderCollectionSelector() {
   });
 }
 
-function renderCollectionFilterTabs() {
-  if (!elements.collectionFilterTabs) return;
+async function createCollection() {
+  const name = prompt("Enter collection name:");
+  if (!name || !name.trim()) return;
 
-  elements.collectionFilterTabs.innerHTML = '';
+  try {
+    const response = await fetch("/api/collections", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: name.trim() }),
+    });
 
-  // "All" tab
+    if (response.ok) {
+      const newCollection = await response.json();
+      collectionList.push(newCollection);
+      renderCollectionSelector();
+      // Select the new collection
+      if (elements.collectionSelect) {
+        elements.collectionSelect.value = newCollection.id;
+        state.collection = newCollection.id;
+      }
+    } else {
+      const err = await response.json();
+      alert(err.error || "Failed to create collection");
+    }
+  } catch (err) {
+    console.error("Failed to create collection:", err);
+    alert("Failed to create collection");
+  }
+}
+
+async function assignPosterToCollection(filename, collectionId) {
+  try {
+    const response = await fetch(`/api/posters/${encodeURIComponent(filename)}/collection`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ collection: collectionId || null }),
+    });
+
+    if (response.ok) {
+      // Refresh gallery to show updated collection
+      loadGallery(true);
+    } else {
+      const err = await response.json();
+      alert(err.error || "Failed to assign collection");
+    }
+  } catch (err) {
+    console.error("Failed to assign collection:", err);
+  }
+}
+
+async function deletePoster(filename) {
+  try {
+    const response = await fetch(`/api/posters/${encodeURIComponent(filename)}`, { method: "DELETE" });
+    if (response.ok) {
+      // Remove from galleryItems
+      window.galleryItems = window.galleryItems.filter(item => item.filename !== filename);
+      // Re-render tabs to update counts
+      renderCollectionModalTabs();
+    } else {
+      const err = await response.json();
+      alert(err.error || "Failed to delete poster");
+    }
+  } catch (err) {
+    console.error("Failed to delete poster:", err);
+  }
+}
+
+let modalCollectionFilter = null; // Track selected collection in modal
+let galleryLoadedForModal = false;
+
+async function openCollectionModal() {
+  elements.collectionModal?.classList.add("open");
+
+  // Load gallery data if not already loaded
+  if (!galleryLoadedForModal || !window.galleryItems?.length) {
+    await loadGallery();
+    startGalleryStream();
+    galleryLoadedForModal = true;
+  }
+
+  modalCollectionFilter = activeCollectionFilter; // Start with current filter
+  renderCollectionModalTabs();
+  renderCollectionModalGrid();
+}
+
+function closeCollectionModal() {
+  elements.collectionModal?.classList.remove("open");
+}
+
+function renderCollectionModalTabs() {
+  if (!elements.collectionModalTabs) return;
+  elements.collectionModalTabs.innerHTML = "";
+
+  const fragment = document.createDocumentFragment();
+
+  // "All Posters" tab
   const allTab = document.createElement("button");
-  allTab.className = "collection-tab" + (activeCollectionFilter === null ? " active" : "");
-  allTab.textContent = "All";
+  allTab.className = "collection-tab" + (modalCollectionFilter === null ? " active" : "");
+  allTab.innerHTML = `All <span class="collection-tab-count">${window.galleryItems?.length || 0}</span>`;
   allTab.addEventListener("click", () => {
-    activeCollectionFilter = null;
-    renderCollectionFilterTabs();
-    filterGalleryByCollection();
+    modalCollectionFilter = null;
+    renderCollectionModalTabs();
+    renderCollectionModalGrid();
   });
-  elements.collectionFilterTabs.appendChild(allTab);
+  fragment.appendChild(allTab);
 
   // Collection tabs
   collectionList.forEach(coll => {
+    const count = window.galleryItems?.filter(item => item.config?.collection === coll.id).length || 0;
     const tab = document.createElement("button");
-    tab.className = "collection-tab" + (activeCollectionFilter === coll.id ? " active" : "");
-    tab.textContent = coll.name;
-    tab.style.borderColor = coll.color;
-    if (activeCollectionFilter === coll.id) {
-      tab.style.background = coll.color;
-      tab.style.color = "white";
-    }
-    tab.addEventListener("click", () => {
-      activeCollectionFilter = coll.id;
-      renderCollectionFilterTabs();
-      filterGalleryByCollection();
+    tab.className = "collection-tab" + (modalCollectionFilter === coll.id ? " active" : "");
+    tab.innerHTML = `${coll.name} <span class="collection-tab-count">${count}</span>
+      <span class="collection-tab-delete" title="Delete collection">×</span>`;
+    tab.addEventListener("click", (e) => {
+      if (e.target.classList.contains("collection-tab-delete")) {
+        e.stopPropagation();
+        if (confirm(`Delete collection "${coll.name}"? Posters won't be deleted.`)) {
+          deleteCollection(coll.id);
+        }
+        return;
+      }
+      modalCollectionFilter = coll.id;
+      renderCollectionModalTabs();
+      renderCollectionModalGrid();
     });
-    elements.collectionFilterTabs.appendChild(tab);
+    fragment.appendChild(tab);
   });
+
+  elements.collectionModalTabs.appendChild(fragment);
 }
 
-function filterGalleryByCollection() {
-  if (!window.galleryItems) return;
+function renderCollectionModalGrid() {
+  if (!elements.collectionModalGrid) return;
+  elements.collectionModalGrid.innerHTML = "";
 
-  const items = activeCollectionFilter
-    ? window.galleryItems.filter(item => item.config?.collection === activeCollectionFilter)
-    : window.galleryItems;
+  const items = modalCollectionFilter === null
+    ? window.galleryItems || []
+    : (window.galleryItems || []).filter(item => item.config?.collection === modalCollectionFilter);
 
-  renderGalleryFiltered(items);
-}
-
-function renderGalleryFiltered(items) {
-  if (!elements.galleryGrid) return;
-
-  elements.galleryGrid.innerHTML = "";
-
-  const itemsWithThumbs = items.filter(item => item.has_thumb && item.thumb_url);
-
-  if (!itemsWithThumbs.length) {
-    elements.galleryGrid.innerHTML = '<div class="gallery-placeholder">No posters in this collection.</div>';
+  if (items.length === 0) {
+    elements.collectionModalGrid.innerHTML = '<div class="collection-modal-empty">No posters in this collection</div>';
     return;
   }
 
   const fragment = document.createDocumentFragment();
 
-  itemsWithThumbs.forEach((item, index) => {
-    const card = createGalleryCard(item, index);
+  items.forEach(item => {
+    const card = document.createElement("div");
+    card.className = "collection-poster-card";
+
+    // Build collection options
+    let collectionOptions = '<option value="">No collection</option>';
+    collectionList.forEach(coll => {
+      const selected = item.config?.collection === coll.id ? 'selected' : '';
+      collectionOptions += `<option value="${coll.id}" ${selected}>${coll.name}</option>`;
+    });
+
+    card.innerHTML = `
+      <div class="collection-poster-image">
+        <img src="${item.thumb_url}?t=${item.mtime}" alt="${item.filename}" loading="lazy">
+        <div class="collection-poster-info">
+          <span class="collection-poster-city">${item.config?.city || item.filename.split('_')[0]}</span>
+          ${item.config?.theme ? `<span class="collection-poster-theme">${item.config.theme}</span>` : ''}
+        </div>
+      </div>
+      <div class="collection-poster-actions">
+        <button class="poster-action-btn poster-view-btn" title="View full size">
+          <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+        </button>
+        <a class="poster-action-btn poster-download-btn" href="${item.url}" download="${item.filename}" title="Download">
+          <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+        </a>
+        <button class="poster-action-btn poster-mockup-btn" title="Create mockup">
+          <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5-7l-3 3.72L9 13l-3 4h12l-4-5z"/></svg>
+        </button>
+        <button class="poster-action-btn poster-delete-btn" title="Delete">
+          <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+        </button>
+        <select class="poster-collection-select" title="Assign to collection">
+          ${collectionOptions}
+        </select>
+      </div>
+    `;
+
+    // Click on image loads settings
+    card.querySelector('.collection-poster-image').addEventListener("click", () => {
+      closeCollectionModal();
+      if (item.config) {
+        loadConfigFromGallery(item.config);
+      }
+    });
+
+    // View button
+    card.querySelector('.poster-view-btn').addEventListener("click", (e) => {
+      e.stopPropagation();
+      window.open(item.url, "_blank");
+    });
+
+    // Download button - handled by href/download attributes
+    card.querySelector('.poster-download-btn').addEventListener("click", (e) => {
+      e.stopPropagation();
+    });
+
+    // Mockup button
+    card.querySelector('.poster-mockup-btn').addEventListener("click", (e) => {
+      e.stopPropagation();
+      openMockupModal(item);
+    });
+
+    // Delete button
+    card.querySelector('.poster-delete-btn').addEventListener("click", async (e) => {
+      e.stopPropagation();
+      if (confirm(`Delete "${item.filename}"?`)) {
+        await deletePoster(item.filename);
+        renderCollectionModalGrid();
+      }
+    });
+
+    // Collection select
+    card.querySelector('.poster-collection-select').addEventListener("change", async (e) => {
+      e.stopPropagation();
+      await assignPosterToCollection(item.filename, e.target.value || null);
+      // Update local item config
+      if (item.config) {
+        item.config.collection = e.target.value || null;
+      }
+    });
+
     fragment.appendChild(card);
   });
 
-  elements.galleryGrid.appendChild(fragment);
-  initLazyLoad();
+  elements.collectionModalGrid.appendChild(fragment);
+}
+
+async function deleteCollection(collId) {
+  try {
+    const response = await fetch(`/api/collections/${collId}`, { method: "DELETE" });
+    if (response.ok) {
+      collectionList = collectionList.filter(c => c.id !== collId);
+      if (activeCollectionFilter === collId) {
+        activeCollectionFilter = null;
+      }
+      if (modalCollectionFilter === collId) {
+        modalCollectionFilter = null;
+      }
+      renderCollectionSelector();
+      renderCollectionModalTabs();
+      renderCollectionModalGrid();
+    }
+  } catch (err) {
+    console.error("Failed to delete collection:", err);
+  }
+}
+
+function filterGalleryByCollection() {
+  // This is now handled by the modal - just update modal if open
+  if (elements.collectionModal?.classList.contains("open")) {
+    renderCollectionModalTabs();
+    renderCollectionModalGrid();
+  }
+}
+
+// ===== BATCH QUEUE =====
+async function addToQueue() {
+  // Validate that we have the required data
+  if (!state.selectedLat || !state.selectedLng || !state.posterCity || !state.posterCountry) {
+    return;
+  }
+
+  const payload = {
+    city: state.posterCity,
+    country: state.posterCountry,
+    tagline: state.posterTagline || null,
+    lat: state.selectedLat,
+    lng: state.selectedLng,
+    distance: state.radius,
+    theme: state.theme,
+    format: state.format,
+    aspect_ratio: state.aspectRatio,
+    collection: state.collection,
+    font: state.font,
+    pin: state.pin !== "none" ? state.pin : null,
+    pin_color: state.pin !== "none" ? state.pinColor : null,
+    dpi: state.dpi,
+  };
+
+  try {
+    const response = await fetch("/api/jobs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const err = await response.json();
+      alert(err.error || "Failed to add to queue");
+      return;
+    }
+
+    const data = await response.json();
+    console.log("Added to queue:", data);
+
+    // Refresh queue display
+    refreshQueueDisplay();
+
+    // Show queue section
+    if (elements.queueSection) {
+      elements.queueSection.style.display = "block";
+    }
+
+  } catch (err) {
+    console.error("Failed to add to queue:", err);
+    alert("Failed to add to queue");
+  }
+}
+
+async function refreshQueueDisplay() {
+  try {
+    const response = await fetch("/api/queue");
+    const data = await response.json();
+
+    renderQueueList(data);
+
+  } catch (err) {
+    console.error("Failed to refresh queue:", err);
+  }
+}
+
+function renderQueueList(data) {
+  if (!elements.queueList) return;
+
+  const { queued, running, queued_count, running_count } = data;
+
+  // Update count
+  if (elements.queueCount) {
+    const total = queued_count + running_count;
+    elements.queueCount.textContent = `${total} job${total !== 1 ? 's' : ''}`;
+  }
+
+  // Show/hide queue section
+  if (elements.queueSection) {
+    elements.queueSection.style.display = (queued_count + running_count) > 0 ? "block" : "none";
+  }
+
+  elements.queueList.innerHTML = "";
+
+  // Running jobs first
+  running.forEach(job => {
+    const item = document.createElement("div");
+    item.className = "queue-item running";
+    item.innerHTML = `
+      <span class="queue-item-status">▶</span>
+      <span class="queue-item-city">${job.city}</span>
+      <span class="queue-item-theme">${job.theme}</span>
+      <span class="queue-item-progress">${job.percent}%</span>
+    `;
+    elements.queueList.appendChild(item);
+  });
+
+  // Queued jobs
+  queued.forEach(job => {
+    const item = document.createElement("div");
+    item.className = "queue-item queued";
+    item.innerHTML = `
+      <span class="queue-item-position">#${job.position}</span>
+      <span class="queue-item-city">${job.city}</span>
+      <span class="queue-item-theme">${job.theme}</span>
+      <button class="queue-item-remove" data-job-id="${job.id}" title="Remove">×</button>
+    `;
+    elements.queueList.appendChild(item);
+  });
+
+  // Add click handlers for remove buttons
+  elements.queueList.querySelectorAll(".queue-item-remove").forEach(btn => {
+    btn.addEventListener("click", async (e) => {
+      const jobId = e.target.dataset.jobId;
+      await removeFromQueue(jobId);
+    });
+  });
+}
+
+async function removeFromQueue(jobId) {
+  try {
+    const response = await fetch(`/api/queue/${jobId}`, { method: "DELETE" });
+    if (response.ok) {
+      refreshQueueDisplay();
+    }
+  } catch (err) {
+    console.error("Failed to remove from queue:", err);
+  }
+}
+
+async function clearQueue() {
+  if (!confirm("Clear all queued jobs?")) return;
+
+  try {
+    const response = await fetch("/api/queue/clear", { method: "POST" });
+    if (response.ok) {
+      refreshQueueDisplay();
+    }
+  } catch (err) {
+    console.error("Failed to clear queue:", err);
+  }
+}
+
+function startQueueRefresh() {
+  // Refresh queue display every 2 seconds when there are jobs
+  if (queueRefreshInterval) return;
+  queueRefreshInterval = setInterval(refreshQueueDisplay, 2000);
+}
+
+function stopQueueRefresh() {
+  if (queueRefreshInterval) {
+    clearInterval(queueRefreshInterval);
+    queueRefreshInterval = null;
+  }
+}
+
+// ===== QUICK VARIATIONS =====
+function toggleVariationMode() {
+  variationMode = !variationMode;
+  selectedThemes = variationMode ? [state.theme] : [];
+
+  // Update toggle button appearance
+  if (elements.variationModeBtn) {
+    elements.variationModeBtn.classList.toggle("active", variationMode);
+    elements.variationModeBtn.title = variationMode ? "Exit multi-select" : "Multi-select themes";
+  }
+
+  // Re-render theme carousel with checkboxes
+  const themes = themesByCategory[currentCategory] || themeList;
+  renderThemeCarousel(themes);
+
+  // Update generate button
+  updateVariationButton();
+}
+
+function toggleThemeSelection(themeId) {
+  if (!variationMode) return;
+
+  const index = selectedThemes.indexOf(themeId);
+  if (index === -1) {
+    selectedThemes.push(themeId);
+  } else {
+    selectedThemes.splice(index, 1);
+  }
+
+  // Update UI
+  document.querySelectorAll(".theme-carousel-card").forEach(card => {
+    const isSelected = selectedThemes.includes(card.dataset.themeId);
+    card.classList.toggle("variation-selected", isSelected);
+  });
+
+  updateVariationButton();
+}
+
+function updateVariationButton() {
+  if (!variationMode) {
+    // Reset to normal
+    elements.generateBtn.textContent = state.posterCity
+      ? `Generate: ${state.posterCity}`
+      : "Select location to generate";
+    return;
+  }
+
+  const count = selectedThemes.length;
+  if (count > 0 && state.posterCity) {
+    elements.generateBtn.textContent = `Generate ${count} Variation${count !== 1 ? "s" : ""}`;
+  } else {
+    elements.generateBtn.textContent = "Select themes for variations";
+  }
+}
+
+async function generateVariations() {
+  if (!variationMode || selectedThemes.length === 0) return;
+
+  // Validate
+  if (!state.selectedLat || !state.selectedLng || !state.posterCity || !state.posterCountry) {
+    return;
+  }
+
+  elements.generateBtn.disabled = true;
+  elements.generateBtn.textContent = `Generating ${selectedThemes.length} variations...`;
+
+  const payload = {
+    themes: selectedThemes,
+    city: state.posterCity,
+    country: state.posterCountry,
+    tagline: state.posterTagline || null,
+    lat: state.selectedLat,
+    lng: state.selectedLng,
+    distance: state.radius,
+    format: state.format,
+    aspect_ratio: state.aspectRatio,
+    collection: state.collection,
+    font: state.font,
+    pin: state.pin !== "none" ? state.pin : null,
+    pin_color: state.pin !== "none" ? state.pinColor : null,
+    dpi: state.dpi,
+  };
+
+  try {
+    const response = await fetch("/api/variations", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const err = await response.json();
+      alert(err.error || "Failed to create variations");
+      elements.generateBtn.disabled = false;
+      updateVariationButton();
+      return;
+    }
+
+    const data = await response.json();
+    console.log("Created variations batch:", data);
+
+    // Show queue section
+    if (elements.queueSection) {
+      elements.queueSection.style.display = "block";
+    }
+
+    // Refresh queue display
+    refreshQueueDisplay();
+
+    // Exit variation mode
+    toggleVariationMode();
+
+    elements.generateBtn.disabled = false;
+    updateGenerateButton();
+
+  } catch (err) {
+    console.error("Failed to create variations:", err);
+    alert("Failed to create variations");
+    elements.generateBtn.disabled = false;
+    updateVariationButton();
+  }
 }
 
 // ===== LEAFLET MAP =====
@@ -547,6 +1093,16 @@ function initLeafletMap() {
     fillColor: "#c76b2b",
     fillOpacity: 0.12,
     weight: 2,
+    interactive: false,
+  });
+
+  // Add aspect ratio rectangle (shows capture area)
+  aspectRatioRect = L.rectangle([[0, 0], [0, 0]], {
+    color: "#c76b2b",
+    fillColor: "transparent",
+    fillOpacity: 0,
+    weight: 2,
+    dashArray: "8, 8",
     interactive: false,
   });
 
@@ -599,6 +1155,9 @@ async function handleMapClick(e) {
   }
   radiusCircle.setLatLng([lat, lng]);
   centerMarker.setLatLng([lat, lng]);
+
+  // Update aspect ratio rectangle
+  updateAspectRatioRect();
 
   // Update coordinates display
   updateCoordsDisplay();
@@ -759,8 +1318,9 @@ function updateGenerateButton() {
   const hasCoords = state.selectedLat !== null && state.selectedLng !== null;
   const hasCity = state.posterCity.trim().length > 0;
   const hasCountry = state.posterCountry.trim().length > 0;
+  const canGenerate = hasCoords && hasCity && hasCountry;
 
-  if (hasCoords && hasCity && hasCountry) {
+  if (canGenerate) {
     elements.generateBtn.disabled = false;
     elements.generateBtn.textContent = `Generate: ${state.posterCity}`;
   } else if (hasCoords && !hasCity) {
@@ -773,6 +1333,11 @@ function updateGenerateButton() {
     elements.generateBtn.disabled = true;
     elements.generateBtn.textContent = "Select location to generate";
   }
+
+  // Also update queue button
+  if (elements.addQueueBtn) {
+    elements.addQueueBtn.disabled = !canGenerate;
+  }
 }
 
 // ===== RADIUS & DPI SLIDERS =====
@@ -783,11 +1348,64 @@ function updateRadius(value) {
   if (radiusCircle) {
     radiusCircle.setRadius(state.radius);
   }
+  updateAspectRatioRect();
 }
 
 function updateDpi(value) {
   state.dpi = parseInt(value);
   elements.dpiValue.textContent = value;
+}
+
+function updateAspectRatioRect() {
+  if (!aspectRatioRect || !leafletMap || state.selectedLat === null) return;
+
+  const lat = state.selectedLat;
+  const lng = state.selectedLng;
+  const radius = state.radius;
+
+  // Parse aspect ratio
+  let aspectWidth = 2, aspectHeight = 3;
+  if (state.aspectRatio === "1:1") {
+    aspectWidth = 1; aspectHeight = 1;
+  } else if (state.aspectRatio === "2:3") {
+    aspectWidth = 2; aspectHeight = 3;
+  } else if (state.aspectRatio === "3:4") {
+    aspectWidth = 3; aspectHeight = 4;
+  } else if (state.aspectRatio === "4:5") {
+    aspectWidth = 4; aspectHeight = 5;
+  } else if (state.aspectRatio === "A4" || state.aspectRatio === "A3") {
+    aspectWidth = 210; aspectHeight = 297; // A4 proportions
+  }
+
+  // Calculate rectangle that fits inside the circle with correct aspect ratio
+  // The rectangle should be inscribed in the circle
+  const aspectRatioValue = aspectWidth / aspectHeight;
+
+  // For a rectangle inscribed in a circle, if we know the radius:
+  // width = 2 * r * cos(theta), height = 2 * r * sin(theta)
+  // where tan(theta) = height/width = 1/aspectRatioValue
+  // So theta = atan(1/aspectRatioValue)
+  const theta = Math.atan(1 / aspectRatioValue);
+  const halfWidth = radius * Math.cos(theta);
+  const halfHeight = radius * Math.sin(theta);
+
+  // Convert meters to degrees (approximate)
+  const metersPerDegreeLat = 111320;
+  const metersPerDegreeLng = 111320 * Math.cos(lat * Math.PI / 180);
+
+  const latOffset = halfHeight / metersPerDegreeLat;
+  const lngOffset = halfWidth / metersPerDegreeLng;
+
+  const bounds = [
+    [lat - latOffset, lng - lngOffset],
+    [lat + latOffset, lng + lngOffset]
+  ];
+
+  aspectRatioRect.setBounds(bounds);
+
+  if (!leafletMap.hasLayer(aspectRatioRect)) {
+    aspectRatioRect.addTo(leafletMap);
+  }
 }
 
 // ===== THEMES =====
@@ -1566,7 +2184,12 @@ function renderThemeCarousel(themes) {
         e.preventDefault();
         return;
       }
-      selectTheme(theme.id);
+      // In variation mode, toggle selection instead of changing theme
+      if (variationMode) {
+        toggleThemeSelection(theme.id);
+      } else {
+        selectTheme(theme.id);
+      }
     });
 
     elements.themeCarousel.appendChild(card);
@@ -1841,25 +2464,7 @@ function toggleWidget() {
   elements.controlsWidget.dataset.collapsed = isCollapsed ? "false" : "true";
 }
 
-// ===== GALLERY =====
-
-function openGallery() {
-  elements.galleryOverlay.classList.add("open");
-  elements.galleryOverlay.setAttribute("aria-hidden", "false");
-  document.body.style.overflow = "hidden";
-
-  if (!galleryLoaded) {
-    loadGallery();
-    startGalleryStream();
-    galleryLoaded = true;
-  }
-}
-
-function closeGallery() {
-  elements.galleryOverlay.classList.remove("open");
-  elements.galleryOverlay.setAttribute("aria-hidden", "true");
-  document.body.style.overflow = "";
-}
+// ===== GALLERY DATA =====
 
 async function loadGallery(force = false) {
   try {
@@ -1923,6 +2528,9 @@ function loadConfigFromGallery(config) {
       radiusCircle.setRadius(config.distance);
     }
   }
+
+  // Update aspect ratio rectangle
+  updateAspectRatioRect();
 
   // Set poster text
   if (config.city) {
@@ -2003,128 +2611,21 @@ function loadConfigFromGallery(config) {
   // Update preview
   updatePreview();
 
-  // Close gallery
-  closeGallery();
-
   // Show confirmation
   console.log("Settings loaded from:", config.city, config.country);
 }
 
 function renderGallery(items) {
-  elements.galleryGrid.innerHTML = "";
-
   // Filter to only show items with thumbnails
   const itemsWithThumbs = items.filter(item => item.has_thumb && item.thumb_url);
 
-  if (!itemsWithThumbs.length) {
-    elements.galleryGrid.innerHTML = '<div class="gallery-placeholder">No posters yet. Generate one!</div>';
-    return;
-  }
-
-  // Store filtered items for lightbox
+  // Store filtered items for modal and lightbox
   window.galleryItems = itemsWithThumbs;
 
-  const fragment = document.createDocumentFragment();
-
-  itemsWithThumbs.forEach((item, index) => {
-    const card = document.createElement("div");
-    card.className = "gallery-item";
-
-    // Thumbnail image
-    const img = document.createElement("img");
-    img.dataset.src = `${item.thumb_url}?t=${item.mtime}`;
-    img.alt = item.filename;
-    img.loading = "lazy";
-    card.appendChild(img);
-
-    // Info overlay with config data
-    const info = document.createElement("div");
-    info.className = "gallery-item-info";
-    if (item.config) {
-      info.innerHTML = `<span class="gallery-item-city">${item.config.city || ''}</span>`;
-    } else {
-      info.innerHTML = `<span class="gallery-item-city">${item.filename.split('_')[0]}</span>`;
-    }
-    card.appendChild(info);
-
-    // Action buttons
-    const actions = document.createElement("div");
-    actions.className = "gallery-item-actions";
-
-    // Load settings button (only if config exists)
-    if (item.config) {
-      const loadBtn = document.createElement("button");
-      loadBtn.className = "gallery-action-btn gallery-load";
-      loadBtn.type = "button";
-      loadBtn.title = "Load settings (reuse cache)";
-      loadBtn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>';
-      loadBtn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        loadConfigFromGallery(item.config);
-      });
-      actions.appendChild(loadBtn);
-    }
-
-    // Download button
-    const downloadBtn = document.createElement("a");
-    downloadBtn.className = "gallery-action-btn";
-    downloadBtn.href = item.url;
-    downloadBtn.download = item.filename;
-    downloadBtn.title = "Download full size";
-    downloadBtn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>';
-    downloadBtn.addEventListener("click", (e) => e.stopPropagation());
-    actions.appendChild(downloadBtn);
-
-    // Delete button
-    const deleteBtn = document.createElement("button");
-    deleteBtn.className = "gallery-action-btn gallery-delete";
-    deleteBtn.type = "button";
-    deleteBtn.title = "Delete";
-    deleteBtn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>';
-    deleteBtn.addEventListener("click", async (e) => {
-      e.stopPropagation();
-      if (confirm(`Delete ${item.filename}?`)) {
-        await fetch(`/api/posters/${encodeURIComponent(item.filename)}`, { method: "DELETE" });
-        loadGallery(true);
-      }
-    });
-    actions.appendChild(deleteBtn);
-
-    card.appendChild(actions);
-
-    // Click to view full size
-    card.addEventListener("click", () => window.open(item.url, "_blank"));
-    fragment.appendChild(card);
-  });
-
-  elements.galleryGrid.appendChild(fragment);
-  hydrateGalleryImages();
-}
-
-function hydrateGalleryImages() {
-  const images = elements.galleryGrid.querySelectorAll("img[data-src]");
-
-  if ("IntersectionObserver" in window) {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const img = entry.target;
-            img.src = img.dataset.src;
-            delete img.dataset.src;
-            observer.unobserve(img);
-          }
-        });
-      },
-      { rootMargin: "100px" }
-    );
-
-    images.forEach((img) => observer.observe(img));
-  } else {
-    images.forEach((img) => {
-      img.src = img.dataset.src;
-      delete img.dataset.src;
-    });
+  // If modal is open, refresh it
+  if (elements.collectionModal?.classList.contains("open")) {
+    renderCollectionModalTabs();
+    renderCollectionModalGrid();
   }
 }
 
@@ -2323,7 +2824,7 @@ function setProgress({ percent, message, stage, status, output_url, error }) {
     if (output_url) {
       showLatestPoster(output_url);
     }
-    if (galleryLoaded) {
+    if (galleryLoadedForModal) {
       loadGallery();
     }
     elements.generateBtn.disabled = false;
@@ -2492,6 +2993,7 @@ function initEventListeners() {
   // Aspect ratio
   elements.aspectSelect?.addEventListener("change", (e) => {
     state.aspectRatio = e.target.value;
+    updateAspectRatioRect();
     // Reset preset to Custom when manually changing settings
     if (elements.presetSelect) elements.presetSelect.value = "";
   });
@@ -2506,6 +3008,24 @@ function initEventListeners() {
   elements.collectionSelect?.addEventListener("change", (e) => {
     state.collection = e.target.value || null;
   });
+  elements.addCollectionBtn?.addEventListener("click", createCollection);
+
+  // Collection modal
+  elements.collectionModalClose?.addEventListener("click", closeCollectionModal);
+  elements.addCollectionModalBtn?.addEventListener("click", async () => {
+    await createCollection();
+    renderCollectionModalTabs();
+    renderCollectionModalGrid();
+  });
+  elements.collectionModal?.addEventListener("click", (e) => {
+    if (e.target.classList.contains("collection-modal-backdrop")) {
+      closeCollectionModal();
+    }
+  });
+
+  // Queue
+  elements.addQueueBtn?.addEventListener("click", addToQueue);
+  elements.clearQueueBtn?.addEventListener("click", clearQueue);
 
   // Pin selector
   elements.pinSelector?.querySelectorAll(".pin-option").forEach((btn) => {
@@ -2536,10 +3056,11 @@ function initEventListeners() {
   elements.headerThemeBtn?.addEventListener("click", () => {
     window.open("/theme-samples", "_blank");
   });
-  elements.headerGalleryBtn?.addEventListener("click", openGallery);
+  elements.headerGalleryBtn?.addEventListener("click", openCollectionModal);
 
   // Theme drawer
   elements.browseThemesBtn?.addEventListener("click", openThemeDrawer);
+  elements.variationModeBtn?.addEventListener("click", toggleVariationMode);
   elements.drawerClose?.addEventListener("click", closeThemeDrawer);
   elements.themeSearch?.addEventListener("input", (e) => filterThemes(e.target.value));
 
@@ -2569,19 +3090,16 @@ function initEventListeners() {
   });
 
   // Generate button
-  elements.generateBtn?.addEventListener("click", generatePoster);
-
-  // Gallery
-  elements.galleryToggle?.addEventListener("click", openGallery);
-  elements.galleryClose?.addEventListener("click", closeGallery);
-  elements.openFolderBtn?.addEventListener("click", openFolder);
-
-  // Close gallery on backdrop click
-  elements.galleryOverlay?.addEventListener("click", (e) => {
-    if (e.target.hasAttribute("data-close-gallery")) {
-      closeGallery();
+  elements.generateBtn?.addEventListener("click", () => {
+    if (variationMode && selectedThemes.length > 0) {
+      generateVariations();
+    } else {
+      generatePoster();
     }
   });
+
+  // Open folder button (in collection modal)
+  elements.openFolderBtn?.addEventListener("click", openFolder);
 
   // Lightbox
   elements.lightbox?.addEventListener("click", (e) => {
@@ -2596,16 +3114,65 @@ function initEventListeners() {
     }
   });
 
+  // Mockup modal
+  elements.mockupClose?.addEventListener("click", closeMockupModal);
+  elements.mockupModal?.addEventListener("click", (e) => {
+    if (e.target === elements.mockupModal) {
+      closeMockupModal();
+    }
+  });
+  elements.mockupCreateBtn?.addEventListener("click", openMockupCreator);
+
+  // Mockup creator
+  elements.mockupCreatorClose?.addEventListener("click", closeMockupCreator);
+  elements.mockupCreator?.addEventListener("click", (e) => {
+    if (e.target.classList.contains("mockup-creator-backdrop")) {
+      closeMockupCreator();
+    }
+  });
+  elements.mockupTemplateFile?.addEventListener("change", handleMockupFileUpload);
+  elements.mockupTemplateName?.addEventListener("input", updateMockupSaveBtn);
+  elements.mockupSaveBtn?.addEventListener("click", saveMockupTemplate);
+
+  // Canvas drawing (creator)
+  elements.mockupCreatorCanvas?.addEventListener("mousedown", handleMockupCanvasMouseDown);
+  elements.mockupCreatorCanvas?.addEventListener("mousemove", handleMockupCanvasMouseMove);
+  elements.mockupCreatorCanvas?.addEventListener("mouseup", handleMockupCanvasMouseUp);
+
+  // Mockup preview
+  elements.mockupPreviewClose?.addEventListener("click", closeMockupPreview);
+  elements.mockupPreview?.addEventListener("click", (e) => {
+    if (e.target.classList.contains("mockup-preview-backdrop")) {
+      closeMockupPreview();
+    }
+  });
+  elements.mockupScaleSlider?.addEventListener("input", handleMockupPreviewScale);
+  elements.mockupXSlider?.addEventListener("input", handleMockupPreviewOffsetX);
+  elements.mockupYSlider?.addEventListener("input", handleMockupPreviewOffsetY);
+  elements.mockupPreviewReset?.addEventListener("click", resetMockupPreview);
+  elements.mockupPreviewGenerate?.addEventListener("click", generateMockupFromPreview);
+
+  // Preview canvas drag
+  elements.mockupPreviewCanvas?.addEventListener("mousedown", handlePreviewCanvasMouseDown);
+  elements.mockupPreviewCanvas?.addEventListener("mousemove", handlePreviewCanvasMouseMove);
+  elements.mockupPreviewCanvas?.addEventListener("mouseup", handlePreviewCanvasMouseUp);
+  elements.mockupPreviewCanvas?.addEventListener("mouseleave", handlePreviewCanvasMouseUp);
+  elements.mockupCreatorCanvas?.addEventListener("mouseleave", handleMockupCanvasMouseUp);
+
   // Keyboard navigation
   document.addEventListener("keydown", (e) => {
     // Escape closes overlays
     if (e.key === "Escape") {
-      if (elements.lightbox?.classList.contains("open")) {
+      if (elements.mockupCreator?.classList.contains("open")) {
+        closeMockupCreator();
+      } else if (elements.mockupModal?.classList.contains("open")) {
+        closeMockupModal();
+      } else if (elements.collectionModal?.classList.contains("open")) {
+        closeCollectionModal();
+      } else if (elements.lightbox?.classList.contains("open")) {
         closeLightbox();
       } else if (elements.themeDrawer?.classList.contains("open")) {
         closeThemeDrawer();
-      } else if (elements.galleryOverlay?.classList.contains("open")) {
-        closeGallery();
       } else if (elements.styleDropdown?.classList.contains("open")) {
         closeStyleDropdown();
       }
@@ -2617,6 +3184,634 @@ function initEventListeners() {
       if (e.key === "ArrowRight") stepLightbox(1);
     }
   });
+}
+
+// ===== MOCKUPS =====
+
+async function loadMockups() {
+  try {
+    const response = await fetch("/api/mockups");
+    mockupList = await response.json();
+  } catch (err) {
+    console.error("Failed to load mockups:", err);
+    mockupList = [];
+  }
+}
+
+function openMockupModal(posterItem) {
+  selectedPosterForMockup = posterItem;
+
+  if (!mockupList.length) {
+    alert("No mockup templates available. Add templates to the mockups/ folder.");
+    return;
+  }
+
+  renderMockupGrid();
+  elements.mockupModal?.classList.add("open");
+}
+
+function closeMockupModal() {
+  elements.mockupModal?.classList.remove("open");
+  selectedPosterForMockup = null;
+}
+
+function renderMockupGrid() {
+  if (!elements.mockupGrid) return;
+  elements.mockupGrid.innerHTML = "";
+
+  if (!mockupList.length) {
+    elements.mockupGrid.innerHTML = '<div class="mockup-placeholder">No mockup templates found. Click "New Template" to create one.</div>';
+    return;
+  }
+
+  const fragment = document.createDocumentFragment();
+
+  mockupList.forEach((mockup) => {
+    const card = document.createElement("div");
+    card.className = "mockup-card";
+    card.dataset.mockupId = mockup.id;
+
+    const img = document.createElement("img");
+    img.src = mockup.thumbnail;
+    img.alt = mockup.name;
+    card.appendChild(img);
+
+    const footer = document.createElement("div");
+    footer.className = "mockup-card-footer";
+
+    const name = document.createElement("div");
+    name.className = "mockup-card-name";
+    name.textContent = mockup.name;
+    footer.appendChild(name);
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.className = "mockup-delete-btn";
+    deleteBtn.type = "button";
+    deleteBtn.title = "Delete template";
+    deleteBtn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>';
+    deleteBtn.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      if (confirm(`Delete template "${mockup.name}"?`)) {
+        await deleteMockupTemplate(mockup.id);
+      }
+    });
+    footer.appendChild(deleteBtn);
+
+    card.appendChild(footer);
+
+    card.addEventListener("click", () => openMockupPreview(mockup));
+    fragment.appendChild(card);
+  });
+
+  elements.mockupGrid.appendChild(fragment);
+}
+
+async function deleteMockupTemplate(mockupId) {
+  try {
+    const response = await fetch(`/api/mockups/${mockupId}`, { method: "DELETE" });
+    if (response.ok) {
+      await loadMockups();
+      renderMockupGrid();
+    } else {
+      const err = await response.json();
+      alert(err.error || "Failed to delete template");
+    }
+  } catch (err) {
+    console.error("Failed to delete mockup template:", err);
+  }
+}
+
+async function generateMockup(mockupId) {
+  if (!selectedPosterForMockup) return;
+
+  const card = elements.mockupGrid?.querySelector(`[data-mockup-id="${mockupId}"]`);
+  if (card) card.classList.add("loading");
+
+  try {
+    const response = await fetch("/api/mockups/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        poster: selectedPosterForMockup.filename,
+        mockup_id: mockupId,
+      }),
+    });
+
+    const result = await response.json();
+
+    if (result.ok) {
+      closeMockupModal();
+      // Refresh gallery to show the new mockup
+      loadGallery(true);
+      // Open the generated mockup in a new tab
+      window.open(result.url, "_blank");
+    } else {
+      alert(`Mockup generation failed: ${result.error}`);
+    }
+  } catch (err) {
+    console.error("Mockup generation failed:", err);
+    alert("Failed to generate mockup. Please try again.");
+  } finally {
+    if (card) card.classList.remove("loading");
+  }
+}
+
+// ===== MOCKUP PREVIEW =====
+
+async function openMockupPreview(mockup) {
+  if (!selectedPosterForMockup) return;
+
+  mockupPreviewTemplate = mockup;
+  mockupPreviewPoster = selectedPosterForMockup;
+  mockupPreviewScale = 1.0;
+  mockupPreviewOffsetX = 0;
+  mockupPreviewOffsetY = 0;
+
+  // Reset sliders
+  if (elements.mockupScaleSlider) {
+    elements.mockupScaleSlider.value = 1;
+    elements.mockupScaleValue.textContent = "100%";
+  }
+  if (elements.mockupXSlider) {
+    elements.mockupXSlider.value = 0;
+    elements.mockupXValue.textContent = "0px";
+  }
+  if (elements.mockupYSlider) {
+    elements.mockupYSlider.value = 0;
+    elements.mockupYValue.textContent = "0px";
+  }
+
+  // Close mockup modal and show preview
+  closeMockupModal();
+  elements.mockupPreview?.classList.add("open");
+
+  // Load images
+  try {
+    console.log("Mockup object:", mockup);
+    console.log("Poster object:", mockupPreviewPoster);
+
+    const templateUrl = mockup?.thumbnail;
+    const posterUrl = mockupPreviewPoster?.url;
+
+    console.log("Template URL:", templateUrl);
+    console.log("Poster URL:", posterUrl);
+
+    if (!templateUrl) {
+      throw new Error("Mockup template URL is missing");
+    }
+    if (!posterUrl) {
+      throw new Error("Poster URL is missing");
+    }
+
+    // Load template image
+    let templateImg;
+    try {
+      templateImg = await loadImage(templateUrl);
+      console.log("Template loaded successfully");
+    } catch (e) {
+      console.error("Failed to load template image:", templateUrl, e);
+      throw new Error("Failed to load mockup template image");
+    }
+
+    // Load poster image
+    let posterImg;
+    try {
+      posterImg = await loadImage(posterUrl);
+      console.log("Poster loaded successfully");
+    } catch (e) {
+      console.error("Failed to load poster image:", posterUrl, e);
+      throw new Error("Failed to load poster image");
+    }
+
+    mockupPreviewTemplateImg = templateImg;
+    mockupPreviewPosterImg = posterImg;
+
+    renderMockupPreview();
+  } catch (err) {
+    console.error("Failed to load images for preview:", err);
+    alert(err.message || "Failed to load images. Please try again.");
+    closeMockupPreview();
+  }
+}
+
+function loadImage(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = (e) => {
+      console.error("Failed to load image:", src, e);
+      reject(e);
+    };
+    img.src = src;
+  });
+}
+
+function closeMockupPreview() {
+  elements.mockupPreview?.classList.remove("open");
+  mockupPreviewTemplateImg = null;
+  mockupPreviewPosterImg = null;
+  mockupPreviewTemplate = null;
+  mockupPreviewPoster = null;
+}
+
+function resetMockupPreview() {
+  mockupPreviewScale = 1.0;
+  mockupPreviewOffsetX = 0;
+  mockupPreviewOffsetY = 0;
+
+  if (elements.mockupScaleSlider) {
+    elements.mockupScaleSlider.value = 1;
+    elements.mockupScaleValue.textContent = "100%";
+  }
+  if (elements.mockupXSlider) {
+    elements.mockupXSlider.value = 0;
+    elements.mockupXValue.textContent = "0px";
+  }
+  if (elements.mockupYSlider) {
+    elements.mockupYSlider.value = 0;
+    elements.mockupYValue.textContent = "0px";
+  }
+
+  renderMockupPreview();
+}
+
+function renderMockupPreview() {
+  const canvas = elements.mockupPreviewCanvas;
+  if (!canvas || !mockupPreviewTemplateImg || !mockupPreviewPosterImg) return;
+
+  const ctx = canvas.getContext("2d");
+  const template = mockupPreviewTemplateImg;
+  const poster = mockupPreviewPosterImg;
+  const rect = mockupPreviewTemplate?.poster_rect || {};
+
+  // Set canvas size to template size (scaled for display)
+  const maxWidth = 900;
+  const maxHeight = 700;
+  const displayScale = Math.min(maxWidth / template.width, maxHeight / template.height, 1);
+
+  canvas.width = template.width * displayScale;
+  canvas.height = template.height * displayScale;
+  canvas.dataset.displayScale = displayScale;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Draw template first (background)
+  ctx.drawImage(template, 0, 0, canvas.width, canvas.height);
+
+  // Calculate poster dimensions preserving aspect ratio
+  const posterAspect = poster.width / poster.height;
+  const baseX = (rect.x || 0) * displayScale;
+  const baseY = (rect.y || 0) * displayScale;
+
+  let posterWidth, posterHeight;
+  if (rect.width && rect.height) {
+    posterWidth = rect.width * displayScale;
+    posterHeight = rect.height * displayScale;
+  } else if (rect.width) {
+    posterWidth = rect.width * displayScale;
+    posterHeight = posterWidth / posterAspect;
+  } else if (rect.height) {
+    posterHeight = rect.height * displayScale;
+    posterWidth = posterHeight * posterAspect;
+  } else {
+    posterWidth = poster.width * displayScale * 0.3;
+    posterHeight = posterWidth / posterAspect;
+  }
+
+  // Apply user scale and offset
+  const scaledWidth = posterWidth * mockupPreviewScale;
+  const scaledHeight = posterHeight * mockupPreviewScale;
+  const finalX = baseX + (mockupPreviewOffsetX * displayScale);
+  const finalY = baseY + (mockupPreviewOffsetY * displayScale);
+
+  // Draw poster on top of template
+  ctx.drawImage(poster, finalX, finalY, scaledWidth, scaledHeight);
+}
+
+function handleMockupPreviewScale(e) {
+  mockupPreviewScale = parseFloat(e.target.value);
+  if (elements.mockupScaleValue) {
+    elements.mockupScaleValue.textContent = Math.round(mockupPreviewScale * 100) + "%";
+  }
+  renderMockupPreview();
+}
+
+function handleMockupPreviewOffsetX(e) {
+  mockupPreviewOffsetX = parseInt(e.target.value, 10);
+  if (elements.mockupXValue) {
+    elements.mockupXValue.textContent = mockupPreviewOffsetX + "px";
+  }
+  renderMockupPreview();
+}
+
+function handleMockupPreviewOffsetY(e) {
+  mockupPreviewOffsetY = parseInt(e.target.value, 10);
+  if (elements.mockupYValue) {
+    elements.mockupYValue.textContent = mockupPreviewOffsetY + "px";
+  }
+  renderMockupPreview();
+}
+
+// Drag to reposition poster
+function handlePreviewCanvasMouseDown(e) {
+  mockupPreviewDragging = true;
+  mockupPreviewDragStartX = e.clientX;
+  mockupPreviewDragStartY = e.clientY;
+  e.target.style.cursor = "grabbing";
+}
+
+function handlePreviewCanvasMouseMove(e) {
+  if (!mockupPreviewDragging) return;
+
+  const displayScale = parseFloat(elements.mockupPreviewCanvas?.dataset.displayScale) || 1;
+  const dx = (e.clientX - mockupPreviewDragStartX) / displayScale;
+  const dy = (e.clientY - mockupPreviewDragStartY) / displayScale;
+
+  mockupPreviewOffsetX += dx;
+  mockupPreviewOffsetY += dy;
+
+  // Update sliders
+  if (elements.mockupXSlider) {
+    elements.mockupXSlider.value = Math.max(-500, Math.min(500, mockupPreviewOffsetX));
+    elements.mockupXValue.textContent = Math.round(mockupPreviewOffsetX) + "px";
+  }
+  if (elements.mockupYSlider) {
+    elements.mockupYSlider.value = Math.max(-500, Math.min(500, mockupPreviewOffsetY));
+    elements.mockupYValue.textContent = Math.round(mockupPreviewOffsetY) + "px";
+  }
+
+  mockupPreviewDragStartX = e.clientX;
+  mockupPreviewDragStartY = e.clientY;
+
+  renderMockupPreview();
+}
+
+function handlePreviewCanvasMouseUp() {
+  mockupPreviewDragging = false;
+  if (elements.mockupPreviewCanvas) {
+    elements.mockupPreviewCanvas.style.cursor = "grab";
+  }
+}
+
+async function generateMockupFromPreview() {
+  if (!mockupPreviewTemplate || !mockupPreviewPoster) return;
+
+  const btn = elements.mockupPreviewGenerate;
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "Generating...";
+  }
+
+  try {
+    const response = await fetch("/api/mockups/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        poster: mockupPreviewPoster.filename,
+        mockup_id: mockupPreviewTemplate.id,
+        scale: mockupPreviewScale,
+        offset_x: mockupPreviewOffsetX,
+        offset_y: mockupPreviewOffsetY,
+      }),
+    });
+
+    const result = await response.json();
+
+    if (result.ok) {
+      closeMockupPreview();
+      loadGallery(true);
+      window.open(result.url, "_blank");
+    } else {
+      alert(`Mockup generation failed: ${result.error}`);
+    }
+  } catch (err) {
+    console.error("Mockup generation failed:", err);
+    alert("Failed to generate mockup. Please try again.");
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = "Generate Mockup";
+    }
+  }
+}
+
+// ===== MOCKUP TEMPLATE CREATOR =====
+
+function openMockupCreator() {
+  closeMockupModal();
+  closeCollectionModal();
+  resetMockupCreator();
+  elements.mockupCreator?.classList.add("open");
+}
+
+function closeMockupCreator() {
+  elements.mockupCreator?.classList.remove("open");
+  resetMockupCreator();
+}
+
+function resetMockupCreator() {
+  mockupCreatorImage = null;
+  mockupCreatorRect = { x: 0, y: 0, width: 0, height: 0 };
+  mockupCreatorDrawing = false;
+
+  if (elements.mockupTemplateName) elements.mockupTemplateName.value = "";
+  if (elements.mockupTemplateFile) elements.mockupTemplateFile.value = "";
+  if (elements.mockupSaveBtn) elements.mockupSaveBtn.disabled = true;
+
+  if (elements.mockupCreatorCanvas) {
+    elements.mockupCreatorCanvas.style.display = "none";
+    const ctx = elements.mockupCreatorCanvas.getContext("2d");
+    ctx.clearRect(0, 0, elements.mockupCreatorCanvas.width, elements.mockupCreatorCanvas.height);
+  }
+  if (elements.mockupCanvasPlaceholder) {
+    elements.mockupCanvasPlaceholder.style.display = "flex";
+  }
+
+  updateMockupRectDisplay();
+}
+
+function handleMockupFileUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    const img = new Image();
+    img.onload = () => {
+      mockupCreatorImage = img;
+      setupMockupCanvas();
+    };
+    img.src = event.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function setupMockupCanvas() {
+  if (!mockupCreatorImage || !elements.mockupCreatorCanvas) return;
+
+  const canvas = elements.mockupCreatorCanvas;
+  const container = canvas.parentElement;
+
+  // Calculate scale to fit in container while maintaining aspect ratio
+  const maxWidth = container.clientWidth - 40;
+  const maxHeight = 500;
+  const scale = Math.min(maxWidth / mockupCreatorImage.width, maxHeight / mockupCreatorImage.height, 1);
+
+  canvas.width = mockupCreatorImage.width * scale;
+  canvas.height = mockupCreatorImage.height * scale;
+
+  // Store scale factor for coordinate conversion
+  canvas.dataset.scale = scale;
+
+  // Show canvas, hide placeholder
+  canvas.style.display = "block";
+  if (elements.mockupCanvasPlaceholder) {
+    elements.mockupCanvasPlaceholder.style.display = "none";
+  }
+
+  drawMockupCanvas();
+  updateMockupSaveBtn();
+}
+
+function drawMockupCanvas() {
+  if (!mockupCreatorImage || !elements.mockupCreatorCanvas) return;
+
+  const canvas = elements.mockupCreatorCanvas;
+  const ctx = canvas.getContext("2d");
+  const scale = parseFloat(canvas.dataset.scale) || 1;
+
+  // Clear and draw image
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(mockupCreatorImage, 0, 0, canvas.width, canvas.height);
+
+  // Draw rectangle overlay
+  if (mockupCreatorRect.width > 0 && mockupCreatorRect.height > 0) {
+    const x = mockupCreatorRect.x * scale;
+    const y = mockupCreatorRect.y * scale;
+    const w = mockupCreatorRect.width * scale;
+    const h = mockupCreatorRect.height * scale;
+
+    // Semi-transparent overlay
+    ctx.fillStyle = "rgba(102, 126, 234, 0.3)";
+    ctx.fillRect(x, y, w, h);
+
+    // Border
+    ctx.strokeStyle = "#667eea";
+    ctx.lineWidth = 2;
+    ctx.setLineDash([5, 5]);
+    ctx.strokeRect(x, y, w, h);
+    ctx.setLineDash([]);
+
+    // Label
+    ctx.fillStyle = "#667eea";
+    ctx.font = "bold 14px sans-serif";
+    ctx.fillText("Poster Area", x + 8, y + 20);
+  }
+}
+
+function handleMockupCanvasMouseDown(e) {
+  if (!mockupCreatorImage) return;
+
+  const canvas = elements.mockupCreatorCanvas;
+  const rect = canvas.getBoundingClientRect();
+  const scale = parseFloat(canvas.dataset.scale) || 1;
+
+  mockupCreatorStartX = (e.clientX - rect.left) / scale;
+  mockupCreatorStartY = (e.clientY - rect.top) / scale;
+  mockupCreatorDrawing = true;
+
+  // Reset rect
+  mockupCreatorRect = { x: mockupCreatorStartX, y: mockupCreatorStartY, width: 0, height: 0 };
+}
+
+function handleMockupCanvasMouseMove(e) {
+  if (!mockupCreatorDrawing || !mockupCreatorImage) return;
+
+  const canvas = elements.mockupCreatorCanvas;
+  const rect = canvas.getBoundingClientRect();
+  const scale = parseFloat(canvas.dataset.scale) || 1;
+
+  const currentX = (e.clientX - rect.left) / scale;
+  const currentY = (e.clientY - rect.top) / scale;
+
+  // Calculate rect (handle negative dimensions)
+  const x = Math.min(mockupCreatorStartX, currentX);
+  const y = Math.min(mockupCreatorStartY, currentY);
+  const w = Math.abs(currentX - mockupCreatorStartX);
+  const h = Math.abs(currentY - mockupCreatorStartY);
+
+  mockupCreatorRect = { x: Math.round(x), y: Math.round(y), width: Math.round(w), height: Math.round(h) };
+
+  drawMockupCanvas();
+  updateMockupRectDisplay();
+}
+
+function handleMockupCanvasMouseUp() {
+  mockupCreatorDrawing = false;
+  updateMockupSaveBtn();
+}
+
+function updateMockupRectDisplay() {
+  if (elements.rectX) elements.rectX.textContent = mockupCreatorRect.x || 0;
+  if (elements.rectY) elements.rectY.textContent = mockupCreatorRect.y || 0;
+  if (elements.rectW) elements.rectW.textContent = mockupCreatorRect.width || 0;
+  if (elements.rectH) elements.rectH.textContent = mockupCreatorRect.height || 0;
+}
+
+function updateMockupSaveBtn() {
+  if (!elements.mockupSaveBtn) return;
+
+  const hasName = elements.mockupTemplateName?.value.trim();
+  const hasImage = mockupCreatorImage !== null;
+  const hasRect = mockupCreatorRect.width > 0 && mockupCreatorRect.height > 0;
+
+  elements.mockupSaveBtn.disabled = !(hasName && hasImage && hasRect);
+}
+
+async function saveMockupTemplate() {
+  const name = elements.mockupTemplateName?.value.trim();
+  const file = elements.mockupTemplateFile?.files[0];
+
+  if (!name || !file || mockupCreatorRect.width <= 0) {
+    alert("Please provide a name, upload an image, and draw the poster area.");
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("name", name);
+  formData.append("image", file);
+  formData.append("rect", JSON.stringify({
+    poster_rect: mockupCreatorRect,
+    output_size: mockupCreatorImage ? [mockupCreatorImage.width, mockupCreatorImage.height] : null,
+  }));
+
+  elements.mockupSaveBtn.disabled = true;
+  elements.mockupSaveBtn.textContent = "Saving...";
+
+  try {
+    const response = await fetch("/api/mockups", {
+      method: "POST",
+      body: formData,
+    });
+
+    const result = await response.json();
+
+    if (result.ok) {
+      closeMockupCreator();
+      await loadMockups();
+      alert(`Template "${name}" created successfully!`);
+    } else {
+      alert(result.error || "Failed to save template");
+    }
+  } catch (err) {
+    console.error("Failed to save mockup template:", err);
+    alert("Failed to save template. Please try again.");
+  } finally {
+    if (elements.mockupSaveBtn) {
+      elements.mockupSaveBtn.disabled = false;
+      elements.mockupSaveBtn.textContent = "Save Template";
+    }
+  }
 }
 
 // ===== INITIALIZE =====

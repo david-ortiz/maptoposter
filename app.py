@@ -12,6 +12,7 @@ from flask import Flask, Response, jsonify, render_template, request, send_from_
 os.environ.setdefault("MPLBACKEND", "Agg")
 
 import create_map_poster as poster
+import mockup_generator
 
 
 app = Flask(__name__, static_folder="static", template_folder="templates")
@@ -20,6 +21,8 @@ JOBS = {}
 JOBS_LOCK = threading.Lock()
 JOB_QUEUE = queue.Queue()
 WORKER_STARTED = False
+MAX_CONCURRENT_JOBS = 1  # Can be increased for multi-worker setup
+MAX_QUEUED_JOBS = 50  # Maximum jobs in queue
 
 
 def load_theme_catalog():
@@ -589,14 +592,18 @@ def api_jobs():
     }
 
     with JOBS_LOCK:
-        for existing in JOBS.values():
-            if existing["status"] in {"queued", "running"}:
-                return jsonify({"error": "A job is already running."}), 409
+        # Count queued and running jobs
+        queued_count = sum(1 for j in JOBS.values() if j["status"] == "queued")
+        if queued_count >= MAX_QUEUED_JOBS:
+            return jsonify({"error": f"Queue is full ({MAX_QUEUED_JOBS} jobs max)."}), 409
+
+        # Calculate queue position
+        job["queue_position"] = queued_count + 1
         JOBS[job_id] = job
 
     JOB_QUEUE.put(job_id)
 
-    return jsonify({"job_id": job_id})
+    return jsonify({"job_id": job_id, "queue_position": job["queue_position"]})
 
 
 @app.route("/api/jobs/<job_id>")
@@ -642,6 +649,293 @@ def api_jobs_list():
                 }
             )
         return jsonify(payload)
+
+
+@app.route("/api/queue")
+def api_queue_status():
+    """Get current queue status."""
+    with JOBS_LOCK:
+        queued = [j for j in JOBS.values() if j["status"] == "queued"]
+        running = [j for j in JOBS.values() if j["status"] == "running"]
+
+        # Sort by creation time
+        queued.sort(key=lambda x: x.get("created_at", 0))
+        running.sort(key=lambda x: x.get("created_at", 0))
+
+        return jsonify({
+            "queued": [{
+                "id": j["id"],
+                "city": j["city"],
+                "country": j["country"],
+                "theme": j["theme"],
+                "position": i + 1,
+            } for i, j in enumerate(queued)],
+            "running": [{
+                "id": j["id"],
+                "city": j["city"],
+                "country": j["country"],
+                "theme": j["theme"],
+                "percent": j["progress"],
+            } for j in running],
+            "queued_count": len(queued),
+            "running_count": len(running),
+            "max_queued": MAX_QUEUED_JOBS,
+        })
+
+
+@app.route("/api/queue/<job_id>", methods=["DELETE"])
+def api_queue_remove(job_id):
+    """Remove a job from the queue (only if still queued)."""
+    with JOBS_LOCK:
+        job = JOBS.get(job_id)
+        if not job:
+            return jsonify({"error": "Job not found."}), 404
+        if job["status"] != "queued":
+            return jsonify({"error": "Can only remove queued jobs."}), 400
+
+        job["status"] = "cancelled"
+        push_event(job_id, {"status": "cancelled", "message": "Removed from queue"})
+
+    return jsonify({"ok": True})
+
+
+@app.route("/api/queue/clear", methods=["POST"])
+def api_queue_clear():
+    """Clear all queued jobs."""
+    with JOBS_LOCK:
+        cancelled_count = 0
+        for job_id, job in JOBS.items():
+            if job["status"] == "queued":
+                job["status"] = "cancelled"
+                push_event(job_id, {"status": "cancelled", "message": "Queue cleared"})
+                cancelled_count += 1
+
+    return jsonify({"ok": True, "cancelled": cancelled_count})
+
+
+@app.route("/api/variations", methods=["POST"])
+def api_variations():
+    """Generate same location with multiple themes (quick variations)."""
+    ensure_worker()
+    payload = request.get_json(silent=True) or {}
+
+    themes = payload.get("themes", [])
+    if not themes:
+        return jsonify({"error": "At least one theme is required."}), 400
+    if len(themes) > 20:
+        return jsonify({"error": "Maximum 20 themes per batch."}), 400
+
+    # Validate required fields
+    city = (payload.get("city") or "").strip()
+    country = (payload.get("country") or "").strip()
+    if not city or not country:
+        return jsonify({"error": "City and country are required."}), 400
+
+    # Get common parameters
+    lat = payload.get("lat")
+    lng = payload.get("lng")
+    distance = int(payload.get("distance") or 29000)
+    dpi = int(payload.get("dpi") or 300)
+    output_format = (payload.get("format") or "png").strip()
+    font = (payload.get("font") or "").strip()
+    tagline = payload.get("tagline")
+    pin = (payload.get("pin") or "").strip() or None
+    pin_color = (payload.get("pin_color") or "").strip() or None
+    aspect_ratio = (payload.get("aspect_ratio") or "").strip() or "2:3"
+    collection = (payload.get("collection") or "").strip() or None
+
+    batch_id = uuid.uuid4().hex
+    job_ids = []
+
+    with JOBS_LOCK:
+        # Check queue capacity
+        queued_count = sum(1 for j in JOBS.values() if j["status"] == "queued")
+        if queued_count + len(themes) > MAX_QUEUED_JOBS:
+            return jsonify({"error": f"Queue would exceed limit ({MAX_QUEUED_JOBS} max)."}), 409
+
+        for i, theme in enumerate(themes):
+            job_id = uuid.uuid4().hex
+            job = {
+                "id": job_id,
+                "batch_id": batch_id,
+                "batch_position": i + 1,
+                "batch_total": len(themes),
+                "status": "queued",
+                "stage": "queued",
+                "progress": 0,
+                "message": "Queued",
+                "output": None,
+                "output_url": None,
+                "error": None,
+                "queue": queue.Queue(),
+                "city": city,
+                "country": country,
+                "theme": theme,
+                "distance": distance,
+                "dpi": dpi,
+                "format": output_format,
+                "font": font,
+                "lat": lat,
+                "lng": lng,
+                "tagline": tagline,
+                "pin": pin,
+                "pin_color": pin_color,
+                "aspect_ratio": aspect_ratio,
+                "collection": collection,
+                "queue_position": queued_count + i + 1,
+                "created_at": uuid.uuid1().time,
+            }
+            JOBS[job_id] = job
+            JOB_QUEUE.put(job_id)
+            job_ids.append(job_id)
+
+    return jsonify({
+        "batch_id": batch_id,
+        "job_ids": job_ids,
+        "count": len(themes),
+    })
+
+
+# ===== MOCKUPS =====
+MOCKUPS_DIR = os.path.join(os.path.dirname(__file__), "mockups")
+
+
+@app.route("/mockups/<path:filename>")
+def serve_mockup_file(filename):
+    """Serve mockup template files."""
+    return send_from_directory(MOCKUPS_DIR, filename)
+
+
+@app.route("/api/mockups")
+def api_mockups_list():
+    """List available mockup templates."""
+    mockups = mockup_generator.list_mockups()
+    return jsonify(mockups)
+
+
+@app.route("/api/mockups", methods=["POST"])
+def api_mockups_create():
+    """Create a new mockup template from uploaded image and rect data."""
+    # Ensure mockups directory exists
+    os.makedirs(MOCKUPS_DIR, exist_ok=True)
+
+    if "image" not in request.files:
+        return jsonify({"error": "No image uploaded."}), 400
+
+    image_file = request.files["image"]
+    name = request.form.get("name", "").strip()
+    rect_data = request.form.get("rect", "")
+
+    if not name:
+        return jsonify({"error": "Template name is required."}), 400
+
+    try:
+        rect = json.loads(rect_data) if rect_data else {}
+    except json.JSONDecodeError:
+        return jsonify({"error": "Invalid rect data."}), 400
+
+    # Generate safe ID from name
+    import re
+    mockup_id = re.sub(r'[^\w\s-]', '', name.lower())
+    mockup_id = re.sub(r'[\s]+', '-', mockup_id)[:30]
+
+    # Ensure unique ID
+    base_id = mockup_id
+    counter = 1
+    while os.path.exists(os.path.join(MOCKUPS_DIR, f"{mockup_id}.json")):
+        mockup_id = f"{base_id}-{counter}"
+        counter += 1
+
+    # Save image
+    ext = os.path.splitext(image_file.filename)[1].lower() or ".png"
+    if ext not in [".png", ".jpg", ".jpeg"]:
+        ext = ".png"
+    image_path = os.path.join(MOCKUPS_DIR, f"{mockup_id}{ext}")
+    image_file.save(image_path)
+
+    # Create metadata
+    metadata = {
+        "name": name,
+        "poster_rect": rect.get("poster_rect", {"x": 0, "y": 0, "width": 400, "height": 600}),
+        "poster_rotation": rect.get("poster_rotation", 0),
+        "output_size": rect.get("output_size"),
+    }
+
+    # Save metadata
+    metadata_path = os.path.join(MOCKUPS_DIR, f"{mockup_id}.json")
+    with open(metadata_path, "w") as f:
+        json.dump(metadata, f, indent=2)
+
+    return jsonify({
+        "ok": True,
+        "id": mockup_id,
+        "name": name,
+    })
+
+
+@app.route("/api/mockups/<mockup_id>", methods=["DELETE"])
+def api_mockups_delete(mockup_id):
+    """Delete a mockup template."""
+    # Find and delete image and metadata
+    deleted = False
+    for ext in [".png", ".jpg", ".jpeg"]:
+        image_path = os.path.join(MOCKUPS_DIR, f"{mockup_id}{ext}")
+        if os.path.exists(image_path):
+            os.remove(image_path)
+            deleted = True
+            break
+
+    metadata_path = os.path.join(MOCKUPS_DIR, f"{mockup_id}.json")
+    if os.path.exists(metadata_path):
+        os.remove(metadata_path)
+        deleted = True
+
+    if not deleted:
+        return jsonify({"error": "Template not found."}), 404
+
+    return jsonify({"ok": True})
+
+
+@app.route("/api/mockups/generate", methods=["POST"])
+def api_mockups_generate():
+    """Generate a mockup for a poster."""
+    payload = request.get_json(silent=True) or {}
+
+    poster_filename = payload.get("poster")
+    mockup_id = payload.get("mockup_id")
+    scale = payload.get("scale", 1.0)
+    offset_x = payload.get("offset_x", 0)
+    offset_y = payload.get("offset_y", 0)
+
+    if not poster_filename:
+        return jsonify({"error": "Poster filename is required."}), 400
+    if not mockup_id:
+        return jsonify({"error": "Mockup ID is required."}), 400
+
+    # Validate poster exists
+    poster_path = os.path.join(poster.POSTERS_DIR, os.path.basename(poster_filename))
+    if not os.path.exists(poster_path):
+        return jsonify({"error": "Poster not found."}), 404
+
+    # Generate output filename
+    base_name = os.path.basename(poster_filename).rsplit('.', 1)[0]
+    output_filename = f"{base_name}_mockup_{mockup_id}.png"
+    output_path = os.path.join(poster.POSTERS_DIR, output_filename)
+
+    # Generate the mockup with adjustments
+    result = mockup_generator.generate_mockup(
+        poster_path, mockup_id, output_path,
+        scale=scale, offset_x=offset_x, offset_y=offset_y
+    )
+
+    if result["success"]:
+        return jsonify({
+            "ok": True,
+            "filename": output_filename,
+            "url": f"/posters/{output_filename}",
+        })
+    else:
+        return jsonify({"error": result.get("error", "Unknown error")}), 500
 
 
 @app.route("/api/jobs/<job_id>/stream")
