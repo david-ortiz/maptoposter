@@ -38,6 +38,16 @@
                 <path fill="currentColor" d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"/>
               </svg>
             </button>
+            <button id="header-mockup-btn" class="header-icon-btn" type="button" title="Mockup Studio">
+              <svg viewBox="0 0 24 24" width="18" height="18">
+                <path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-7-2h2v-4h4v-2h-4V7h-2v4H8v2h4z"/>
+              </svg>
+            </button>
+            <button id="header-mockup-gallery-btn" class="header-icon-btn" type="button" title="Mockup Gallery">
+              <svg viewBox="0 0 24 24" width="18" height="18">
+                <path fill="currentColor" d="M22 16V4c0-1.1-.9-2-2-2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2zm-11-4l2.03 2.71L16 11l4 5H8l3-4zM2 6v14c0 1.1.9 2 2 2h14v-2H4V6H2z"/>
+              </svg>
+            </button>
           </div>
         </header>
 
@@ -503,32 +513,23 @@
             <canvas id="mockup-preview-canvas"></canvas>
           </div>
           <div class="mockup-preview-sidebar">
-            <div class="mockup-preview-field">
-              <label>Scale</label>
-              <div class="slider-row">
-                <input type="range" id="mockup-scale-slider" min="0.1" max="2" step="0.01" value="1">
-                <input type="text" class="slider-value-input" id="mockup-scale-value" value="100%" title="Type to edit">
-              </div>
+            <div class="mockup-preview-actions-compact">
+              <button type="button" class="compact-btn secondary" id="mockup-preview-reset">Reset</button>
+              <button type="button" class="compact-btn primary" id="mockup-preview-generate">Generate</button>
             </div>
-            <div class="mockup-preview-field">
-              <label>Horizontal Offset</label>
-              <div class="slider-row">
-                <input type="range" id="mockup-x-slider" min="-500" max="500" step="1" value="0">
-                <input type="text" class="slider-value-input" id="mockup-x-value" value="0px" title="Type to edit">
-              </div>
-            </div>
-            <div class="mockup-preview-field">
-              <label>Vertical Offset</label>
-              <div class="slider-row">
-                <input type="range" id="mockup-y-slider" min="-500" max="500" step="1" value="0">
-                <input type="text" class="slider-value-input" id="mockup-y-value" value="0px" title="Type to edit">
-              </div>
-            </div>
-            <p class="field-hint">Tip: Click and drag on the preview to reposition the poster.</p>
 
-            <!-- Text Labels Section -->
-            <div class="mockup-labels-section">
-              <label>Text Labels</label>
+            <!-- Layers Section -->
+            <div class="mockup-layers-section">
+              <div class="section-header-row">
+                <label>Layers</label>
+                <div class="mockup-labels-buttons">
+                  <button type="button" class="label-btn-sm" id="add-theme-label" title="Add theme name">Theme</button>
+                  <button type="button" class="label-btn-sm" id="add-font-label" title="Add font name">Font</button>
+                  <button type="button" class="label-btn-sm" id="add-aspect-label" title="Add aspect ratio">Ratio</button>
+                  <button type="button" class="label-btn-sm" id="add-custom-label" title="Add custom text">+</button>
+                </div>
+              </div>
+              <div id="mockup-labels-list" class="mockup-labels-list"></div>
               <div class="mockup-labels-row">
                 <select id="mockup-label-font" class="mockup-label-select">
                   <option value="Arial">Arial</option>
@@ -554,37 +555,133 @@
                 </div>
                 <input type="color" id="mockup-label-color" value="#ffffff" class="mockup-label-color" title="Custom color">
               </div>
-              <div class="mockup-labels-buttons">
-                <button type="button" class="label-btn" id="add-theme-label" title="Add theme name">+ Theme</button>
-                <button type="button" class="label-btn" id="add-font-label" title="Add font name">+ Font</button>
-                <button type="button" class="label-btn" id="add-aspect-label" title="Add aspect ratio">+ Aspect</button>
-                <button type="button" class="label-btn" id="add-custom-label" title="Add custom text">+ Custom</button>
-              </div>
-              <div id="mockup-labels-list" class="mockup-labels-list"></div>
+            </div>
 
-              <!-- Guides Section -->
-              <div class="mockup-guides-section">
-                <div class="guides-header">
-                  <span>Guides</span>
-                  <div class="guides-buttons">
-                    <button type="button" class="guide-add-btn" id="add-h-guide" title="Add horizontal guide">H</button>
-                    <button type="button" class="guide-add-btn" id="add-v-guide" title="Add vertical guide">V</button>
-                    <button type="button" class="guide-clear-btn" id="clear-guides" title="Clear all guides">Clear</button>
-                  </div>
+            <!-- Poster Adjustments -->
+            <div class="mockup-adjustments">
+              <div class="adjust-row">
+                <label>Scale</label>
+                <input type="range" id="mockup-scale-slider" min="0.1" max="2" step="0.01" value="1">
+                <input type="text" class="slider-value-input" id="mockup-scale-value" value="100%">
+              </div>
+              <div class="adjust-row">
+                <label>X</label>
+                <input type="range" id="mockup-x-slider" min="-500" max="500" step="1" value="0">
+                <input type="text" class="slider-value-input" id="mockup-x-value" value="0px">
+              </div>
+              <div class="adjust-row">
+                <label>Y</label>
+                <input type="range" id="mockup-y-slider" min="-500" max="500" step="1" value="0">
+                <input type="text" class="slider-value-input" id="mockup-y-value" value="0px">
+              </div>
+            </div>
+
+            <!-- Guides Section -->
+            <div class="mockup-guides-section">
+              <div class="guides-header">
+                <span>Guides</span>
+                <div class="guides-buttons">
+                  <button type="button" class="guide-add-btn" id="add-h-guide" title="Add horizontal guide">H</button>
+                  <button type="button" class="guide-add-btn" id="add-v-guide" title="Add vertical guide">V</button>
+                  <button type="button" class="guide-clear-btn" id="clear-guides" title="Clear all guides">Clear</button>
                 </div>
-                <div id="mockup-guides-list" class="mockup-guides-list"></div>
-                <label class="snap-toggle">
-                  <input type="checkbox" id="mockup-snap-enabled" checked>
-                  <span>Snap to guides</span>
-                </label>
               </div>
-              <p class="field-hint">Click labels to select, drag to move. Press Delete to remove.</p>
+              <div id="mockup-guides-list" class="mockup-guides-list"></div>
+              <label class="snap-toggle">
+                <input type="checkbox" id="mockup-snap-enabled" checked>
+                <span>Snap to guides</span>
+              </label>
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-            <div class="mockup-preview-actions">
-              <button type="button" class="secondary-btn" id="mockup-preview-reset">Reset</button>
-              <button type="button" class="primary-btn" id="mockup-preview-generate">Generate Mockup</button>
+    <!-- MOCKUP STUDIO -->
+    <div class="mockup-studio" id="mockup-studio" aria-hidden="true">
+      <div class="mockup-studio-backdrop"></div>
+      <div class="mockup-studio-panel" role="dialog" aria-modal="true">
+        <div class="mockup-studio-header">
+          <div class="mockup-studio-title">
+            <h3>Mockup Studio</h3>
+            <span class="mockup-studio-breadcrumb" id="mockup-studio-breadcrumb"></span>
+          </div>
+          <button class="mockup-studio-close" id="mockup-studio-close" type="button">
+            <svg viewBox="0 0 24 24" width="24" height="24">
+              <path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+            </svg>
+          </button>
+        </div>
+        <div class="mockup-studio-body">
+          <!-- Step 1: Template Selection -->
+          <div class="mockup-studio-step" id="mockup-studio-templates" data-step="templates">
+            <div class="mockup-studio-step-header">
+              <h4>Select a Mockup Template</h4>
+              <button type="button" class="secondary-btn" id="mockup-studio-add-template">
+                <svg viewBox="0 0 24 24" width="16" height="16">
+                  <path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                </svg>
+                Add Template
+              </button>
             </div>
+            <div class="mockup-studio-grid" id="mockup-studio-template-grid">
+              <!-- Templates rendered here -->
+            </div>
+          </div>
+
+          <!-- Step 2: Poster Selection -->
+          <div class="mockup-studio-step hidden" id="mockup-studio-posters" data-step="posters">
+            <div class="mockup-studio-step-header">
+              <button type="button" class="mockup-studio-back" id="mockup-studio-back">
+                <svg viewBox="0 0 24 24" width="20" height="20">
+                  <path fill="currentColor" d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+                </svg>
+                Back
+              </button>
+              <h4>Select a Poster</h4>
+              <div class="mockup-studio-filter">
+                <select id="mockup-studio-collection-filter">
+                  <option value="">All Posters</option>
+                </select>
+              </div>
+            </div>
+            <div class="mockup-studio-selected-template" id="mockup-studio-selected-template">
+              <!-- Selected template preview shown here -->
+            </div>
+            <div class="mockup-studio-grid poster-grid" id="mockup-studio-poster-grid">
+              <!-- Posters rendered here -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MOCKUP OUTPUT GALLERY -->
+    <div class="mockup-gallery" id="mockup-gallery" aria-hidden="true">
+      <div class="mockup-gallery-backdrop"></div>
+      <div class="mockup-gallery-panel" role="dialog" aria-modal="true">
+        <div class="mockup-gallery-header">
+          <h3>Generated Mockups</h3>
+          <div class="mockup-gallery-actions">
+            <button type="button" class="secondary-btn" id="mockup-gallery-open-folder" title="Open folder">
+              <svg viewBox="0 0 24 24" width="16" height="16">
+                <path fill="currentColor" d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/>
+              </svg>
+            </button>
+            <button class="mockup-gallery-close" id="mockup-gallery-close" type="button">
+              <svg viewBox="0 0 24 24" width="24" height="24">
+                <path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="mockup-gallery-body">
+          <div class="mockup-gallery-grid" id="mockup-gallery-grid">
+            <!-- Generated mockups rendered here -->
+          </div>
+          <div class="mockup-gallery-empty" id="mockup-gallery-empty" style="display: none;">
+            <p>No mockups generated yet.</p>
+            <p class="hint">Use the Mockup Studio to create mockups from your posters.</p>
           </div>
         </div>
       </div>

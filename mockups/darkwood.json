@@ -1,0 +1,16 @@
+{
+  "name": "darkwood",
+  "poster_rect": {
+    "x": 362,
+    "y": 222,
+    "width": 463,
+    "height": 667
+  },
+  "poster_rotation": 0,
+  "output_size": [
+    1200,
+    1200
+  ],
+  "guides": [],
+  "labels": []
+}

@@ -3,10 +3,12 @@ Mockup Generator for MapToPoster
 Places generated posters into frame mockup templates.
 """
 
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont, ImageFilter
 import json
 import os
 from pathlib import Path
+
+FONTS_DIR = Path(__file__).parent / "fonts"
 
 MOCKUPS_DIR = Path(__file__).parent / "mockups"
 
@@ -37,7 +39,9 @@ def list_mockups():
                     "poster_rect": metadata.get("poster_rect", {}),
                     "poster_rotation": metadata.get("poster_rotation", 0),
                     "output_size": metadata.get("output_size"),
-                    "thumbnail": f"/mockups/{image_file.name}"
+                    "thumbnail": f"/mockups/{image_file.name}",
+                    "guides": metadata.get("guides", []),
+                    "labels": metadata.get("labels", [])
                 })
         except (json.JSONDecodeError, IOError) as e:
             print(f"Error loading mockup {json_file}: {e}")
@@ -46,7 +50,41 @@ def list_mockups():
     return mockups
 
 
-def generate_mockup(poster_path, mockup_id, output_path, scale=1.0, offset_x=0, offset_y=0):
+def find_font_path(font_name):
+    """Find the font file path for a given font name."""
+    # Check app fonts directory
+    for ext in [".ttf", ".otf", ".TTF", ".OTF"]:
+        font_path = FONTS_DIR / f"{font_name}{ext}"
+        if font_path.exists():
+            return str(font_path)
+
+    # Check subdirectories
+    for subdir in FONTS_DIR.iterdir():
+        if subdir.is_dir():
+            for ext in [".ttf", ".otf", ".TTF", ".OTF"]:
+                font_path = subdir / f"{font_name}{ext}"
+                if font_path.exists():
+                    return str(font_path)
+
+    # Fallback to system fonts (common paths)
+    system_font_dirs = [
+        Path("C:/Windows/Fonts"),
+        Path("/usr/share/fonts"),
+        Path("/System/Library/Fonts"),
+        Path.home() / ".fonts",
+    ]
+
+    for font_dir in system_font_dirs:
+        if font_dir.exists():
+            for ext in [".ttf", ".otf", ".TTF", ".OTF"]:
+                font_path = font_dir / f"{font_name}{ext}"
+                if font_path.exists():
+                    return str(font_path)
+
+    return None
+
+
+def generate_mockup(poster_path, mockup_id, output_path, scale=1.0, offset_x=0, offset_y=0, labels=None):
     """
     Generate a mockup by compositing a poster onto a template.
 
@@ -57,6 +95,7 @@ def generate_mockup(poster_path, mockup_id, output_path, scale=1.0, offset_x=0, 
         scale: User adjustment scale multiplier (default 1.0)
         offset_x: User adjustment X offset in pixels (default 0)
         offset_y: User adjustment Y offset in pixels (default 0)
+        labels: List of label objects with text, x, y, font, size, color, shadow
 
     Returns:
         dict with success status and output path or error message
@@ -138,6 +177,54 @@ def generate_mockup(poster_path, mockup_id, output_path, scale=1.0, offset_x=0, 
         # Paste poster onto mockup
         # Use the poster's alpha channel as mask for proper transparency
         result.paste(poster_resized, (x, y), poster_resized)
+
+        # Draw labels on top
+        if labels:
+            draw = ImageDraw.Draw(result)
+            img_width, img_height = result.size
+
+            for label in labels:
+                label_text = label.get("text", "")
+                if not label_text:
+                    continue
+
+                # Position is percentage based (0-100)
+                label_x = int((label.get("x", 50) / 100) * img_width)
+                label_y = int((label.get("y", 50) / 100) * img_height)
+                font_name = label.get("font", "Arial")
+                font_size = label.get("size", 24)
+                font_color = label.get("color", "#ffffff")
+                has_shadow = label.get("shadow", True)
+
+                # Try to load the font
+                font = None
+                font_path = find_font_path(font_name)
+                if font_path:
+                    try:
+                        font = ImageFont.truetype(font_path, font_size)
+                    except Exception:
+                        pass
+
+                # Fallback to default font
+                if font is None:
+                    try:
+                        font = ImageFont.truetype("arial.ttf", font_size)
+                    except Exception:
+                        font = ImageFont.load_default()
+
+                # Draw shadow if enabled
+                if has_shadow:
+                    shadow_offset = max(2, font_size // 12)
+                    shadow_color = (0, 0, 0, 180)  # Semi-transparent black
+                    draw.text(
+                        (label_x + shadow_offset, label_y + shadow_offset),
+                        label_text,
+                        font=font,
+                        fill=shadow_color
+                    )
+
+                # Draw main text
+                draw.text((label_x, label_y), label_text, font=font, fill=font_color)
 
         # Resize output if specified
         output_size = metadata.get("output_size")

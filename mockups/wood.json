@@ -1,0 +1,16 @@
+{
+  "name": "Wood",
+  "poster_rect": {
+    "x": 322,
+    "y": 244,
+    "width": 526,
+    "height": 761
+  },
+  "poster_rotation": 0,
+  "output_size": [
+    1200,
+    1200
+  ],
+  "guides": [],
+  "labels": []
+}

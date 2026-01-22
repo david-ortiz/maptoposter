@@ -837,12 +837,91 @@ def api_variations():
 
 # ===== MOCKUPS =====
 MOCKUPS_DIR = os.path.join(os.path.dirname(__file__), "mockups")
+MOCKUP_OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "mockup_output")
+
+
+def ensure_mockup_output_dir():
+    if not os.path.exists(MOCKUP_OUTPUT_DIR):
+        os.makedirs(MOCKUP_OUTPUT_DIR)
 
 
 @app.route("/mockups/<path:filename>")
 def serve_mockup_file(filename):
     """Serve mockup template files."""
     return send_from_directory(MOCKUPS_DIR, filename)
+
+
+@app.route("/mockup_output/<path:filename>")
+def serve_mockup_output(filename):
+    """Serve generated mockup images."""
+    return send_from_directory(MOCKUP_OUTPUT_DIR, filename)
+
+
+@app.route("/api/mockup_output")
+def api_mockup_output_list():
+    """List all generated mockup images."""
+    ensure_mockup_output_dir()
+    items = []
+    valid_extensions = (".png", ".jpg", ".jpeg")
+
+    for filename in os.listdir(MOCKUP_OUTPUT_DIR):
+        if not filename.lower().endswith(valid_extensions):
+            continue
+        path = os.path.join(MOCKUP_OUTPUT_DIR, filename)
+        try:
+            mtime = os.path.getmtime(path)
+            size = os.path.getsize(path)
+        except OSError:
+            mtime = 0
+            size = 0
+
+        items.append({
+            "filename": filename,
+            "url": f"/mockup_output/{filename}",
+            "mtime": mtime,
+            "size": size,
+        })
+
+    # Sort by modification time (newest first)
+    items.sort(key=lambda x: x["mtime"], reverse=True)
+    return jsonify({"items": items})
+
+
+@app.route("/api/mockup_output/<path:filename>", methods=["DELETE"])
+def delete_mockup_output(filename):
+    """Delete a generated mockup image."""
+    safe_name = os.path.basename(filename)
+    valid_extensions = (".png", ".jpg", ".jpeg")
+    if safe_name != filename or not safe_name.lower().endswith(valid_extensions):
+        return jsonify({"error": "Invalid filename."}), 400
+
+    path = os.path.join(MOCKUP_OUTPUT_DIR, safe_name)
+    if not os.path.exists(path):
+        return jsonify({"error": "File not found."}), 404
+
+    try:
+        os.remove(path)
+    except OSError as exc:
+        return jsonify({"error": str(exc)}), 500
+
+    return jsonify({"ok": True})
+
+
+@app.route("/api/mockup_output/open", methods=["POST"])
+def open_mockup_output_folder():
+    """Open the mockup output folder in file explorer."""
+    ensure_mockup_output_dir()
+    folder_path = os.path.abspath(MOCKUP_OUTPUT_DIR)
+    try:
+        if sys.platform == "darwin":
+            subprocess.run(["open", folder_path], check=False)
+        elif sys.platform.startswith("win"):
+            os.startfile(folder_path)
+        else:
+            subprocess.run(["xdg-open", folder_path], check=False)
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 500
+    return jsonify({"ok": True})
 
 
 @app.route("/api/mockups")
@@ -912,32 +991,92 @@ def api_mockups_create():
     })
 
 
-@app.route("/api/mockups/<mockup_id>", methods=["DELETE"])
-def api_mockups_delete(mockup_id):
-    """Delete a mockup template."""
-    # Find and delete image and metadata
-    deleted = False
-    for ext in [".png", ".jpg", ".jpeg"]:
-        image_path = os.path.join(MOCKUPS_DIR, f"{mockup_id}{ext}")
-        if os.path.exists(image_path):
-            os.remove(image_path)
-            deleted = True
-            break
-
+@app.route("/api/mockups/<mockup_id>", methods=["DELETE", "PATCH"])
+def api_mockups_modify(mockup_id):
+    """Delete or update a mockup template."""
     metadata_path = os.path.join(MOCKUPS_DIR, f"{mockup_id}.json")
-    if os.path.exists(metadata_path):
-        os.remove(metadata_path)
-        deleted = True
 
-    if not deleted:
-        return jsonify({"error": "Template not found."}), 404
+    if request.method == "DELETE":
+        # Find and delete image and metadata
+        deleted = False
+        for ext in [".png", ".jpg", ".jpeg"]:
+            image_path = os.path.join(MOCKUPS_DIR, f"{mockup_id}{ext}")
+            if os.path.exists(image_path):
+                os.remove(image_path)
+                deleted = True
+                break
 
-    return jsonify({"ok": True})
+        if os.path.exists(metadata_path):
+            os.remove(metadata_path)
+            deleted = True
+
+        if not deleted:
+            return jsonify({"error": "Template not found."}), 404
+
+        return jsonify({"ok": True})
+
+    else:  # PATCH - Update template metadata (guides, labels, etc.)
+        if not os.path.exists(metadata_path):
+            return jsonify({"error": "Template not found."}), 404
+
+        payload = request.get_json(silent=True) or {}
+
+        # Load existing metadata
+        with open(metadata_path, "r", encoding="utf-8") as f:
+            metadata = json.load(f)
+
+        # Update guides if provided
+        if "guides" in payload:
+            metadata["guides"] = payload["guides"]
+
+        # Update labels if provided
+        if "labels" in payload:
+            metadata["labels"] = payload["labels"]
+
+        # Save updated metadata
+        with open(metadata_path, "w", encoding="utf-8") as f:
+            json.dump(metadata, f, indent=2)
+
+        return jsonify({"ok": True})
+
+
+@app.route("/api/mockups/save", methods=["POST"])
+def api_mockups_save():
+    """Save a client-rendered mockup image."""
+    ensure_mockup_output_dir()
+
+    if "image" not in request.files:
+        return jsonify({"error": "No image uploaded."}), 400
+
+    image_file = request.files["image"]
+    poster_filename = request.form.get("poster", "")
+    mockup_id = request.form.get("mockup_id", "")
+
+    if not poster_filename:
+        return jsonify({"error": "Poster filename is required."}), 400
+    if not mockup_id:
+        return jsonify({"error": "Mockup ID is required."}), 400
+
+    # Generate output filename
+    base_name = os.path.basename(poster_filename).rsplit('.', 1)[0]
+    output_filename = f"{base_name}_mockup_{mockup_id}.png"
+    output_path = os.path.join(MOCKUP_OUTPUT_DIR, output_filename)
+
+    try:
+        image_file.save(output_path)
+        return jsonify({
+            "ok": True,
+            "filename": output_filename,
+            "url": f"/mockup_output/{output_filename}",
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/api/mockups/generate", methods=["POST"])
 def api_mockups_generate():
-    """Generate a mockup for a poster."""
+    """Generate a mockup for a poster (server-side fallback)."""
+    ensure_mockup_output_dir()
     payload = request.get_json(silent=True) or {}
 
     poster_filename = payload.get("poster")
@@ -945,6 +1084,7 @@ def api_mockups_generate():
     scale = payload.get("scale", 1.0)
     offset_x = payload.get("offset_x", 0)
     offset_y = payload.get("offset_y", 0)
+    labels = payload.get("labels", [])  # Array of label objects
 
     if not poster_filename:
         return jsonify({"error": "Poster filename is required."}), 400
@@ -959,19 +1099,20 @@ def api_mockups_generate():
     # Generate output filename
     base_name = os.path.basename(poster_filename).rsplit('.', 1)[0]
     output_filename = f"{base_name}_mockup_{mockup_id}.png"
-    output_path = os.path.join(poster.POSTERS_DIR, output_filename)
+    output_path = os.path.join(MOCKUP_OUTPUT_DIR, output_filename)
 
-    # Generate the mockup with adjustments
+    # Generate the mockup with adjustments and labels
     result = mockup_generator.generate_mockup(
         poster_path, mockup_id, output_path,
-        scale=scale, offset_x=offset_x, offset_y=offset_y
+        scale=scale, offset_x=offset_x, offset_y=offset_y,
+        labels=labels
     )
 
     if result["success"]:
         return jsonify({
             "ok": True,
             "filename": output_filename,
-            "url": f"/posters/{output_filename}",
+            "url": f"/mockup_output/{output_filename}",
         })
     else:
         return jsonify({"error": result.get("error", "Unknown error")}), 500

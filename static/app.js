@@ -83,7 +83,7 @@ let mockupPreviewDragStartY = 0;
 // Mockup Labels State
 let mockupLabels = [];  // Array of { id, text, x, y, font, size, color, shadow }
 let mockupLabelIdCounter = 0;
-let mockupSelectedLabel = null;
+let mockupSelectedLayer = "poster";  // "poster" or label id number
 let mockupLabelDragging = false;
 let mockupLabelDragStartX = 0;
 let mockupLabelDragStartY = 0;
@@ -92,6 +92,9 @@ let mockupLabelDragStartY = 0;
 let mockupGuides = [];  // Array of { id, type: 'h'|'v', position: 0-100 }
 let mockupGuideIdCounter = 0;
 const SNAP_THRESHOLD = 8;  // Pixels to snap within
+
+// Mockup Studio State
+let mockupStudioSelectedTemplate = null;
 
 // ===== MAP VARIABLES =====
 let leafletMap = null;
@@ -226,6 +229,10 @@ const elements = {
   collectionModalGrid: document.getElementById("collection-modal-grid"),
   addCollectionModalBtn: document.getElementById("add-collection-modal-btn"),
 
+  // Floating elements
+  bottomBarFloat: document.getElementById("bottom-bar-float"),
+  coordsWidget: document.getElementById("coords-widget"),
+
   // Map style
   styleWidget: document.getElementById("style-widget"),
   styleToggle: document.getElementById("style-toggle"),
@@ -296,6 +303,28 @@ const elements = {
   clearGuides: document.getElementById("clear-guides"),
   mockupGuidesList: document.getElementById("mockup-guides-list"),
   mockupSnapEnabled: document.getElementById("mockup-snap-enabled"),
+
+  // Mockup Studio
+  mockupStudio: document.getElementById("mockup-studio"),
+  mockupStudioClose: document.getElementById("mockup-studio-close"),
+  mockupStudioBreadcrumb: document.getElementById("mockup-studio-breadcrumb"),
+  mockupStudioTemplates: document.getElementById("mockup-studio-templates"),
+  mockupStudioPosters: document.getElementById("mockup-studio-posters"),
+  mockupStudioTemplateGrid: document.getElementById("mockup-studio-template-grid"),
+  mockupStudioPosterGrid: document.getElementById("mockup-studio-poster-grid"),
+  mockupStudioSelectedTemplate: document.getElementById("mockup-studio-selected-template"),
+  mockupStudioAddTemplate: document.getElementById("mockup-studio-add-template"),
+  mockupStudioBack: document.getElementById("mockup-studio-back"),
+  mockupStudioCollectionFilter: document.getElementById("mockup-studio-collection-filter"),
+  headerMockupBtn: document.getElementById("header-mockup-btn"),
+
+  // Mockup Output Gallery
+  mockupGallery: document.getElementById("mockup-gallery"),
+  mockupGalleryClose: document.getElementById("mockup-gallery-close"),
+  mockupGalleryGrid: document.getElementById("mockup-gallery-grid"),
+  mockupGalleryEmpty: document.getElementById("mockup-gallery-empty"),
+  mockupGalleryOpenFolder: document.getElementById("mockup-gallery-open-folder"),
+  headerMockupGalleryBtn: document.getElementById("header-mockup-gallery-btn"),
 };
 
 // ===== MAP TILE PROVIDERS =====
@@ -3383,6 +3412,23 @@ function initEventListeners() {
     window.open("/theme-samples", "_blank");
   });
   elements.headerGalleryBtn?.addEventListener("click", openCollectionModal);
+  elements.headerMockupBtn?.addEventListener("click", openMockupStudio);
+
+  // Mockup Studio
+  elements.mockupStudioClose?.addEventListener("click", closeMockupStudio);
+  elements.mockupStudio?.querySelector(".mockup-studio-backdrop")?.addEventListener("click", closeMockupStudio);
+  elements.mockupStudioAddTemplate?.addEventListener("click", () => {
+    closeMockupStudio();
+    openMockupCreator();
+  });
+  elements.mockupStudioBack?.addEventListener("click", mockupStudioGoBack);
+  elements.mockupStudioCollectionFilter?.addEventListener("change", renderMockupStudioPosters);
+
+  // Mockup Output Gallery
+  elements.headerMockupGalleryBtn?.addEventListener("click", openMockupGallery);
+  elements.mockupGalleryClose?.addEventListener("click", closeMockupGallery);
+  elements.mockupGallery?.querySelector(".mockup-gallery-backdrop")?.addEventListener("click", closeMockupGallery);
+  elements.mockupGalleryOpenFolder?.addEventListener("click", openMockupOutputFolder);
 
   // Theme drawer
   elements.browseThemesBtn?.addEventListener("click", openThemeDrawer);
@@ -3536,6 +3582,10 @@ function initEventListeners() {
         closeLightbox();
       } else if (elements.mockupCreator?.classList.contains("open")) {
         closeMockupCreator();
+      } else if (elements.mockupStudio?.classList.contains("open")) {
+        closeMockupStudio();
+      } else if (elements.mockupPreview?.classList.contains("open")) {
+        closeMockupPreview();
       } else if (elements.mockupModal?.classList.contains("open")) {
         closeMockupModal();
       } else if (elements.collectionModal?.classList.contains("open")) {
@@ -3687,11 +3737,13 @@ async function generateMockup(mockupId) {
 
 // ===== MOCKUP PREVIEW =====
 
-async function openMockupPreview(mockup) {
-  if (!selectedPosterForMockup) return;
+async function openMockupPreview(mockup, poster = null) {
+  // Use provided poster or fall back to selectedPosterForMockup
+  const posterToUse = poster || selectedPosterForMockup;
+  if (!posterToUse) return;
 
   mockupPreviewTemplate = mockup;
-  mockupPreviewPoster = selectedPosterForMockup;
+  mockupPreviewPoster = posterToUse;
   mockupPreviewScale = 1.0;
   mockupPreviewOffsetX = 0;
   mockupPreviewOffsetY = 0;
@@ -3710,9 +3762,9 @@ async function openMockupPreview(mockup) {
     elements.mockupYValue.value = "0px";
   }
 
-  // Clear labels and guides
-  clearMockupLabels();
-  clearMockupGuides();
+  // Load saved guides and labels from template
+  loadMockupGuides(mockup.guides || []);
+  loadMockupLabels(mockup.labels || []);
 
   // Close mockup modal and show preview
   closeMockupModal();
@@ -3912,7 +3964,7 @@ function renderMockupPreview() {
     ctx.shadowOffsetY = 0;
 
     // Draw selection indicator
-    if (mockupSelectedLabel === label.id) {
+    if (mockupSelectedLayer === label.id) {
       const metrics = ctx.measureText(label.text);
       ctx.strokeStyle = "#00aaff";
       ctx.lineWidth = 2;
@@ -3949,12 +4001,18 @@ function handleMockupPreviewOffsetY(e) {
 
 // Drag to reposition poster or labels
 function handlePreviewCanvasMouseDown(e) {
-  // First check if clicking on a label
+  // First check if clicking on a label (this auto-selects that label)
   if (handleLabelCanvasMouseDown(e)) {
     return;  // Label handling took over
   }
 
-  // Otherwise, handle poster dragging
+  // Only allow poster dragging if poster layer is selected
+  if (mockupSelectedLayer !== "poster") {
+    // Select the poster layer when clicking on empty area
+    selectMockupLayer("poster");
+  }
+
+  // Handle poster dragging
   mockupPreviewDragging = true;
   mockupPreviewDragStartX = e.clientX;
   mockupPreviewDragStartY = e.clientY;
@@ -3967,7 +4025,8 @@ function handlePreviewCanvasMouseMove(e) {
     return;
   }
 
-  if (!mockupPreviewDragging) return;
+  // Only move poster if poster layer is selected
+  if (!mockupPreviewDragging || mockupSelectedLayer !== "poster") return;
 
   const displayScale = parseFloat(elements.mockupPreviewCanvas?.dataset.displayScale) || 1;
   const dx = (e.clientX - mockupPreviewDragStartX) / displayScale;
@@ -3979,11 +4038,11 @@ function handlePreviewCanvasMouseMove(e) {
   // Update sliders
   if (elements.mockupXSlider) {
     elements.mockupXSlider.value = Math.max(-500, Math.min(500, mockupPreviewOffsetX));
-    elements.mockupXValue.textContent = Math.round(mockupPreviewOffsetX) + "px";
+    elements.mockupXValue.value = Math.round(mockupPreviewOffsetX) + "px";
   }
   if (elements.mockupYSlider) {
     elements.mockupYSlider.value = Math.max(-500, Math.min(500, mockupPreviewOffsetY));
-    elements.mockupYValue.textContent = Math.round(mockupPreviewOffsetY) + "px";
+    elements.mockupYValue.value = Math.round(mockupPreviewOffsetY) + "px";
   }
 
   mockupPreviewDragStartX = e.clientX;
@@ -4023,27 +4082,27 @@ function addMockupLabel(text, type = "custom") {
   mockupLabels.push(label);
   renderMockupLabelsListUI();
   renderMockupPreview();
-  selectMockupLabel(label.id);
+  selectMockupLayer(label.id);
 }
 
 function removeMockupLabel(labelId) {
   mockupLabels = mockupLabels.filter(l => l.id !== labelId);
-  if (mockupSelectedLabel === labelId) {
-    mockupSelectedLabel = null;
+  if (mockupSelectedLayer === labelId) {
+    mockupSelectedLayer = "poster";
   }
   renderMockupLabelsListUI();
   renderMockupPreview();
 }
 
-function selectMockupLabel(labelId) {
-  mockupSelectedLabel = labelId;
+function selectMockupLayer(layerId) {
+  mockupSelectedLayer = layerId;
   renderMockupLabelsListUI();
   renderMockupPreview();
 }
 
 function clearMockupLabels() {
   mockupLabels = [];
-  mockupSelectedLabel = null;
+  mockupSelectedLayer = "poster";
   mockupLabelIdCounter = 0;
   renderMockupLabelsListUI();
 }
@@ -4054,19 +4113,44 @@ function renderMockupLabelsListUI() {
 
   list.innerHTML = "";
 
+  // Add Poster layer (non-deleteable) at the top
+  const posterItem = document.createElement("div");
+  posterItem.className = "mockup-layer-item poster-layer" + (mockupSelectedLayer === "poster" ? " selected" : "");
+  posterItem.innerHTML = `
+    <span class="layer-icon">
+      <svg viewBox="0 0 24 24" width="14" height="14">
+        <path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5-7l-3 3.72L9 13l-3 4h12l-4-5z"/>
+      </svg>
+    </span>
+    <span class="layer-text">Poster</span>
+    <span class="layer-lock">
+      <svg viewBox="0 0 24 24" width="12" height="12">
+        <path fill="currentColor" d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
+      </svg>
+    </span>
+  `;
+  posterItem.addEventListener("click", () => selectMockupLayer("poster"));
+  list.appendChild(posterItem);
+
+  // Add label layers
   mockupLabels.forEach(label => {
     const item = document.createElement("div");
-    item.className = "mockup-label-item" + (mockupSelectedLabel === label.id ? " selected" : "");
+    item.className = "mockup-layer-item label-layer" + (mockupSelectedLayer === label.id ? " selected" : "");
     item.innerHTML = `
-      <span class="label-text" style="color: ${label.color}">${escapeHtml(label.text)}</span>
-      <button type="button" class="label-remove" title="Remove">×</button>
+      <span class="layer-icon label-icon">
+        <svg viewBox="0 0 24 24" width="14" height="14">
+          <path fill="currentColor" d="M2.5 4v3h5v12h3V7h5V4h-13zm19 5h-9v3h3v7h3v-7h3V9z"/>
+        </svg>
+      </span>
+      <span class="layer-text" style="color: ${label.color}">${escapeHtml(label.text)}</span>
+      <button type="button" class="layer-remove" title="Remove">×</button>
     `;
     item.addEventListener("click", (e) => {
-      if (!e.target.classList.contains("label-remove")) {
-        selectMockupLabel(label.id);
+      if (!e.target.classList.contains("layer-remove")) {
+        selectMockupLayer(label.id);
       }
     });
-    item.querySelector(".label-remove").addEventListener("click", (e) => {
+    item.querySelector(".layer-remove").addEventListener("click", (e) => {
       e.stopPropagation();
       removeMockupLabel(label.id);
     });
@@ -4102,7 +4186,7 @@ function getLabelAtPosition(canvasX, canvasY) {
 
 function handleLabelCanvasMouseDown(e) {
   const canvas = elements.mockupPreviewCanvas;
-  if (!canvas) return;
+  if (!canvas) return false;
 
   const rect = canvas.getBoundingClientRect();
   const canvasX = e.clientX - rect.left;
@@ -4112,7 +4196,7 @@ function handleLabelCanvasMouseDown(e) {
 
   if (label) {
     e.stopPropagation();
-    selectMockupLabel(label.id);
+    selectMockupLayer(label.id);
     mockupLabelDragging = true;
     mockupLabelDragStartX = e.clientX;
     mockupLabelDragStartY = e.clientY;
@@ -4123,7 +4207,8 @@ function handleLabelCanvasMouseDown(e) {
 }
 
 function handleLabelCanvasMouseMove(e) {
-  if (!mockupLabelDragging || !mockupSelectedLabel) return false;
+  // Only handle if dragging a label layer (not poster)
+  if (!mockupLabelDragging || mockupSelectedLayer === "poster") return false;
 
   const canvas = elements.mockupPreviewCanvas;
   if (!canvas) return false;
@@ -4131,7 +4216,7 @@ function handleLabelCanvasMouseMove(e) {
   const dx = e.clientX - mockupLabelDragStartX;
   const dy = e.clientY - mockupLabelDragStartY;
 
-  const label = mockupLabels.find(l => l.id === mockupSelectedLabel);
+  const label = mockupLabels.find(l => l.id === mockupSelectedLayer);
   if (label) {
     // Convert pixel delta to percentage
     label.x += (dx / canvas.width) * 100;
@@ -4170,11 +4255,12 @@ function handleLabelCanvasMouseMove(e) {
 
 function handleLabelKeyDown(e) {
   if (e.key === "Delete" || e.key === "Backspace") {
-    if (mockupSelectedLabel && elements.mockupPreview?.classList.contains("open")) {
+    // Only delete label layers, not the poster
+    if (mockupSelectedLayer && mockupSelectedLayer !== "poster" && elements.mockupPreview?.classList.contains("open")) {
       // Don't delete if user is typing in an input
       if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
       e.preventDefault();
-      removeMockupLabel(mockupSelectedLabel);
+      removeMockupLabel(mockupSelectedLayer);
     }
   }
 }
@@ -4203,6 +4289,90 @@ function clearMockupGuides() {
   mockupGuideIdCounter = 0;
   renderMockupGuidesListUI();
   renderMockupPreview();
+}
+
+function loadMockupGuides(guides) {
+  mockupGuides = [];
+  mockupGuideIdCounter = 0;
+
+  if (Array.isArray(guides)) {
+    guides.forEach(g => {
+      mockupGuides.push({
+        id: ++mockupGuideIdCounter,
+        type: g.type || "h",
+        position: g.position || 50
+      });
+    });
+  }
+
+  renderMockupGuidesListUI();
+}
+
+function loadMockupLabels(labels) {
+  mockupLabels = [];
+  mockupLabelIdCounter = 0;
+  mockupSelectedLayer = "poster";
+
+  if (Array.isArray(labels)) {
+    labels.forEach(l => {
+      mockupLabels.push({
+        id: ++mockupLabelIdCounter,
+        text: l.text || "",
+        type: l.type || "custom",
+        x: l.x ?? 50,
+        y: l.y ?? 50,
+        font: l.font || "Arial",
+        size: l.size || 24,
+        color: l.color || "#ffffff",
+        shadow: l.shadow !== false,
+      });
+    });
+  }
+
+  renderMockupLabelsListUI();
+}
+
+async function saveMockupGuides() {
+  await saveMockupTemplateData();
+}
+
+async function saveMockupTemplateData() {
+  if (!mockupPreviewTemplate?.id) return;
+
+  // Prepare guides data (strip internal ids)
+  const guidesData = mockupGuides.map(g => ({
+    type: g.type,
+    position: g.position
+  }));
+
+  // Prepare labels data (strip internal ids)
+  const labelsData = mockupLabels.map(l => ({
+    text: l.text,
+    type: l.type,
+    x: l.x,
+    y: l.y,
+    font: l.font,
+    size: l.size,
+    color: l.color,
+    shadow: l.shadow,
+  }));
+
+  try {
+    await fetch(`/api/mockups/${mockupPreviewTemplate.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ guides: guidesData, labels: labelsData })
+    });
+
+    // Update the template in mockupList so it persists in memory too
+    const template = mockupList.find(m => m.id === mockupPreviewTemplate.id);
+    if (template) {
+      template.guides = guidesData;
+      template.labels = labelsData;
+    }
+  } catch (err) {
+    console.error("Failed to save mockup template data:", err);
+  }
 }
 
 function updateGuidePosition(guideId, position) {
@@ -4258,6 +4428,7 @@ function populateMockupLabelFonts() {
     const opt = document.createElement("option");
     opt.value = f;
     opt.textContent = f;
+    opt.style.fontFamily = `"${f}", sans-serif`;
     optgroupSystem.appendChild(opt);
   });
   select.appendChild(optgroupSystem);
@@ -4269,6 +4440,7 @@ function populateMockupLabelFonts() {
     const opt = document.createElement("option");
     opt.value = f;
     opt.textContent = f;
+    opt.style.fontFamily = `"${f}", sans-serif`;
     optgroupApp.appendChild(opt);
   });
   select.appendChild(optgroupApp);
@@ -4329,26 +4501,126 @@ function setupSliderKeyboardInput() {
   }
 }
 
+function renderMockupFullResolution() {
+  // Create an offscreen canvas at full template resolution
+  const template = mockupPreviewTemplateImg;
+  const poster = mockupPreviewPosterImg;
+  if (!template || !poster) return null;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = template.width;
+  canvas.height = template.height;
+  const ctx = canvas.getContext("2d");
+
+  const rect = mockupPreviewTemplate?.poster_rect || {};
+
+  // Draw template first (background)
+  ctx.drawImage(template, 0, 0, canvas.width, canvas.height);
+
+  // Calculate poster dimensions preserving aspect ratio (no display scaling)
+  const posterAspect = poster.width / poster.height;
+  const baseX = rect.x || 0;
+  const baseY = rect.y || 0;
+
+  let posterWidth, posterHeight;
+  if (rect.width && rect.height) {
+    posterWidth = rect.width;
+    posterHeight = rect.height;
+  } else if (rect.width) {
+    posterWidth = rect.width;
+    posterHeight = posterWidth / posterAspect;
+  } else if (rect.height) {
+    posterHeight = rect.height;
+    posterWidth = posterHeight * posterAspect;
+  } else {
+    posterWidth = poster.width * 0.3;
+    posterHeight = posterWidth / posterAspect;
+  }
+
+  // Apply user scale and offset
+  const scaledWidth = posterWidth * mockupPreviewScale;
+  const scaledHeight = posterHeight * mockupPreviewScale;
+  const finalX = baseX + mockupPreviewOffsetX;
+  const finalY = baseY + mockupPreviewOffsetY;
+
+  // Draw poster on top of template
+  ctx.drawImage(poster, finalX, finalY, scaledWidth, scaledHeight);
+
+  // Draw labels at full resolution (scale font sizes proportionally)
+  const displayScale = parseFloat(elements.mockupPreviewCanvas?.dataset.displayScale) || 1;
+  const fontScale = 1 / displayScale;  // Scale up fonts for full resolution
+
+  mockupLabels.forEach(label => {
+    const x = (label.x / 100) * canvas.width;
+    const y = (label.y / 100) * canvas.height;
+
+    const scaledFontSize = Math.round(label.size * fontScale);
+    ctx.font = `${scaledFontSize}px "${label.font}"`;
+    ctx.fillStyle = label.color;
+    ctx.textBaseline = "alphabetic";
+
+    // Draw text shadow if enabled
+    if (label.shadow) {
+      const shadowOffset = Math.max(2, scaledFontSize / 12);
+      ctx.shadowColor = "rgba(0, 0, 0, 0.7)";
+      ctx.shadowBlur = 4 * fontScale;
+      ctx.shadowOffsetX = shadowOffset;
+      ctx.shadowOffsetY = shadowOffset;
+    }
+
+    ctx.fillText(label.text, x, y);
+
+    // Reset shadow
+    ctx.shadowColor = "transparent";
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
+  });
+
+  return canvas;
+}
+
 async function generateMockupFromPreview() {
   if (!mockupPreviewTemplate || !mockupPreviewPoster) return;
 
   const btn = elements.mockupPreviewGenerate;
   if (btn) {
     btn.disabled = true;
-    btn.textContent = "Generating...";
+    btn.textContent = "Saving...";
+  }
+
+  // Save guides to template first
+  await saveMockupGuides();
+
+  if (btn) {
+    btn.textContent = "Rendering...";
   }
 
   try {
-    const response = await fetch("/api/mockups/generate", {
+    // Render mockup at full resolution on canvas
+    const canvas = renderMockupFullResolution();
+    if (!canvas) {
+      throw new Error("Failed to render mockup");
+    }
+
+    if (btn) {
+      btn.textContent = "Uploading...";
+    }
+
+    // Convert canvas to blob
+    const blob = await new Promise((resolve, reject) => {
+      canvas.toBlob(b => b ? resolve(b) : reject(new Error("Failed to create blob")), "image/png", 1.0);
+    });
+
+    // Create form data with the image
+    const formData = new FormData();
+    formData.append("image", blob, "mockup.png");
+    formData.append("poster", mockupPreviewPoster.filename);
+    formData.append("mockup_id", mockupPreviewTemplate.id);
+
+    const response = await fetch("/api/mockups/save", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        poster: mockupPreviewPoster.filename,
-        mockup_id: mockupPreviewTemplate.id,
-        scale: mockupPreviewScale,
-        offset_x: mockupPreviewOffsetX,
-        offset_y: mockupPreviewOffsetY,
-      }),
+      body: formData,
     });
 
     const result = await response.json();
@@ -4366,7 +4638,7 @@ async function generateMockupFromPreview() {
   } finally {
     if (btn) {
       btn.disabled = false;
-      btn.textContent = "Generate Mockup";
+      btn.textContent = "Generate";
     }
   }
 }
@@ -4575,7 +4847,8 @@ async function saveMockupTemplate() {
     if (result.ok) {
       closeMockupCreator();
       await loadMockups();
-      alert(`Template "${name}" created successfully!`);
+      // Re-open mockup studio to show the new template
+      openMockupStudio();
     } else {
       alert(result.error || "Failed to save template");
     }
@@ -4587,6 +4860,352 @@ async function saveMockupTemplate() {
       elements.mockupSaveBtn.disabled = false;
       elements.mockupSaveBtn.textContent = "Save Template";
     }
+  }
+}
+
+// ===== MOCKUP STUDIO =====
+
+function openMockupStudio() {
+  mockupStudioSelectedTemplate = null;
+
+  // Hide floating elements
+  document.getElementById("bottom-bar-float")?.classList.add("hidden-by-modal");
+  document.getElementById("coords-widget")?.classList.add("hidden-by-modal");
+  document.getElementById("style-widget")?.classList.add("hidden-by-modal");
+
+  // Render template grid
+  renderMockupStudioTemplates();
+
+  // Show templates step, hide posters step
+  elements.mockupStudioTemplates?.classList.remove("hidden");
+  elements.mockupStudioPosters?.classList.add("hidden");
+
+  // Clear breadcrumb
+  if (elements.mockupStudioBreadcrumb) {
+    elements.mockupStudioBreadcrumb.textContent = "";
+  }
+
+  elements.mockupStudio?.classList.add("open");
+}
+
+function closeMockupStudio() {
+  elements.mockupStudio?.classList.remove("open");
+  mockupStudioSelectedTemplate = null;
+
+  // Show floating elements
+  document.getElementById("bottom-bar-float")?.classList.remove("hidden-by-modal");
+  document.getElementById("coords-widget")?.classList.remove("hidden-by-modal");
+  document.getElementById("style-widget")?.classList.remove("hidden-by-modal");
+}
+
+function renderMockupStudioTemplates() {
+  const grid = elements.mockupStudioTemplateGrid;
+  if (!grid) return;
+
+  grid.innerHTML = "";
+
+  if (!mockupList.length) {
+    grid.innerHTML = '<div class="mockup-studio-empty">No mockup templates yet. Click "Add Template" to create one.</div>';
+    return;
+  }
+
+  mockupList.forEach(mockup => {
+    const card = document.createElement("div");
+    card.className = "mockup-studio-card";
+    card.innerHTML = `
+      <div class="mockup-studio-card-image">
+        <img src="${mockup.thumbnail}" alt="${escapeHtml(mockup.name)}" loading="lazy">
+      </div>
+      <div class="mockup-studio-card-info">
+        <span class="mockup-studio-card-name">${escapeHtml(mockup.name)}</span>
+      </div>
+      <button type="button" class="mockup-studio-card-delete" title="Delete template">
+        <svg viewBox="0 0 24 24" width="14" height="14">
+          <path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+        </svg>
+      </button>
+    `;
+
+    card.addEventListener("click", (e) => {
+      if (e.target.closest(".mockup-studio-card-delete")) {
+        e.stopPropagation();
+        deleteMockupStudioTemplate(mockup);
+        return;
+      }
+      selectMockupStudioTemplate(mockup);
+    });
+
+    grid.appendChild(card);
+  });
+}
+
+async function deleteMockupStudioTemplate(mockup) {
+  if (!confirm(`Delete template "${mockup.name}"? This cannot be undone.`)) return;
+
+  try {
+    const response = await fetch(`/api/mockups/${mockup.id}`, { method: "DELETE" });
+    const result = await response.json();
+
+    if (result.ok) {
+      await loadMockups();
+      renderMockupStudioTemplates();
+    } else {
+      alert(result.error || "Failed to delete template");
+    }
+  } catch (err) {
+    console.error("Failed to delete template:", err);
+    alert("Failed to delete template");
+  }
+}
+
+function selectMockupStudioTemplate(mockup) {
+  mockupStudioSelectedTemplate = mockup;
+
+  // Update breadcrumb
+  if (elements.mockupStudioBreadcrumb) {
+    elements.mockupStudioBreadcrumb.textContent = `/ ${mockup.name}`;
+  }
+
+  // Show selected template preview
+  if (elements.mockupStudioSelectedTemplate) {
+    elements.mockupStudioSelectedTemplate.innerHTML = `
+      <div class="mockup-studio-selected-preview">
+        <img src="${mockup.thumbnail}" alt="${escapeHtml(mockup.name)}">
+        <span>${escapeHtml(mockup.name)}</span>
+      </div>
+    `;
+  }
+
+  // Populate collection filter
+  populateMockupStudioCollectionFilter();
+
+  // Render posters
+  renderMockupStudioPosters();
+
+  // Switch views
+  elements.mockupStudioTemplates?.classList.add("hidden");
+  elements.mockupStudioPosters?.classList.remove("hidden");
+}
+
+function mockupStudioGoBack() {
+  mockupStudioSelectedTemplate = null;
+
+  // Clear breadcrumb
+  if (elements.mockupStudioBreadcrumb) {
+    elements.mockupStudioBreadcrumb.textContent = "";
+  }
+
+  // Switch views
+  elements.mockupStudioTemplates?.classList.remove("hidden");
+  elements.mockupStudioPosters?.classList.add("hidden");
+}
+
+function populateMockupStudioCollectionFilter() {
+  const select = elements.mockupStudioCollectionFilter;
+  if (!select) return;
+
+  select.innerHTML = '<option value="">All Posters</option>';
+
+  collectionList.forEach(coll => {
+    const opt = document.createElement("option");
+    opt.value = coll.id;
+    opt.textContent = coll.name;
+    select.appendChild(opt);
+  });
+}
+
+function renderMockupStudioPosters() {
+  const grid = elements.mockupStudioPosterGrid;
+  if (!grid) return;
+
+  grid.innerHTML = "";
+
+  const collectionFilter = elements.mockupStudioCollectionFilter?.value || "";
+
+  // Filter gallery items to only include images with thumbnails
+  let posters = (window.galleryItems || []).filter(item =>
+    item.has_thumb && item.thumb_url && !item.filename.includes("_mockup_")
+  );
+
+  // Apply collection filter
+  if (collectionFilter) {
+    posters = posters.filter(item => item.config?.collection === collectionFilter);
+  }
+
+  if (!posters.length) {
+    grid.innerHTML = '<div class="mockup-studio-empty">No posters available. Generate some posters first!</div>';
+    return;
+  }
+
+  posters.forEach(poster => {
+    const card = document.createElement("div");
+    card.className = "mockup-studio-poster-card";
+
+    const city = poster.config?.city || poster.filename.split("_")[0];
+    const theme = poster.config?.theme || "";
+    const themeFormatted = theme.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+    const aspectRatio = poster.config?.aspect_ratio || "2:3";
+    const dpi = poster.config?.dpi || 300;
+    const format = (poster.config?.format || "png").toUpperCase();
+
+    card.innerHTML = `
+      <div class="mockup-studio-poster-image">
+        <img src="${poster.thumb_url}?t=${poster.mtime}" alt="${escapeHtml(poster.filename)}" loading="lazy">
+        <div class="mockup-studio-poster-specs">${escapeHtml(aspectRatio)} · ${dpi} DPI</div>
+      </div>
+      <div class="mockup-studio-poster-info">
+        <span class="mockup-studio-poster-city">${escapeHtml(city)}</span>
+        <span class="mockup-studio-poster-theme">${escapeHtml(themeFormatted)}</span>
+      </div>
+    `;
+
+    card.addEventListener("click", () => {
+      selectMockupStudioPoster(poster);
+    });
+
+    grid.appendChild(card);
+  });
+}
+
+function selectMockupStudioPoster(poster) {
+  if (!mockupStudioSelectedTemplate) return;
+
+  // Save template reference before closing (closeMockupStudio clears it)
+  const template = mockupStudioSelectedTemplate;
+
+  // Close the studio and open the preview with the selected template and poster
+  closeMockupStudio();
+  openMockupPreview(template, poster);
+}
+
+// ===== MOCKUP OUTPUT GALLERY =====
+
+let mockupOutputList = [];
+
+async function openMockupGallery() {
+  // Hide floating elements
+  document.getElementById("bottom-bar-float")?.classList.add("hidden-by-modal");
+  document.getElementById("coords-widget")?.classList.add("hidden-by-modal");
+  document.getElementById("style-widget")?.classList.add("hidden-by-modal");
+
+  elements.mockupGallery?.classList.add("open");
+  await loadMockupOutputs();
+  renderMockupGallery();
+}
+
+function closeMockupGallery() {
+  elements.mockupGallery?.classList.remove("open");
+
+  // Show floating elements
+  document.getElementById("bottom-bar-float")?.classList.remove("hidden-by-modal");
+  document.getElementById("coords-widget")?.classList.remove("hidden-by-modal");
+  document.getElementById("style-widget")?.classList.remove("hidden-by-modal");
+}
+
+async function loadMockupOutputs() {
+  try {
+    const response = await fetch("/api/mockup_output");
+    const data = await response.json();
+    mockupOutputList = data.items || [];
+  } catch (err) {
+    console.error("Failed to load mockup outputs:", err);
+    mockupOutputList = [];
+  }
+}
+
+function renderMockupGallery() {
+  const grid = elements.mockupGalleryGrid;
+  const empty = elements.mockupGalleryEmpty;
+  if (!grid) return;
+
+  grid.innerHTML = "";
+
+  if (!mockupOutputList.length) {
+    grid.style.display = "none";
+    if (empty) empty.style.display = "block";
+    return;
+  }
+
+  grid.style.display = "grid";
+  if (empty) empty.style.display = "none";
+
+  mockupOutputList.forEach(item => {
+    const card = document.createElement("div");
+    card.className = "mockup-gallery-item";
+
+    const date = new Date(item.mtime * 1000);
+    const dateStr = date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+
+    // Truncate filename for display
+    const displayName = item.filename.length > 25
+      ? item.filename.substring(0, 22) + "..."
+      : item.filename;
+
+    card.innerHTML = `
+      <div class="mockup-gallery-item-image">
+        <img src="${item.url}?t=${item.mtime}" alt="${escapeHtml(item.filename)}" loading="lazy">
+      </div>
+      <div class="mockup-gallery-item-info">
+        <span class="mockup-gallery-item-name" title="${escapeHtml(item.filename)}">${escapeHtml(displayName)}</span>
+        <span class="mockup-gallery-item-date">${dateStr}</span>
+      </div>
+      <div class="mockup-gallery-item-actions">
+        <button type="button" class="mockup-gallery-item-btn download" title="Download">
+          <svg viewBox="0 0 24 24" width="16" height="16">
+            <path fill="currentColor" d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+          </svg>
+        </button>
+        <button type="button" class="mockup-gallery-item-btn delete" title="Delete">
+          <svg viewBox="0 0 24 24" width="16" height="16">
+            <path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+          </svg>
+        </button>
+      </div>
+    `;
+
+    // Click image to open in new tab
+    card.querySelector(".mockup-gallery-item-image").addEventListener("click", () => {
+      window.open(item.url, "_blank");
+    });
+
+    // Download button
+    card.querySelector(".download").addEventListener("click", (e) => {
+      e.stopPropagation();
+      const link = document.createElement("a");
+      link.href = item.url;
+      link.download = item.filename;
+      link.click();
+    });
+
+    // Delete button
+    card.querySelector(".delete").addEventListener("click", async (e) => {
+      e.stopPropagation();
+      if (!confirm(`Delete "${item.filename}"?`)) return;
+
+      try {
+        const response = await fetch(`/api/mockup_output/${item.filename}`, { method: "DELETE" });
+        const result = await response.json();
+        if (result.ok) {
+          await loadMockupOutputs();
+          renderMockupGallery();
+        } else {
+          alert(result.error || "Failed to delete");
+        }
+      } catch (err) {
+        console.error("Failed to delete mockup:", err);
+        alert("Failed to delete mockup");
+      }
+    });
+
+    grid.appendChild(card);
+  });
+}
+
+async function openMockupOutputFolder() {
+  try {
+    await fetch("/api/mockup_output/open", { method: "POST" });
+  } catch (err) {
+    console.error("Failed to open folder:", err);
   }
 }
 
