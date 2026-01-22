@@ -22,6 +22,8 @@ const state = {
   radius: 29000,
   dpi: 300,
   format: "png",
+  aspectRatio: "2:3",  // Poster aspect ratio
+  collection: null,  // Collection to add poster to
   theme: "feature_based",
   font: "",  // Empty means default (Roboto)
   pin: "none",  // Center pin icon: none, marker, heart, star, home, circle
@@ -40,6 +42,13 @@ let fontList = [];
 // ===== STARRED ITEMS =====
 let starredFonts = [];
 let starredThemes = [];
+
+// ===== PRESETS =====
+let presetList = [];
+
+// ===== COLLECTIONS =====
+let collectionList = [];
+let activeCollectionFilter = null;
 
 // ===== MAP VARIABLES =====
 let leafletMap = null;
@@ -98,8 +107,11 @@ const elements = {
   dpiSlider: document.getElementById("dpi-slider"),
   dpiValue: document.getElementById("dpi-value"),
 
-  // Format, Font & Theme
+  // Format, Aspect, Preset, Font & Theme
   formatSelect: document.getElementById("format-select"),
+  aspectSelect: document.getElementById("aspect-select"),
+  presetSelect: document.getElementById("preset-select"),
+  savePresetBtn: document.getElementById("save-preset-btn"),
   fontPicker: document.getElementById("font-picker"),
   fontPickerToggle: document.getElementById("font-picker-toggle"),
   fontPickerLabel: document.getElementById("font-picker-label"),
@@ -130,6 +142,8 @@ const elements = {
 
   // Generate
   generateBtn: document.getElementById("generate-btn"),
+  collectionSelect: document.getElementById("collection-select"),
+  collectionFilterTabs: document.getElementById("collection-filter-tabs"),
 
   // Progress
   progressSection: document.getElementById("progress-section"),
@@ -162,6 +176,7 @@ const elements = {
   styleDropdown: document.getElementById("style-dropdown"),
 
   // Theme drawer
+  browseThemesBtn: document.getElementById("browse-themes-btn"),
   themeDrawer: document.getElementById("theme-drawer"),
   themeSearch: document.getElementById("theme-search"),
   themeGridFull: document.getElementById("theme-grid-full"),
@@ -228,6 +243,8 @@ async function initApp() {
   await loadStarred();
   loadThemes();
   loadFonts();
+  loadPresets();
+  loadCollections();
   initEventListeners();
   initPreviewWidget();
 }
@@ -281,6 +298,227 @@ async function toggleStarTheme(themeId, e) {
   } catch (err) {
     console.error("Failed to toggle star:", err);
   }
+}
+
+// ===== PRESETS =====
+async function loadPresets() {
+  try {
+    const response = await fetch("/api/presets");
+    presetList = await response.json();
+    renderPresetSelector();
+  } catch (err) {
+    console.error("Failed to load presets:", err);
+    presetList = [];
+  }
+}
+
+function renderPresetSelector() {
+  if (!elements.presetSelect) return;
+
+  // Keep "Custom" option and add presets
+  elements.presetSelect.innerHTML = '<option value="">Custom</option>';
+
+  presetList.forEach(preset => {
+    const option = document.createElement("option");
+    option.value = preset.id;
+    option.textContent = preset.name;
+    elements.presetSelect.appendChild(option);
+  });
+}
+
+function applyPreset(presetId) {
+  if (!presetId) return;
+
+  const preset = presetList.find(p => p.id === presetId);
+  if (!preset) return;
+
+  // Apply theme
+  if (preset.theme) {
+    selectTheme(preset.theme);
+  }
+
+  // Apply font
+  if (preset.font !== undefined) {
+    state.font = preset.font;
+    selectFont(preset.font);
+  }
+
+  // Apply pin
+  if (preset.pin) {
+    state.pin = preset.pin;
+    elements.pinSelector?.querySelectorAll(".pin-option").forEach(btn => {
+      btn.classList.toggle("selected", btn.dataset.pin === preset.pin);
+    });
+    if (preset.pin !== "none" && elements.pinColorSelector) {
+      elements.pinColorSelector.style.display = "flex";
+      updatePinColorSwatches();
+    }
+  }
+
+  // Apply pin color
+  if (preset.pin_color) {
+    state.pinColor = preset.pin_color;
+  }
+
+  // Apply format
+  if (preset.format) {
+    state.format = preset.format;
+    if (elements.formatSelect) {
+      elements.formatSelect.value = preset.format;
+    }
+  }
+
+  // Apply aspect ratio
+  if (preset.aspect_ratio) {
+    state.aspectRatio = preset.aspect_ratio;
+    if (elements.aspectSelect) {
+      elements.aspectSelect.value = preset.aspect_ratio;
+    }
+  }
+
+  // Apply DPI
+  if (preset.dpi) {
+    state.dpi = preset.dpi;
+    if (elements.dpiSlider) {
+      elements.dpiSlider.value = preset.dpi;
+    }
+    if (elements.dpiValue) {
+      elements.dpiValue.textContent = preset.dpi;
+    }
+  }
+
+  updatePreview();
+}
+
+async function saveCurrentAsPreset() {
+  const name = prompt("Enter a name for this preset:");
+  if (!name || !name.trim()) return;
+
+  try {
+    const response = await fetch("/api/presets", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: name.trim(),
+        theme: state.theme,
+        font: state.font,
+        pin: state.pin,
+        pin_color: state.pinColor,
+        format: state.format,
+        dpi: state.dpi,
+        aspect_ratio: state.aspectRatio,
+      }),
+    });
+
+    if (response.ok) {
+      await loadPresets();
+      // Select the newly created preset
+      const preset = await response.json();
+      if (elements.presetSelect) {
+        elements.presetSelect.value = preset.id;
+      }
+    } else {
+      const err = await response.json();
+      alert(err.error || "Failed to save preset");
+    }
+  } catch (err) {
+    console.error("Failed to save preset:", err);
+    alert("Failed to save preset");
+  }
+}
+
+// ===== COLLECTIONS =====
+async function loadCollections() {
+  try {
+    const response = await fetch("/api/collections");
+    collectionList = await response.json();
+    renderCollectionSelector();
+    renderCollectionFilterTabs();
+  } catch (err) {
+    console.error("Failed to load collections:", err);
+    collectionList = [];
+  }
+}
+
+function renderCollectionSelector() {
+  if (!elements.collectionSelect) return;
+
+  elements.collectionSelect.innerHTML = '<option value="">None</option>';
+
+  collectionList.forEach(coll => {
+    const option = document.createElement("option");
+    option.value = coll.id;
+    option.textContent = coll.name;
+    elements.collectionSelect.appendChild(option);
+  });
+}
+
+function renderCollectionFilterTabs() {
+  if (!elements.collectionFilterTabs) return;
+
+  elements.collectionFilterTabs.innerHTML = '';
+
+  // "All" tab
+  const allTab = document.createElement("button");
+  allTab.className = "collection-tab" + (activeCollectionFilter === null ? " active" : "");
+  allTab.textContent = "All";
+  allTab.addEventListener("click", () => {
+    activeCollectionFilter = null;
+    renderCollectionFilterTabs();
+    filterGalleryByCollection();
+  });
+  elements.collectionFilterTabs.appendChild(allTab);
+
+  // Collection tabs
+  collectionList.forEach(coll => {
+    const tab = document.createElement("button");
+    tab.className = "collection-tab" + (activeCollectionFilter === coll.id ? " active" : "");
+    tab.textContent = coll.name;
+    tab.style.borderColor = coll.color;
+    if (activeCollectionFilter === coll.id) {
+      tab.style.background = coll.color;
+      tab.style.color = "white";
+    }
+    tab.addEventListener("click", () => {
+      activeCollectionFilter = coll.id;
+      renderCollectionFilterTabs();
+      filterGalleryByCollection();
+    });
+    elements.collectionFilterTabs.appendChild(tab);
+  });
+}
+
+function filterGalleryByCollection() {
+  if (!window.galleryItems) return;
+
+  const items = activeCollectionFilter
+    ? window.galleryItems.filter(item => item.config?.collection === activeCollectionFilter)
+    : window.galleryItems;
+
+  renderGalleryFiltered(items);
+}
+
+function renderGalleryFiltered(items) {
+  if (!elements.galleryGrid) return;
+
+  elements.galleryGrid.innerHTML = "";
+
+  const itemsWithThumbs = items.filter(item => item.has_thumb && item.thumb_url);
+
+  if (!itemsWithThumbs.length) {
+    elements.galleryGrid.innerHTML = '<div class="gallery-placeholder">No posters in this collection.</div>';
+    return;
+  }
+
+  const fragment = document.createDocumentFragment();
+
+  itemsWithThumbs.forEach((item, index) => {
+    const card = createGalleryCard(item, index);
+    fragment.appendChild(card);
+  });
+
+  elements.galleryGrid.appendChild(fragment);
+  initLazyLoad();
 }
 
 // ===== LEAFLET MAP =====
@@ -1721,6 +1959,14 @@ function loadConfigFromGallery(config) {
     }
   }
 
+  // Set aspect ratio
+  if (config.aspect_ratio) {
+    state.aspectRatio = config.aspect_ratio;
+    if (elements.aspectSelect) {
+      elements.aspectSelect.value = config.aspect_ratio;
+    }
+  }
+
   // Set DPI
   if (config.dpi) {
     state.dpi = config.dpi;
@@ -2145,6 +2391,8 @@ async function generatePoster() {
     distance: state.radius,
     theme: state.theme,
     format: state.format,
+    aspect_ratio: state.aspectRatio,
+    collection: state.collection,
     font: state.font,
     pin: state.pin !== "none" ? state.pin : null,
     pin_color: state.pin !== "none" ? state.pinColor : null,
@@ -2241,6 +2489,24 @@ function initEventListeners() {
     state.format = e.target.value;
   });
 
+  // Aspect ratio
+  elements.aspectSelect?.addEventListener("change", (e) => {
+    state.aspectRatio = e.target.value;
+    // Reset preset to Custom when manually changing settings
+    if (elements.presetSelect) elements.presetSelect.value = "";
+  });
+
+  // Presets
+  elements.presetSelect?.addEventListener("change", (e) => {
+    applyPreset(e.target.value);
+  });
+  elements.savePresetBtn?.addEventListener("click", saveCurrentAsPreset);
+
+  // Collection
+  elements.collectionSelect?.addEventListener("change", (e) => {
+    state.collection = e.target.value || null;
+  });
+
   // Pin selector
   elements.pinSelector?.querySelectorAll(".pin-option").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -2273,6 +2539,7 @@ function initEventListeners() {
   elements.headerGalleryBtn?.addEventListener("click", openGallery);
 
   // Theme drawer
+  elements.browseThemesBtn?.addEventListener("click", openThemeDrawer);
   elements.drawerClose?.addEventListener("click", closeThemeDrawer);
   elements.themeSearch?.addEventListener("input", (e) => filterThemes(e.target.value));
 

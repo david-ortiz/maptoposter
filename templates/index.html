@@ -128,7 +128,7 @@
           />
         </section>
 
-        <!-- Output Format -->
+        <!-- Output Format & Aspect Ratio -->
         <section class="widget-section inline-row">
           <label class="inline-label" for="format-select">Format</label>
           <select id="format-select" class="inline-select">
@@ -136,6 +136,18 @@
             <option value="svg">SVG (Vector)</option>
             <option value="pdf">PDF (Print)</option>
             <option value="svg-laser">SVG Laser (CNC)</option>
+          </select>
+        </section>
+
+        <section class="widget-section inline-row">
+          <label class="inline-label" for="aspect-select">Size</label>
+          <select id="aspect-select" class="inline-select">
+            <option value="2:3" selected>2:3 Poster</option>
+            <option value="3:4">3:4 Photo</option>
+            <option value="4:5">4:5 Social</option>
+            <option value="1:1">1:1 Square</option>
+            <option value="A4">A4 (ISO)</option>
+            <option value="A3">A3 (ISO)</option>
           </select>
         </section>
 
@@ -198,10 +210,24 @@
           </div>
         </section>
 
+        <!-- Preset Bundles -->
+        <section class="widget-section inline-row">
+          <label class="inline-label">Preset</label>
+          <select id="preset-select" class="inline-select preset-select">
+            <option value="">Custom</option>
+          </select>
+          <button id="save-preset-btn" class="icon-btn save-preset-btn" type="button" title="Save current settings as preset">
+            <svg viewBox="0 0 24 24" width="16" height="16">
+              <path fill="currentColor" d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/>
+            </svg>
+          </button>
+        </section>
+
         <!-- Theme Carousel -->
         <section class="widget-section theme-section">
           <div class="theme-header">
             <label class="section-label">Theme</label>
+            <button id="browse-themes-btn" class="browse-link" type="button">Browse All</button>
           </div>
           <div id="theme-category-tabs" class="theme-category-tabs"></div>
           <div id="theme-carousel-wrap" class="theme-carousel-wrap">
@@ -209,6 +235,14 @@
             <div id="theme-carousel" class="theme-carousel"></div>
             <div class="carousel-fade-right"></div>
           </div>
+        </section>
+
+        <!-- Collection -->
+        <section class="widget-section inline-row">
+          <label class="inline-label">Collection</label>
+          <select id="collection-select" class="inline-select">
+            <option value="">None</option>
+          </select>
         </section>
 
         <!-- Generate Button -->
@@ -361,6 +395,7 @@
           </button>
           <span id="gallery-path" class="gallery-path"></span>
         </div>
+        <div id="collection-filter-tabs" class="collection-filter-tabs"></div>
         <div id="gallery-grid" class="gallery-grid">
           <div class="gallery-placeholder">No posters yet. Generate one!</div>
         </div>

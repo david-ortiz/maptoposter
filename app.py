@@ -83,7 +83,7 @@ def push_event(job_id, payload):
         job["queue"].put(event)
 
 
-def run_job(job_id, city, country, theme, distance, dpi, output_format, lat=None, lng=None, font=None, tagline=None, pin=None, pin_color=None):
+def run_job(job_id, city, country, theme, distance, dpi, output_format, lat=None, lng=None, font=None, tagline=None, pin=None, pin_color=None, aspect_ratio="2:3", collection=None):
     def progress(info):
         payload = dict(info)
         payload["status"] = "running"
@@ -117,7 +117,7 @@ def run_job(job_id, city, country, theme, distance, dpi, output_format, lat=None
 
         output_file = poster.generate_output_filename(city, theme, output_format)
         poster.create_poster(
-            city, country, coords, distance, output_file, output_format, dpi=dpi, progress=progress, font_family=font, tagline=tagline, pin=pin, pin_color=pin_color
+            city, country, coords, distance, output_file, output_format, dpi=dpi, progress=progress, font_family=font, tagline=tagline, pin=pin, pin_color=pin_color, aspect_ratio=aspect_ratio
         )
 
         # Save config JSON for this poster
@@ -134,6 +134,8 @@ def run_job(job_id, city, country, theme, distance, dpi, output_format, lat=None
             "tagline": tagline,
             "pin": pin,
             "pin_color": pin_color,
+            "aspect_ratio": aspect_ratio,
+            "collection": collection,
             "created_at": time.strftime("%Y-%m-%d %H:%M:%S"),
         }
         config_file = output_file.rsplit('.', 1)[0] + '_config.json'
@@ -191,6 +193,8 @@ def job_worker():
                 tagline=job.get("tagline"),
                 pin=job.get("pin"),
                 pin_color=job.get("pin_color"),
+                aspect_ratio=job.get("aspect_ratio", "2:3"),
+                collection=job.get("collection"),
             )
         finally:
             JOB_QUEUE.task_done()
@@ -294,6 +298,191 @@ def api_starred_remove(item_type, item_id):
     return jsonify({"ok": True, "starred": starred})
 
 
+# ===== PRESETS =====
+PRESETS_DIR = os.path.join(os.path.dirname(__file__), "presets")
+
+
+def ensure_presets_dir():
+    if not os.path.exists(PRESETS_DIR):
+        os.makedirs(PRESETS_DIR)
+
+
+def sanitize_preset_name(name):
+    """Convert preset name to safe filename."""
+    import re
+    # Remove special characters, replace spaces with underscores
+    safe = re.sub(r'[^\w\s-]', '', name.strip())
+    safe = re.sub(r'[\s]+', '_', safe)
+    return safe.lower()[:50]  # Limit length
+
+
+@app.route("/api/presets")
+def api_presets_list():
+    """List all saved presets."""
+    ensure_presets_dir()
+    presets = []
+    for filename in os.listdir(PRESETS_DIR):
+        if filename.endswith(".json"):
+            filepath = os.path.join(PRESETS_DIR, filename)
+            try:
+                with open(filepath, "r") as f:
+                    preset = json.load(f)
+                    preset["id"] = filename[:-5]  # Remove .json extension
+                    presets.append(preset)
+            except Exception:
+                pass
+    # Sort by name
+    presets.sort(key=lambda x: x.get("name", "").lower())
+    return jsonify(presets)
+
+
+@app.route("/api/presets", methods=["POST"])
+def api_presets_create():
+    """Create a new preset."""
+    ensure_presets_dir()
+    payload = request.get_json(silent=True) or {}
+
+    name = (payload.get("name") or "").strip()
+    if not name:
+        return jsonify({"error": "Preset name is required."}), 400
+
+    preset_id = sanitize_preset_name(name)
+    if not preset_id:
+        return jsonify({"error": "Invalid preset name."}), 400
+
+    filepath = os.path.join(PRESETS_DIR, f"{preset_id}.json")
+
+    preset = {
+        "name": name,
+        "theme": payload.get("theme", "feature_based"),
+        "font": payload.get("font", ""),
+        "pin": payload.get("pin", "none"),
+        "pin_color": payload.get("pin_color"),
+        "format": payload.get("format", "png"),
+        "dpi": payload.get("dpi", 300),
+        "aspect_ratio": payload.get("aspect_ratio", "2:3"),
+        "created_at": time.strftime("%Y-%m-%d %H:%M:%S"),
+    }
+
+    with open(filepath, "w") as f:
+        json.dump(preset, f, indent=2)
+
+    preset["id"] = preset_id
+    return jsonify(preset)
+
+
+@app.route("/api/presets/<preset_id>", methods=["DELETE"])
+def api_presets_delete(preset_id):
+    """Delete a preset."""
+    ensure_presets_dir()
+    filepath = os.path.join(PRESETS_DIR, f"{preset_id}.json")
+
+    if not os.path.exists(filepath):
+        return jsonify({"error": "Preset not found."}), 404
+
+    os.remove(filepath)
+    return jsonify({"ok": True})
+
+
+# ===== COLLECTIONS =====
+COLLECTIONS_FILE = os.path.join(os.path.dirname(__file__), "collections.json")
+
+
+def load_collections():
+    """Load collections from JSON file."""
+    if not os.path.exists(COLLECTIONS_FILE):
+        return []
+    try:
+        with open(COLLECTIONS_FILE, "r") as f:
+            return json.load(f)
+    except Exception:
+        return []
+
+
+def save_collections(collections):
+    """Save collections to JSON file."""
+    with open(COLLECTIONS_FILE, "w") as f:
+        json.dump(collections, f, indent=2)
+
+
+@app.route("/api/collections")
+def api_collections_list():
+    """List all collections."""
+    return jsonify(load_collections())
+
+
+@app.route("/api/collections", methods=["POST"])
+def api_collections_create():
+    """Create a new collection."""
+    payload = request.get_json(silent=True) or {}
+    name = (payload.get("name") or "").strip()
+
+    if not name:
+        return jsonify({"error": "Collection name is required."}), 400
+
+    collections = load_collections()
+
+    # Generate ID from name
+    import re
+    coll_id = re.sub(r'[^\w\s-]', '', name.lower())
+    coll_id = re.sub(r'[\s]+', '-', coll_id)[:30]
+
+    # Ensure unique ID
+    base_id = coll_id
+    counter = 1
+    while any(c["id"] == coll_id for c in collections):
+        coll_id = f"{base_id}-{counter}"
+        counter += 1
+
+    collection = {
+        "id": coll_id,
+        "name": name,
+        "color": payload.get("color", "#667eea"),
+        "created_at": time.strftime("%Y-%m-%d %H:%M:%S"),
+    }
+
+    collections.append(collection)
+    save_collections(collections)
+
+    return jsonify(collection)
+
+
+@app.route("/api/collections/<coll_id>", methods=["DELETE"])
+def api_collections_delete(coll_id):
+    """Delete a collection."""
+    collections = load_collections()
+    collections = [c for c in collections if c["id"] != coll_id]
+    save_collections(collections)
+    return jsonify({"ok": True})
+
+
+@app.route("/api/posters/<path:filename>/collection", methods=["PATCH"])
+def api_poster_collection(filename):
+    """Assign a poster to a collection."""
+    payload = request.get_json(silent=True) or {}
+    collection = payload.get("collection")  # Can be null to remove from collection
+
+    # Find config file
+    base_name = filename.rsplit('.', 1)[0]
+    config_path = os.path.join(poster.POSTERS_DIR, f"{base_name}_config.json")
+
+    if not os.path.exists(config_path):
+        return jsonify({"error": "Config not found for this poster."}), 404
+
+    try:
+        with open(config_path, "r") as f:
+            config = json.load(f)
+
+        config["collection"] = collection
+
+        with open(config_path, "w") as f:
+            json.dump(config, f, indent=2)
+
+        return jsonify({"ok": True, "collection": collection})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route("/fonts/<path:filename>")
 def serve_font(filename):
     """Serve font files from the fonts directory."""
@@ -359,6 +548,15 @@ def api_jobs():
     # Optional pin color (hex color from theme)
     pin_color = (payload.get("pin_color") or "").strip() or None
 
+    # Aspect ratio for poster dimensions
+    aspect_ratio = (payload.get("aspect_ratio") or "").strip() or "2:3"
+    valid_aspects = ("2:3", "3:4", "4:5", "1:1", "A4", "A3")
+    if aspect_ratio not in valid_aspects:
+        aspect_ratio = "2:3"
+
+    # Collection assignment
+    collection = (payload.get("collection") or "").strip() or None
+
     if not city or not country:
         return jsonify({"error": "City and country are required."}), 400
 
@@ -385,6 +583,8 @@ def api_jobs():
         "tagline": tagline,
         "pin": pin,
         "pin_color": pin_color,
+        "aspect_ratio": aspect_ratio,
+        "collection": collection,
         "created_at": uuid.uuid1().time,
     }
 

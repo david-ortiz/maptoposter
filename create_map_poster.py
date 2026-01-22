@@ -33,6 +33,26 @@ ox.settings.log_console = True  # Show cache hits/misses in console
 ox.settings.overpass_url = "https://gall.openstreetmap.de/api/"
 ox.settings.timeout = 180  # 3 minute timeout for slower servers
 
+# Aspect ratio presets for different print sizes
+# Values are (width, height) ratios - will be scaled to base width of 12 inches
+ASPECT_RATIOS = {
+    "2:3": (2, 3),      # Standard poster, portrait
+    "3:4": (3, 4),      # Photo print
+    "4:5": (4, 5),      # Instagram/social
+    "1:1": (1, 1),      # Square
+    "A4": (210, 297),   # ISO A4 (will normalize)
+    "A3": (297, 420),   # ISO A3 (will normalize)
+}
+
+def get_figure_size(aspect_ratio="2:3", base_width=12):
+    """Calculate figure dimensions based on aspect ratio."""
+    if aspect_ratio not in ASPECT_RATIOS:
+        aspect_ratio = "2:3"
+    w, h = ASPECT_RATIOS[aspect_ratio]
+    # Normalize to base width
+    height = base_width * (h / w)
+    return (base_width, height)
+
 
 def get_cache_key(lat, lon, dist):
     """
@@ -1093,7 +1113,7 @@ def get_crop_limits(G: MultiDiGraph, fig: Figure) -> tuple[tuple[float, float], 
     
     return crop_xlim, crop_ylim
 
-def create_poster(city, country, point, dist, output_file, output_format='png', dpi=300, progress=None, use_cache=True, font_family=None, tagline=None, pin=None, pin_color=None):
+def create_poster(city, country, point, dist, output_file, output_format='png', dpi=300, progress=None, use_cache=True, font_family=None, tagline=None, pin=None, pin_color=None, aspect_ratio="2:3"):
     log(f"\nGenerating map for {city}, {country}...")
     log("")
 
@@ -1172,7 +1192,8 @@ def create_poster(city, country, point, dist, output_file, output_format='png', 
     spinner = Spinner("Rendering map...")
     spinner.start()
 
-    fig, ax = plt.subplots(figsize=(12, 16), facecolor=THEME['bg'])
+    fig_size = get_figure_size(aspect_ratio)
+    fig, ax = plt.subplots(figsize=fig_size, facecolor=THEME['bg'])
     ax.set_facecolor(THEME['bg'])
     ax.set_position((0.0, 0.0, 1.0, 1.0))
 
