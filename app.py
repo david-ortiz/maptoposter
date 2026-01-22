@@ -553,7 +553,7 @@ def api_jobs():
 
     # Aspect ratio for poster dimensions
     aspect_ratio = (payload.get("aspect_ratio") or "").strip() or "2:3"
-    valid_aspects = ("2:3", "3:4", "4:5", "1:1", "A4", "A3")
+    valid_aspects = ("2:3", "3:4", "4:5", "5:7", "11:14", "1:1", "16:9", "9:16", "A4", "A3")
     if aspect_ratio not in valid_aspects:
         aspect_ratio = "2:3"
 

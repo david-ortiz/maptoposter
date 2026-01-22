@@ -14,11 +14,7 @@
     </div>
 
     <!-- LEFT WIDGET - Controls Panel -->
-    <aside id="controls-widget" class="floating-widget widget-left" data-collapsed="false">
-      <button class="widget-toggle" aria-label="Toggle controls panel">
-        <span class="toggle-icon"></span>
-      </button>
-
+    <aside id="controls-widget" class="floating-widget widget-left">
       <div class="widget-content">
         <!-- Header/Brand -->
         <header class="widget-header">
@@ -45,29 +41,12 @@
           </div>
         </header>
 
-        <!-- Location Search (pans map) -->
-        <section class="widget-section">
-          <label class="section-label" for="location-search">Find Location</label>
-          <div class="search-input-wrap">
-            <input
-              type="text"
-              id="location-search"
-              placeholder="Search city or place..."
-              autocomplete="off"
-            />
-            <button id="search-btn" class="icon-btn" type="button" aria-label="Search">
-              <svg viewBox="0 0 24 24" width="18" height="18">
-                <path fill="currentColor" d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 0 0 1.48-5.34c-.47-2.78-2.79-5-5.59-5.34a6.505 6.505 0 0 0-7.27 7.27c.34 2.8 2.56 5.12 5.34 5.59a6.5 6.5 0 0 0 5.34-1.48l.27.28v.79l4.25 4.25c.41.41 1.08.41 1.49 0 .41-.41.41-1.08 0-1.49L15.5 14zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
-              </svg>
-            </button>
-          </div>
-          <div id="search-results" class="search-dropdown"></div>
-          <p class="section-hint">Search to pan map. Click on map to set poster center.</p>
-        </section>
-
         <!-- Poster Text (editable, decoupled from map) -->
         <section class="widget-section">
-          <label class="section-label">Poster Text</label>
+          <div class="section-header-row">
+            <label class="section-label">Poster Text</label>
+            <span class="section-hint-inline">Edit or click sync for suggestion</span>
+          </div>
           <div class="field-row">
             <input type="text" id="poster-city" placeholder="City name" />
             <button id="sync-city" class="sync-btn" type="button" title="Use suggested city">
@@ -92,7 +71,6 @@
               </svg>
             </button>
           </div>
-          <p class="section-hint">Edit freely or click sync to use map suggestion.</p>
         </section>
 
         <!-- Radius Slider -->
@@ -128,7 +106,7 @@
           />
         </section>
 
-        <!-- Output Format & Aspect Ratio -->
+        <!-- Output Format -->
         <section class="widget-section inline-row">
           <label class="inline-label" for="format-select">Format</label>
           <select id="format-select" class="inline-select">
@@ -137,77 +115,6 @@
             <option value="pdf">PDF (Print)</option>
             <option value="svg-laser">SVG Laser (CNC)</option>
           </select>
-        </section>
-
-        <section class="widget-section inline-row">
-          <label class="inline-label" for="aspect-select">Size</label>
-          <select id="aspect-select" class="inline-select">
-            <option value="2:3" selected>2:3 Poster</option>
-            <option value="3:4">3:4 Photo</option>
-            <option value="4:5">4:5 Social</option>
-            <option value="1:1">1:1 Square</option>
-            <option value="A4">A4 (ISO)</option>
-            <option value="A3">A3 (ISO)</option>
-          </select>
-        </section>
-
-        <!-- Font -->
-        <section class="widget-section inline-row">
-          <label class="inline-label">Font</label>
-          <div id="font-picker" class="font-picker inline-picker">
-            <button type="button" id="font-picker-toggle" class="font-picker-toggle">
-              <span id="font-picker-label">Loading...</span>
-              <svg viewBox="0 0 24 24" width="16" height="16">
-                <path fill="currentColor" d="M7 10l5 5 5-5z"/>
-              </svg>
-            </button>
-            <div id="font-picker-dropdown" class="font-picker-dropdown" aria-hidden="true">
-              <div id="font-picker-options" class="font-picker-options"></div>
-            </div>
-          </div>
-        </section>
-
-        <!-- Center Pin Icon -->
-        <section class="widget-section pin-section">
-          <label class="section-label">Center Pin</label>
-          <div id="pin-selector" class="pin-selector">
-            <button type="button" class="pin-option selected" data-pin="none" title="No pin">
-              <svg viewBox="0 0 24 24" width="20" height="20">
-                <circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 2"/>
-              </svg>
-            </button>
-            <button type="button" class="pin-option" data-pin="marker" title="Map marker">
-              <svg viewBox="0 0 24 24" width="20" height="20">
-                <path fill="currentColor" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-              </svg>
-            </button>
-            <button type="button" class="pin-option" data-pin="heart" title="Heart">
-              <svg viewBox="0 0 24 24" width="20" height="20">
-                <path fill="currentColor" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-              </svg>
-            </button>
-            <button type="button" class="pin-option" data-pin="star" title="Star">
-              <svg viewBox="0 0 24 24" width="20" height="20">
-                <path fill="currentColor" d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
-              </svg>
-            </button>
-            <button type="button" class="pin-option" data-pin="home" title="Home">
-              <svg viewBox="0 0 24 24" width="20" height="20">
-                <path fill="currentColor" d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
-              </svg>
-            </button>
-            <button type="button" class="pin-option" data-pin="circle" title="Circle dot">
-              <svg viewBox="0 0 24 24" width="20" height="20">
-                <circle cx="12" cy="12" r="8" fill="currentColor"/>
-              </svg>
-            </button>
-          </div>
-          <div id="pin-color-selector" class="pin-color-selector" style="display: none;">
-            <span class="pin-color-label">Color:</span>
-            <div id="pin-color-swatches" class="pin-color-swatches">
-              <!-- Swatches populated dynamically from theme colors -->
-            </div>
-          </div>
         </section>
 
         <!-- Preset Bundles -->
@@ -223,70 +130,128 @@
           </button>
         </section>
 
-        <!-- Theme Carousel -->
-        <section class="widget-section theme-section">
-          <div class="theme-header">
-            <label class="section-label">Theme</label>
-            <div class="theme-header-actions">
-              <button id="variation-mode-btn" class="variation-toggle" type="button" title="Multi-select themes for variations">
-                <svg viewBox="0 0 24 24" width="14" height="14">
-                  <path fill="currentColor" d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"/>
+        <!-- Design Options Group -->
+        <div class="options-group">
+          <div class="options-group-label">Design Options</div>
+
+          <!-- Aspect Ratio / Size -->
+          <section class="widget-section inline-row">
+            <label class="inline-label" for="aspect-select">Size</label>
+            <select id="aspect-select" class="inline-select">
+              <option value="2:3" selected>2:3 Poster (24×36")</option>
+              <option value="3:4">3:4 Photo (18×24")</option>
+              <option value="4:5">4:5 Frame (16×20")</option>
+              <option value="5:7">5:7 Frame (5×7")</option>
+              <option value="11:14">11:14 Frame</option>
+              <option value="1:1">1:1 Square</option>
+              <option value="16:9">16:9 Landscape</option>
+              <option value="9:16">9:16 Portrait</option>
+              <option value="A4">A4 (ISO)</option>
+              <option value="A3">A3 (ISO)</option>
+            </select>
+          </section>
+
+          <!-- Font -->
+          <section class="widget-section inline-row">
+            <label class="inline-label">Font</label>
+            <div id="font-picker" class="font-picker inline-picker">
+              <button type="button" id="font-picker-toggle" class="font-picker-toggle">
+                <span id="font-picker-label">Loading...</span>
+                <svg viewBox="0 0 24 24" width="16" height="16">
+                  <path fill="currentColor" d="M7 10l5 5 5-5z"/>
                 </svg>
               </button>
-              <button id="browse-themes-btn" class="browse-link" type="button">Browse All</button>
+              <div id="font-picker-dropdown" class="font-picker-dropdown" aria-hidden="true">
+                <div id="font-picker-options" class="font-picker-options"></div>
+              </div>
             </div>
-          </div>
-          <div id="theme-category-tabs" class="theme-category-tabs"></div>
-          <div id="theme-carousel-wrap" class="theme-carousel-wrap">
-            <div class="carousel-fade-left"></div>
-            <div id="theme-carousel" class="theme-carousel"></div>
-            <div class="carousel-fade-right"></div>
-          </div>
-        </section>
+          </section>
 
-        <!-- Collection -->
-        <section class="widget-section inline-row">
-          <label class="inline-label">Collection</label>
-          <div class="collection-select-wrap">
-            <select id="collection-select" class="inline-select">
-              <option value="">None</option>
-            </select>
-            <button id="add-collection-btn" class="icon-btn" type="button" title="Create new collection">
-              <svg viewBox="0 0 24 24" width="16" height="16">
-                <path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
-              </svg>
-            </button>
-          </div>
-        </section>
+          <!-- Center Pin Icon -->
+          <section class="widget-section pin-section">
+            <label class="section-label">Center Pin</label>
+            <div id="pin-selector" class="pin-selector">
+              <button type="button" class="pin-option selected" data-pin="none" title="No pin">
+                <svg viewBox="0 0 24 24" width="20" height="20">
+                  <circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 2"/>
+                </svg>
+              </button>
+              <button type="button" class="pin-option" data-pin="marker" title="Map marker">
+                <svg viewBox="0 0 24 24" width="20" height="20">
+                  <path fill="currentColor" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                </svg>
+              </button>
+              <button type="button" class="pin-option" data-pin="heart" title="Heart">
+                <svg viewBox="0 0 24 24" width="20" height="20">
+                  <path fill="currentColor" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                </svg>
+              </button>
+              <button type="button" class="pin-option" data-pin="star" title="Star">
+                <svg viewBox="0 0 24 24" width="20" height="20">
+                  <path fill="currentColor" d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+                </svg>
+              </button>
+              <button type="button" class="pin-option" data-pin="home" title="Home">
+                <svg viewBox="0 0 24 24" width="20" height="20">
+                  <path fill="currentColor" d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+                </svg>
+              </button>
+              <button type="button" class="pin-option" data-pin="circle" title="Circle dot">
+                <svg viewBox="0 0 24 24" width="20" height="20">
+                  <circle cx="12" cy="12" r="8" fill="currentColor"/>
+                </svg>
+              </button>
+            </div>
+            <div id="pin-color-selector" class="pin-color-selector" style="display: none;">
+              <span class="pin-color-label">Color:</span>
+              <div id="pin-color-swatches" class="pin-color-swatches">
+                <!-- Swatches populated dynamically from theme colors -->
+              </div>
+            </div>
+          </section>
 
-        <!-- Generate Button -->
-        <section class="widget-section generate-section">
-          <div class="generate-buttons">
-            <button id="generate-btn" class="primary-btn" type="button" disabled>
-              Select location to generate
-            </button>
-            <button id="add-queue-btn" class="secondary-btn queue-btn" type="button" disabled title="Add to queue">
-              <svg viewBox="0 0 24 24" width="16" height="16">
-                <path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
-              </svg>
-            </button>
-          </div>
-        </section>
+          <!-- Theme Carousel -->
+          <section class="widget-section theme-section">
+            <div class="theme-header">
+              <label class="section-label">Theme</label>
+              <div class="theme-header-actions">
+                <button id="variation-mode-btn" class="variation-toggle" type="button" title="Multi-select themes for variations">
+                  <svg viewBox="0 0 24 24" width="14" height="14">
+                    <path fill="currentColor" d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"/>
+                  </svg>
+                </button>
+                <button id="browse-themes-btn" class="browse-link" type="button">Browse All</button>
+              </div>
+            </div>
+            <div id="theme-category-tabs" class="theme-category-tabs"></div>
+            <div id="theme-carousel-wrap" class="theme-carousel-wrap">
+              <div class="carousel-fade-left"></div>
+              <div id="theme-carousel" class="theme-carousel"></div>
+              <div class="carousel-fade-right"></div>
+            </div>
+          </section>
 
-        <!-- Queue Panel -->
-        <section id="queue-section" class="widget-section queue-section" style="display: none;">
-          <div class="queue-header">
-            <span class="queue-title">Queue</span>
-            <span id="queue-count" class="queue-count">0 jobs</span>
-            <button id="clear-queue-btn" class="ghost-btn queue-clear-btn" type="button" title="Clear queue">Clear</button>
-          </div>
-          <div id="queue-list" class="queue-list"></div>
-        </section>
+          <!-- Collection -->
+          <section class="widget-section inline-row">
+            <label class="inline-label">Collection</label>
+            <div class="collection-select-wrap">
+              <select id="collection-select" class="inline-select">
+                <option value="">None</option>
+              </select>
+              <button id="add-collection-btn" class="icon-btn" type="button" title="Create new collection">
+                <svg viewBox="0 0 24 24" width="16" height="16">
+                  <path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                </svg>
+              </button>
+            </div>
+          </section>
+
+        </div><!-- /options-group -->
 
       </div>
     </aside>
 
-    <!-- PREVIEW WIDGET - Live theme/font preview -->
+    <!-- PREVIEW WIDGET - Live theme/font preview + Generate controls -->
     <aside id="preview-widget" class="floating-widget widget-preview">
       <div class="preview-header">
         <span class="preview-title">Preview</span>
@@ -302,6 +267,31 @@
       <div class="preview-footer">
         <span class="preview-theme-name" id="preview-theme-name">Feature-Based</span>
       </div>
+
+      <!-- Generate Button -->
+      <div class="preview-generate-section">
+        <div class="generate-buttons">
+          <button id="generate-btn" class="primary-btn" type="button" disabled>
+            Select location
+          </button>
+          <button id="add-queue-btn" class="secondary-btn queue-btn" type="button" disabled title="Add to queue">
+            <svg viewBox="0 0 24 24" width="16" height="16">
+              <path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Queue Panel -->
+      <div id="queue-section" class="preview-queue-section" style="display: none;">
+        <div class="queue-header">
+          <span class="queue-title">Queue</span>
+          <span id="queue-count" class="queue-count">0 jobs</span>
+          <button id="clear-queue-btn" class="ghost-btn queue-clear-btn" type="button" title="Clear queue">Clear</button>
+        </div>
+        <div id="queue-list" class="queue-list"></div>
+      </div>
+
       <div class="preview-resize-handle" id="preview-resize-handle">
         <svg viewBox="0 0 24 24" width="12" height="12">
           <path fill="currentColor" d="M22 22H20V20H22V22ZM22 18H20V16H22V18ZM18 22H16V20H18V22ZM22 14H20V12H22V14ZM18 18H16V16H18V18ZM14 22H12V20H14V22Z"/>
@@ -442,11 +432,18 @@
     <div class="lightbox" id="lightbox" aria-hidden="true">
       <div class="lightbox-backdrop" data-lightbox-close="true"></div>
       <div class="lightbox-panel" role="dialog" aria-modal="true">
-        <button class="lightbox-close" type="button" data-lightbox-close="true">
-          <svg viewBox="0 0 24 24" width="24" height="24">
-            <path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
-          </svg>
-        </button>
+        <div class="lightbox-toolbar">
+          <a class="lightbox-download" id="lightbox-download" href="#" download title="Download full size">
+            <svg viewBox="0 0 24 24" width="20" height="20">
+              <path fill="currentColor" d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+            </svg>
+          </a>
+          <button class="lightbox-close" type="button" data-lightbox-close="true">
+            <svg viewBox="0 0 24 24" width="24" height="24">
+              <path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+            </svg>
+          </button>
+        </div>
         <button class="lightbox-nav prev" type="button" data-lightbox-prev="true">
           <svg viewBox="0 0 24 24" width="32" height="32">
             <path fill="currentColor" d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
@@ -581,6 +578,42 @@
             <canvas id="mockup-creator-canvas" style="display: none;"></canvas>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- FLOATING BOTTOM BAR (search + recent toggle) -->
+    <div id="bottom-bar-float" class="bottom-bar-float">
+      <div class="search-float-inner">
+        <svg class="search-float-icon" viewBox="0 0 24 24" width="20" height="20">
+          <path fill="currentColor" d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 0 0 1.48-5.34c-.47-2.78-2.79-5-5.59-5.34a6.505 6.505 0 0 0-7.27 7.27c.34 2.8 2.56 5.12 5.34 5.59a6.5 6.5 0 0 0 5.34-1.48l.27.28v.79l4.25 4.25c.41.41 1.08.41 1.49 0 .41-.41.41-1.08 0-1.49L15.5 14zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+        </svg>
+        <input
+          type="text"
+          id="location-search-float-input"
+          placeholder="Search location..."
+          autocomplete="off"
+        />
+        <div id="search-results-float" class="search-dropdown-float"></div>
+      </div>
+      <button id="recent-toggle" class="recent-toggle" type="button" title="Recent generations">
+        <svg viewBox="0 0 24 24" width="20" height="20">
+          <path fill="currentColor" d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- LATEST GENERATIONS PANEL (floating) -->
+    <div id="recent-generations" class="recent-generations" aria-hidden="true">
+      <div class="recent-header">
+        <span class="recent-title">Recent</span>
+        <button id="recent-close" class="recent-close" type="button" aria-label="Close">
+          <svg viewBox="0 0 24 24" width="16" height="16">
+            <path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+          </svg>
+        </button>
+      </div>
+      <div id="recent-grid" class="recent-grid">
+        <!-- Recent posters will be rendered here -->
       </div>
     </div>
 

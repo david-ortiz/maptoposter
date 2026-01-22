@@ -114,10 +114,15 @@ const elements = {
   controlsWidget: document.getElementById("controls-widget"),
   widgetToggle: document.querySelector(".widget-toggle"),
 
-  // Location search
-  locationSearch: document.getElementById("location-search"),
-  searchBtn: document.getElementById("search-btn"),
-  searchResults: document.getElementById("search-results"),
+  // Location search (floating)
+  locationSearchFloat: document.getElementById("location-search-float-input"),
+  searchResultsFloat: document.getElementById("search-results-float"),
+
+  // Recent generations
+  recentToggle: document.getElementById("recent-toggle"),
+  recentPanel: document.getElementById("recent-generations"),
+  recentClose: document.getElementById("recent-close"),
+  recentGrid: document.getElementById("recent-grid"),
 
   // Coordinates display
   selectedCoords: document.getElementById("selected-coords"),
@@ -226,6 +231,7 @@ const elements = {
   lightboxImage: document.getElementById("lightbox-image"),
   lightboxCaption: document.getElementById("lightbox-caption"),
   lightboxStrip: document.getElementById("lightbox-strip"),
+  lightboxDownload: document.getElementById("lightbox-download"),
 
   // Mockup
   mockupModal: document.getElementById("mockup-modal"),
@@ -317,6 +323,8 @@ async function initApp() {
   await loadPresets();
   await loadCollections();
   await loadMockups();
+  await loadGallery();
+  startGalleryStream();
   refreshQueueDisplay();
   startQueueRefresh();
   initEventListeners();
@@ -455,6 +463,8 @@ function applyPreset(presetId) {
     state.dpi = preset.dpi;
     if (elements.dpiSlider) {
       elements.dpiSlider.value = preset.dpi;
+      // Dispatch input event to ensure visual update
+      elements.dpiSlider.dispatchEvent(new Event('input', { bubbles: true }));
     }
     if (elements.dpiValue) {
       elements.dpiValue.textContent = preset.dpi;
@@ -718,10 +728,14 @@ function renderCollectionModalGrid() {
       }
     });
 
-    // View button
+    // View button - open in lightbox
     card.querySelector('.poster-view-btn').addEventListener("click", (e) => {
       e.stopPropagation();
-      window.open(item.url, "_blank");
+      // Find index in galleryItems array
+      const index = (window.galleryItems || []).findIndex(gi => gi.filename === item.filename);
+      if (index >= 0) {
+        openLightbox(index);
+      }
     });
 
     // Download button - handled by href/download attributes
@@ -1249,39 +1263,46 @@ async function searchLocation(query) {
 }
 
 function showSearchResults(results) {
-  elements.searchResults.innerHTML = "";
+  const dropdown = elements.searchResultsFloat;
+  if (!dropdown) return;
+
+  dropdown.innerHTML = "";
 
   if (!results.length) {
     const noResults = document.createElement("div");
-    noResults.className = "search-no-results";
-    noResults.textContent = "No locations found";
-    elements.searchResults.appendChild(noResults);
-    elements.searchResults.classList.add("visible");
+    noResults.className = "search-result";
+    noResults.innerHTML = "<span>No locations found</span>";
+    dropdown.appendChild(noResults);
+    dropdown.classList.add("open");
     return;
   }
 
   results.forEach((result) => {
     const item = document.createElement("div");
-    item.className = "search-result-item";
+    item.className = "search-result";
     item.innerHTML = `
-      <span class="search-result-name">${escapeHtml(result.display.split(",").slice(0, 2).join(","))}</span>
-      <span class="search-result-detail">${escapeHtml(result.display.split(",").slice(2, 4).join(","))}</span>
+      <strong>${escapeHtml(result.display.split(",").slice(0, 2).join(","))}</strong>
+      <span>${escapeHtml(result.display.split(",").slice(2, 4).join(","))}</span>
     `;
     item.addEventListener("click", () => {
       // Pan map to this location (DON'T set poster text)
       panToLocation(result.lat, result.lng);
       hideSearchResults();
-      elements.locationSearch.value = "";
+      if (elements.locationSearchFloat) {
+        elements.locationSearchFloat.value = "";
+      }
     });
-    elements.searchResults.appendChild(item);
+    dropdown.appendChild(item);
   });
 
-  elements.searchResults.classList.add("visible");
+  dropdown.classList.add("open");
 }
 
 function hideSearchResults() {
-  elements.searchResults.classList.remove("visible");
-  elements.searchResults.innerHTML = "";
+  if (elements.searchResultsFloat) {
+    elements.searchResultsFloat.classList.remove("open");
+    elements.searchResultsFloat.innerHTML = "";
+  }
 }
 
 function panToLocation(lat, lng) {
@@ -1294,6 +1315,183 @@ function escapeHtml(text) {
   const div = document.createElement("div");
   div.textContent = text || "";
   return div.innerHTML;
+}
+
+// ===== RECENT GENERATIONS PANEL =====
+
+function toggleRecentPanel() {
+  const panel = elements.recentPanel;
+  if (!panel) return;
+
+  const isHidden = panel.getAttribute("aria-hidden") === "true";
+  if (isHidden) {
+    openRecentPanel();
+  } else {
+    closeRecentPanel();
+  }
+}
+
+function openRecentPanel() {
+  const panel = elements.recentPanel;
+  if (!panel) return;
+
+  panel.setAttribute("aria-hidden", "false");
+  renderRecentGenerations();
+}
+
+function closeRecentPanel() {
+  const panel = elements.recentPanel;
+  if (!panel) return;
+
+  panel.setAttribute("aria-hidden", "true");
+}
+
+function renderRecentGenerations() {
+  const grid = elements.recentGrid;
+  if (!grid) return;
+
+  grid.innerHTML = "";
+
+  // Get the first 20 items from galleryItems (already sorted by mtime descending from API)
+  const items = (window.galleryItems || []).slice(0, 20);
+
+  if (!items.length) {
+    grid.innerHTML = '<div class="recent-empty">No recent generations</div>';
+    return;
+  }
+
+  items.forEach((item) => {
+    const div = document.createElement("div");
+    div.className = "recent-item";
+
+    const city = item.config?.city || item.filename.split("_")[0] || "Unknown";
+    const themeRaw = item.config?.theme || "unknown";
+    // Capitalize theme name (replace underscores, title case)
+    const theme = themeRaw.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+    const thumbUrl = item.thumb_url || item.url || `/posters/${item.filename}`;
+
+    // Additional details
+    const aspect = item.config?.aspect_ratio || "2:3";
+    const dpi = item.config?.dpi || 300;
+    const font = item.config?.font || "Default";
+
+    div.innerHTML = `
+      <img class="recent-item-thumb" src="${thumbUrl}" alt="${escapeHtml(city)}" loading="lazy">
+      <div class="recent-item-info">
+        <div class="recent-item-city">${escapeHtml(city)}</div>
+        <div class="recent-item-theme">${escapeHtml(theme)}</div>
+        <div class="recent-item-details">${escapeHtml(aspect)} · ${dpi} DPI · ${escapeHtml(font)}</div>
+      </div>
+    `;
+
+    div.addEventListener("click", () => {
+      loadConfigFromGalleryItem(item);
+      closeRecentPanel();
+    });
+
+    grid.appendChild(div);
+  });
+}
+
+function loadConfigFromGalleryItem(item) {
+  if (!item.config) return;
+
+  const config = item.config;
+
+  // Set location
+  if (config.lat !== undefined && config.lng !== undefined) {
+    state.selectedLat = config.lat;
+    state.selectedLng = config.lng;
+
+    if (leafletMap && radiusCircle && centerMarker) {
+      // Zoom to level 12 for a good view of the area
+      leafletMap.setView([config.lat, config.lng], 12, { animate: true });
+
+      // Add circle and marker to map if not already visible
+      if (!leafletMap.hasLayer(radiusCircle)) {
+        radiusCircle.addTo(leafletMap);
+        centerMarker.addTo(leafletMap);
+      }
+
+      radiusCircle.setLatLng([config.lat, config.lng]);
+      centerMarker.setLatLng([config.lat, config.lng]);
+    }
+  }
+
+  // Set radius
+  if (config.distance) {
+    state.radius = config.distance;
+    if (elements.radiusSlider) {
+      elements.radiusSlider.value = config.distance;
+      elements.radiusSlider.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+    // Update circle radius
+    if (radiusCircle) {
+      radiusCircle.setRadius(config.distance);
+    }
+  }
+
+  // Set poster text
+  if (config.city) {
+    state.posterCity = config.city;
+    if (elements.posterCity) elements.posterCity.value = config.city;
+  }
+  if (config.country) {
+    state.posterCountry = config.country;
+    if (elements.posterCountry) elements.posterCountry.value = config.country;
+  }
+  if (config.tagline !== undefined) {
+    state.posterTagline = config.tagline || "";
+    if (elements.posterTagline) elements.posterTagline.value = config.tagline || "";
+  }
+
+  // Set theme (use selectTheme which updates all UI elements)
+  if (config.theme) {
+    selectTheme(config.theme);
+  }
+
+  // Set format
+  if (config.format && elements.formatSelect) {
+    state.format = config.format;
+    elements.formatSelect.value = config.format;
+  }
+
+  // Set DPI
+  if (config.dpi) {
+    state.dpi = config.dpi;
+    if (elements.dpiSlider) {
+      elements.dpiSlider.value = config.dpi;
+      elements.dpiSlider.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+    if (elements.dpiValue) {
+      elements.dpiValue.textContent = config.dpi;
+    }
+  }
+
+  // Set aspect ratio
+  if (config.aspect_ratio && elements.aspectSelect) {
+    state.aspectRatio = config.aspect_ratio;
+    elements.aspectSelect.value = config.aspect_ratio;
+  }
+
+  // Set font
+  if (config.font) {
+    state.font = config.font;
+    updateFontPickerLabel();
+  }
+
+  // Set pin
+  if (config.pin) {
+    state.pin = config.pin;
+    elements.pinSelector?.querySelectorAll(".pin-option").forEach((btn) => {
+      btn.classList.toggle("selected", btn.dataset.pin === config.pin);
+    });
+  }
+
+  // Update UI
+  updateGenerateButton();
+  updateAspectRatioRect();
+  updatePreview();
 }
 
 // ===== POSTER TEXT (decoupled from map) =====
@@ -1373,6 +1571,14 @@ function updateAspectRatioRect() {
     aspectWidth = 3; aspectHeight = 4;
   } else if (state.aspectRatio === "4:5") {
     aspectWidth = 4; aspectHeight = 5;
+  } else if (state.aspectRatio === "5:7") {
+    aspectWidth = 5; aspectHeight = 7;
+  } else if (state.aspectRatio === "11:14") {
+    aspectWidth = 11; aspectHeight = 14;
+  } else if (state.aspectRatio === "16:9") {
+    aspectWidth = 16; aspectHeight = 9; // Landscape
+  } else if (state.aspectRatio === "9:16") {
+    aspectWidth = 9; aspectHeight = 16; // Portrait
   } else if (state.aspectRatio === "A4" || state.aspectRatio === "A3") {
     aspectWidth = 210; aspectHeight = 297; // A4 proportions
   }
@@ -2486,7 +2692,13 @@ function applyGalleryPayload(payload, force = false) {
 
   lastGallerySignature = signature;
   galleryItems = items;
+  window.galleryItems = items; // Make accessible for recent panel
   renderGallery(items);
+
+  // Update recent panel if open
+  if (elements.recentPanel?.getAttribute("aria-hidden") === "false") {
+    renderRecentGenerations();
+  }
 
   if (elements.galleryPath) {
     elements.galleryPath.textContent = payload.path || "";
@@ -2580,6 +2792,10 @@ function loadConfigFromGallery(config) {
     state.dpi = config.dpi;
     if (elements.dpiSlider) {
       elements.dpiSlider.value = config.dpi;
+      elements.dpiSlider.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    if (elements.dpiValue) {
+      elements.dpiValue.textContent = config.dpi;
     }
   }
 
@@ -2662,10 +2878,17 @@ function openLightbox(index) {
 
   galleryIndex = Math.max(0, Math.min(index, galleryItems.length - 1));
   const item = galleryItems[galleryIndex];
-  const src = `${item.url}?t=${item.mtime}`;
+  // Use thumbnail for fast loading
+  const src = `${item.thumb_url}?t=${item.mtime}`;
 
   elements.lightboxImage.src = src;
-  elements.lightboxCaption.textContent = item.path || item.filename;
+  elements.lightboxCaption.textContent = item.config?.city || item.filename;
+
+  // Set download link to full-size image
+  if (elements.lightboxDownload) {
+    elements.lightboxDownload.href = item.url;
+    elements.lightboxDownload.download = item.filename;
+  }
 
   elements.lightbox.classList.add("open");
   elements.lightbox.setAttribute("aria-hidden", "false");
@@ -2702,7 +2925,8 @@ function buildLightboxStrip() {
     thumb.dataset.index = index;
 
     const img = document.createElement("img");
-    img.src = `${item.url}?t=${item.mtime}`;
+    // Use thumbnail for fast loading
+    img.src = `${item.thumb_url}?t=${item.mtime}`;
     img.alt = item.filename;
     img.loading = "lazy";
     thumb.appendChild(img);
@@ -2737,7 +2961,8 @@ function preloadLightboxNeighbors() {
   [prevIndex, nextIndex].forEach((idx) => {
     const item = galleryItems[idx];
     const img = new Image();
-    img.src = `${item.url}?t=${item.mtime}`;
+    // Preload thumbnails for speed
+    img.src = `${item.thumb_url}?t=${item.mtime}`;
   });
 }
 
@@ -2929,32 +3154,30 @@ async function generatePoster() {
 // ===== EVENT LISTENERS =====
 
 function initEventListeners() {
-  // Widget toggle
-  elements.widgetToggle?.addEventListener("click", toggleWidget);
-
-  // Location search
-  elements.locationSearch?.addEventListener("input", (e) => {
+  // Floating location search
+  elements.locationSearchFloat?.addEventListener("input", (e) => {
     clearTimeout(searchTimeout);
     searchTimeout = setTimeout(() => searchLocation(e.target.value), 300);
   });
 
-  elements.locationSearch?.addEventListener("keydown", (e) => {
+  elements.locationSearchFloat?.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
       searchLocation(e.target.value);
     }
   });
 
-  elements.searchBtn?.addEventListener("click", () => {
-    searchLocation(elements.locationSearch.value);
-  });
-
   // Close search results when clicking outside
   document.addEventListener("click", (e) => {
-    if (!elements.locationSearch?.contains(e.target) && !elements.searchResults?.contains(e.target)) {
+    const floatContainer = document.getElementById("bottom-bar-float");
+    if (!floatContainer?.contains(e.target)) {
       hideSearchResults();
     }
   });
+
+  // Recent generations panel
+  elements.recentToggle?.addEventListener("click", toggleRecentPanel);
+  elements.recentClose?.addEventListener("click", closeRecentPanel);
 
   // Sync buttons
   elements.syncCity?.addEventListener("click", syncCityFromSuggestion);

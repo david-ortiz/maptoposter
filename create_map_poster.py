@@ -36,22 +36,44 @@ ox.settings.timeout = 180  # 3 minute timeout for slower servers
 # Aspect ratio presets for different print sizes
 # Values are (width, height) ratios - will be scaled to base width of 12 inches
 ASPECT_RATIOS = {
-    "2:3": (2, 3),      # Standard poster, portrait
-    "3:4": (3, 4),      # Photo print
-    "4:5": (4, 5),      # Instagram/social
+    "2:3": (2, 3),      # Standard poster (24x36")
+    "3:4": (3, 4),      # Photo print (18x24")
+    "4:5": (4, 5),      # Frame size (16x20")
+    "5:7": (5, 7),      # Frame size (5x7")
+    "11:14": (11, 14),  # Frame size (11x14")
     "1:1": (1, 1),      # Square
+    "16:9": (16, 9),    # Landscape/widescreen
+    "9:16": (9, 16),    # Portrait/stories
     "A4": (210, 297),   # ISO A4 (will normalize)
     "A3": (297, 420),   # ISO A3 (will normalize)
 }
 
-def get_figure_size(aspect_ratio="2:3", base_width=12):
-    """Calculate figure dimensions based on aspect ratio."""
+def get_figure_size(aspect_ratio="2:3", base_size=18):
+    """Calculate figure dimensions based on aspect ratio.
+
+    The longer dimension is set to base_size (default 18 inches).
+    This ensures consistent resolution for both portrait and landscape orientations.
+    """
     if aspect_ratio not in ASPECT_RATIOS:
         aspect_ratio = "2:3"
     w, h = ASPECT_RATIOS[aspect_ratio]
-    # Normalize to base width
-    height = base_width * (h / w)
-    return (base_width, height)
+
+    # Determine orientation and set dimensions
+    # The longer dimension gets base_size
+    if w > h:
+        # Landscape - width is longer
+        width = base_size
+        height = base_size * (h / w)
+    elif h > w:
+        # Portrait - height is longer
+        height = base_size
+        width = base_size * (w / h)
+    else:
+        # Square
+        width = base_size
+        height = base_size
+
+    return (width, height)
 
 
 def get_cache_key(lat, lon, dist):
@@ -1364,9 +1386,11 @@ def create_poster(city, country, point, dist, output_file, output_format='png', 
 
         save_kwargs = dict(facecolor=THEME["bg"], bbox_inches="tight", pad_inches=0.05)
 
-        # DPI matters mainly for raster formats (PNG)
-        if fmt == "png":
+        # DPI matters for raster formats (PNG) and PDF (affects rasterized elements and file size)
+        if fmt in ("png", "pdf"):
             save_kwargs["dpi"] = dpi
+            # Also set figure DPI to ensure rasterized elements use correct resolution
+            fig.set_dpi(dpi)
 
         plt.savefig(output_file, format=fmt if fmt != "svg-laser" else "svg", **save_kwargs)
 
