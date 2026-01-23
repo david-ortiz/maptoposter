@@ -225,6 +225,18 @@
             <div class="theme-header">
               <label class="section-label">Theme</label>
               <div class="theme-header-actions">
+                <div id="theme-view-toggle" class="theme-view-toggle">
+                  <button type="button" class="view-toggle-btn active" data-view="category" title="Group by category">
+                    <svg viewBox="0 0 24 24" width="14" height="14">
+                      <path fill="currentColor" d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/>
+                    </svg>
+                  </button>
+                  <button type="button" class="view-toggle-btn" data-view="collection" title="Group by collection">
+                    <svg viewBox="0 0 24 24" width="14" height="14">
+                      <path fill="currentColor" d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/>
+                    </svg>
+                  </button>
+                </div>
                 <button id="variation-mode-btn" class="variation-toggle" type="button" title="Multi-select themes for variations">
                   <svg viewBox="0 0 24 24" width="14" height="14">
                     <path fill="currentColor" d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"/>
@@ -402,6 +414,7 @@
           </svg>
         </button>
       </div>
+      <div id="theme-collection-tabs" class="theme-collection-tabs"></div>
       <div id="theme-grid-full" class="theme-grid-expanded"></div>
     </div>
 
@@ -510,6 +523,12 @@
         </div>
         <div class="mockup-preview-body">
           <div class="mockup-preview-canvas-wrap">
+            <div class="canvas-zoom-controls">
+              <button type="button" class="zoom-btn" id="preview-zoom-out" title="Zoom out">-</button>
+              <span class="zoom-level" id="preview-zoom-level">100%</span>
+              <button type="button" class="zoom-btn" id="preview-zoom-in" title="Zoom in">+</button>
+              <button type="button" class="zoom-btn zoom-fit" id="preview-zoom-fit" title="Fit to view">Fit</button>
+            </div>
             <canvas id="mockup-preview-canvas"></canvas>
           </div>
           <div class="mockup-preview-sidebar">
@@ -527,9 +546,28 @@
                   <button type="button" class="label-btn-sm" id="add-font-label" title="Add font name">Font</button>
                   <button type="button" class="label-btn-sm" id="add-aspect-label" title="Add aspect ratio">Ratio</button>
                   <button type="button" class="label-btn-sm" id="add-custom-label" title="Add custom text">+</button>
+                  <button type="button" class="label-btn-sm asset-btn" id="add-asset-layer" title="Upload image asset">
+                    <svg viewBox="0 0 24 24" width="14" height="14">
+                      <path fill="currentColor" d="M19 7v2.99s-1.99.01-2 0V7h-3s.01-1.99 0-2h3V2h2v3h3v2h-3zm-3 4V8h-3V5H5c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-8h-3zM5 19l3-4 2 3 3-4 4 5H5z"/>
+                    </svg>
+                  </button>
                 </div>
+                <input type="file" id="asset-file-input" accept="image/png,image/jpeg,image/webp" style="display: none;">
               </div>
               <div id="mockup-labels-list" class="mockup-labels-list"></div>
+              <!-- Asset Controls (shown when asset selected) -->
+              <div id="mockup-asset-controls" class="mockup-asset-controls" style="display: none;">
+                <div class="adjust-row">
+                  <label>Width</label>
+                  <input type="range" id="asset-width-slider" min="5" max="100" step="1" value="20">
+                  <span class="slider-value" id="asset-width-value">20%</span>
+                </div>
+                <div class="adjust-row">
+                  <label>Opacity</label>
+                  <input type="range" id="asset-opacity-slider" min="0" max="1" step="0.05" value="1">
+                  <span class="slider-value" id="asset-opacity-value">100%</span>
+                </div>
+              </div>
               <div class="mockup-labels-row">
                 <select id="mockup-label-font" class="mockup-label-select">
                   <option value="Arial">Arial</option>
@@ -725,6 +763,12 @@
             </button>
           </div>
           <div class="mockup-creator-canvas-wrap">
+            <div class="canvas-zoom-controls" id="creator-zoom-controls">
+              <button type="button" class="zoom-btn" id="creator-zoom-out" title="Zoom out">-</button>
+              <span class="zoom-level" id="creator-zoom-level">100%</span>
+              <button type="button" class="zoom-btn" id="creator-zoom-in" title="Zoom in">+</button>
+              <button type="button" class="zoom-btn zoom-fit" id="creator-zoom-fit" title="Fit to view">Fit</button>
+            </div>
             <div class="mockup-creator-placeholder" id="mockup-canvas-placeholder">
               Upload an image to get started
             </div>

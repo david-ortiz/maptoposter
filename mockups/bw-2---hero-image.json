@@ -1,0 +1,16 @@
+{
+  "name": "B&W 2 - Hero Image",
+  "poster_rect": {
+    "x": 402,
+    "y": 332,
+    "width": 818,
+    "height": 1150
+  },
+  "poster_rotation": 0,
+  "output_size": [
+    1620,
+    2025
+  ],
+  "guides": [],
+  "labels": []
+}

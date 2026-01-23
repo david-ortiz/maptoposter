@@ -1,0 +1,14 @@
+{
+  "name": "Pop Art - Hero Image",
+  "poster_rect": {
+    "x": 483,
+    "y": 349,
+    "width": 667,
+    "height": 940
+  },
+  "poster_rotation": 0,
+  "output_size": [
+    1620,
+    1620
+  ]
+}

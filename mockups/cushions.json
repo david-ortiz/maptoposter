@@ -21,26 +21,5 @@
       "position": 50
     }
   ],
-  "labels": [
-    {
-      "text": "Coral Lagoon",
-      "type": "theme",
-      "x": 61.572052401746845,
-      "y": 7.7142857142856895,
-      "font": "Arial",
-      "size": 24,
-      "color": "#ffffff",
-      "shadow": true
-    },
-    {
-      "text": "Bitter",
-      "type": "font",
-      "x": 78.38427947598247,
-      "y": 13.142857142857197,
-      "font": "Arvo",
-      "size": 24,
-      "color": "#4a90a4",
-      "shadow": false
-    }
-  ]
+  "labels": []
 }

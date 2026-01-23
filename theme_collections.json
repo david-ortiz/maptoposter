@@ -1,0 +1,38 @@
+[
+  {
+    "id": "bw",
+    "name": "B&W",
+    "color": "#667eea",
+    "created_at": "2026-01-23 10:30:51"
+  },
+  {
+    "id": "pastel",
+    "name": "Pastel",
+    "color": "#667eea",
+    "created_at": "2026-01-23 10:30:56"
+  },
+  {
+    "id": "neons",
+    "name": "Neons",
+    "color": "#667eea",
+    "created_at": "2026-01-23 10:31:02"
+  },
+  {
+    "id": "vintage",
+    "name": "Vintage",
+    "color": "#667eea",
+    "created_at": "2026-01-23 10:31:06"
+  },
+  {
+    "id": "luxury",
+    "name": "Luxury",
+    "color": "#667eea",
+    "created_at": "2026-01-23 10:31:11"
+  },
+  {
+    "id": "pop-art",
+    "name": "Pop Art",
+    "color": "#667eea",
+    "created_at": "2026-01-23 11:17:59"
+  }
+]

@@ -525,6 +525,155 @@ def api_poster_collection(filename):
         return jsonify({"error": str(e)}), 500
 
 
+# ===== THEME COLLECTIONS =====
+THEME_COLLECTIONS_FILE = os.path.join(os.path.dirname(__file__), "theme_collections.json")
+THEME_COLLECTION_ITEMS_FILE = os.path.join(os.path.dirname(__file__), "theme_collection_items.json")
+
+
+def load_theme_collections():
+    """Load theme collections from JSON file."""
+    if not os.path.exists(THEME_COLLECTIONS_FILE):
+        return []
+    try:
+        with open(THEME_COLLECTIONS_FILE, "r") as f:
+            return json.load(f)
+    except Exception:
+        return []
+
+
+def save_theme_collections(collections):
+    """Save theme collections to JSON file."""
+    with open(THEME_COLLECTIONS_FILE, "w") as f:
+        json.dump(collections, f, indent=2)
+
+
+def load_theme_collection_items():
+    """Load theme-to-collection mappings."""
+    if not os.path.exists(THEME_COLLECTION_ITEMS_FILE):
+        return {}
+    try:
+        with open(THEME_COLLECTION_ITEMS_FILE, "r") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
+def save_theme_collection_items(items):
+    """Save theme-to-collection mappings."""
+    with open(THEME_COLLECTION_ITEMS_FILE, "w") as f:
+        json.dump(items, f, indent=2)
+
+
+@app.route("/api/theme-collections")
+def api_theme_collections_list():
+    """List all theme collections with their items."""
+    collections = load_theme_collections()
+    items = load_theme_collection_items()
+    return jsonify({"collections": collections, "items": items})
+
+
+@app.route("/api/theme-collections", methods=["POST"])
+def api_theme_collections_create():
+    """Create a new theme collection."""
+    payload = request.get_json(silent=True) or {}
+    name = (payload.get("name") or "").strip()
+
+    if not name:
+        return jsonify({"error": "Collection name is required."}), 400
+
+    collections = load_theme_collections()
+
+    # Generate ID from name
+    import re
+    coll_id = re.sub(r'[^\w\s-]', '', name.lower())
+    coll_id = re.sub(r'[\s]+', '-', coll_id)[:30]
+
+    # Ensure unique ID
+    base_id = coll_id
+    counter = 1
+    while any(c["id"] == coll_id for c in collections):
+        coll_id = f"{base_id}-{counter}"
+        counter += 1
+
+    collection = {
+        "id": coll_id,
+        "name": name,
+        "color": payload.get("color", "#667eea"),
+        "created_at": time.strftime("%Y-%m-%d %H:%M:%S"),
+    }
+
+    collections.append(collection)
+    save_theme_collections(collections)
+
+    # Initialize empty items list for this collection
+    items = load_theme_collection_items()
+    items[coll_id] = []
+    save_theme_collection_items(items)
+
+    return jsonify(collection)
+
+
+@app.route("/api/theme-collections/<coll_id>", methods=["DELETE", "PATCH"])
+def api_theme_collections_modify(coll_id):
+    """Delete or rename a theme collection."""
+    if request.method == "DELETE":
+        collections = load_theme_collections()
+        collections = [c for c in collections if c["id"] != coll_id]
+        save_theme_collections(collections)
+
+        # Remove items for this collection
+        items = load_theme_collection_items()
+        if coll_id in items:
+            del items[coll_id]
+        save_theme_collection_items(items)
+
+        return jsonify({"ok": True})
+
+    else:  # PATCH - rename
+        payload = request.get_json(silent=True) or {}
+        new_name = (payload.get("name") or "").strip()
+
+        if not new_name:
+            return jsonify({"error": "Name is required."}), 400
+
+        collections = load_theme_collections()
+        found = False
+        for coll in collections:
+            if coll["id"] == coll_id:
+                coll["name"] = new_name
+                found = True
+                break
+
+        if not found:
+            return jsonify({"error": "Collection not found."}), 404
+
+        save_theme_collections(collections)
+        return jsonify({"ok": True, "id": coll_id, "name": new_name})
+
+
+@app.route("/api/theme-collections/<coll_id>/themes/<theme_id>", methods=["POST", "DELETE"])
+def api_theme_collection_item(coll_id, theme_id):
+    """Add or remove a theme from a collection."""
+    items = load_theme_collection_items()
+
+    if coll_id not in items:
+        items[coll_id] = []
+
+    if request.method == "POST":
+        # Add theme to collection
+        if theme_id not in items[coll_id]:
+            items[coll_id].append(theme_id)
+        save_theme_collection_items(items)
+        return jsonify({"ok": True, "action": "added"})
+
+    else:  # DELETE
+        # Remove theme from collection
+        if theme_id in items[coll_id]:
+            items[coll_id].remove(theme_id)
+        save_theme_collection_items(items)
+        return jsonify({"ok": True, "action": "removed"})
+
+
 @app.route("/fonts/<path:filename>")
 def serve_font(filename):
     """Serve font files from the fonts directory."""
@@ -1032,6 +1181,10 @@ def api_mockups_modify(mockup_id):
         # Update labels if provided
         if "labels" in payload:
             metadata["labels"] = payload["labels"]
+
+        # Update assets if provided
+        if "assets" in payload:
+            metadata["assets"] = payload["assets"]
 
         # Save updated metadata
         with open(metadata_path, "w", encoding="utf-8") as f:

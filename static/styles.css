@@ -824,6 +824,37 @@ select:focus {
   gap: 8px;
 }
 
+.theme-view-toggle {
+  display: flex;
+  background: rgba(0, 0, 0, 0.06);
+  border-radius: 6px;
+  padding: 2px;
+}
+
+.view-toggle-btn {
+  width: 24px;
+  height: 22px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--ink-soft);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: all 0.15s ease;
+}
+
+.view-toggle-btn:hover {
+  color: var(--ink);
+}
+
+.view-toggle-btn.active {
+  background: white;
+  color: var(--accent-2);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
 .variation-toggle {
   width: 26px;
   height: 26px;
@@ -1941,6 +1972,197 @@ select:focus {
 .drawer-close:hover {
   background: rgba(0, 0, 0, 0.05);
   color: var(--ink);
+}
+
+/* Theme Collection Tabs */
+.theme-collection-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 12px 24px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  overflow-x: auto;
+  flex-shrink: 0;
+}
+
+.theme-collection-tabs::-webkit-scrollbar {
+  height: 4px;
+}
+
+.theme-collection-tabs::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
+}
+
+.collection-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: none;
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: 16px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--ink-soft);
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.collection-tab:hover {
+  background: rgba(0, 0, 0, 0.08);
+  color: var(--ink);
+}
+
+.collection-tab.active {
+  background: var(--accent);
+  color: white;
+}
+
+.collection-tab .tab-count {
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+}
+
+.collection-tab.active .tab-count {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.collection-tab .tab-actions {
+  display: none;
+  gap: 2px;
+  margin-left: 4px;
+}
+
+.collection-tab:hover .tab-actions {
+  display: flex;
+}
+
+.collection-tab.active .tab-actions {
+  display: flex;
+}
+
+.tab-action {
+  width: 18px;
+  height: 18px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: inherit;
+  opacity: 0.6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
+  padding: 0;
+}
+
+.tab-action:hover {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.collection-tab.active .tab-action:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.new-collection-btn {
+  border: 1px dashed rgba(0, 0, 0, 0.2);
+  background: transparent;
+}
+
+.new-collection-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(102, 126, 234, 0.05);
+}
+
+/* Collection button on theme cards */
+.collection-btn {
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  opacity: 0.3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  color: var(--ink-soft);
+  transition: all 0.15s ease;
+}
+
+.collection-btn:hover {
+  opacity: 1;
+  background: rgba(102, 126, 234, 0.1);
+  color: var(--accent);
+}
+
+.collection-btn.has-collections {
+  opacity: 0.8;
+  color: var(--accent);
+}
+
+/* Collection menu dropdown */
+.collection-menu {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  padding: 8px 0;
+  min-width: 180px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.collection-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.collection-menu-item:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.collection-menu-item input {
+  margin: 0;
+}
+
+.collection-menu-empty {
+  padding: 12px;
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.collection-menu-new {
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: var(--accent);
+  text-align: left;
+  margin-top: 4px;
+}
+
+.collection-menu-new:hover {
+  background: rgba(102, 126, 234, 0.05);
+}
+
+/* Empty state in drawer */
+.theme-drawer-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--ink-soft);
+  font-size: 0.95rem;
 }
 
 .theme-grid-expanded {
@@ -3433,13 +3655,71 @@ select:focus {
 
 .mockup-creator-canvas-wrap {
   flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: block;
   padding: 20px;
   background: #2a2a2a;
   overflow: auto;
   min-height: 400px;
+  position: relative;
+  text-align: center;
+}
+
+.mockup-creator-canvas-wrap canvas {
+  display: inline-block;
+  max-width: none;  /* Allow canvas to exceed container width when zoomed */
+  max-height: none; /* Allow canvas to exceed container height when zoomed */
+}
+
+/* === CANVAS ZOOM CONTROLS === */
+.canvas-zoom-controls {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(30, 30, 30, 0.95);
+  padding: 4px 8px;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  z-index: 10;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.zoom-btn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  color: #fff;
+  transition: background 0.15s;
+}
+
+.zoom-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.zoom-btn:active {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.zoom-btn.zoom-fit {
+  width: auto;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.zoom-level {
+  min-width: 50px;
+  text-align: center;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  font-variant-numeric: tabular-nums;
 }
 
 .mockup-creator-placeholder {
@@ -3458,8 +3738,7 @@ select:focus {
   cursor: crosshair;
   border-radius: var(--radius-sm);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-  max-width: 100%;
-  max-height: 100%;
+  /* Remove max constraints to allow zoom beyond container */
 }
 
 /* === MOCKUP PREVIEW === */
@@ -3541,21 +3820,26 @@ select:focus {
 
 .mockup-preview-canvas-wrap {
   flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: block;
   padding: 20px;
   background: #2a2a2a;
   overflow: auto;
   min-height: 400px;
+  position: relative;
+  text-align: center;
+}
+
+.mockup-preview-canvas-wrap canvas {
+  display: inline-block;
+  max-width: none;  /* Allow canvas to exceed container width when zoomed */
+  max-height: none; /* Allow canvas to exceed container height when zoomed */
 }
 
 #mockup-preview-canvas {
   cursor: grab;
   border-radius: var(--radius-sm);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-  max-width: 100%;
-  max-height: 100%;
+  /* Remove max constraints to allow zoom beyond container */
 }
 
 #mockup-preview-canvas:active {
@@ -3648,6 +3932,59 @@ select:focus {
 .label-btn-sm:hover {
   background: rgba(0, 0, 0, 0.1);
   color: var(--ink);
+}
+
+.label-btn-sm.asset-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 5px;
+}
+
+.label-btn-sm.asset-btn svg {
+  display: block;
+}
+
+/* Asset Controls */
+.mockup-asset-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  background: rgba(102, 126, 234, 0.05);
+  border-radius: 6px;
+  border: 1px solid rgba(102, 126, 234, 0.15);
+  margin-top: 4px;
+}
+
+.mockup-asset-controls .adjust-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mockup-asset-controls label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--ink-soft);
+  min-width: 50px;
+}
+
+.mockup-asset-controls input[type="range"] {
+  flex: 1;
+}
+
+.mockup-asset-controls .slider-value {
+  font-size: 0.75rem;
+  min-width: 40px;
+  text-align: right;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Asset layer styling in layers list */
+.mockup-layer-item.asset-layer .layer-icon {
+  color: #667eea;
 }
 
 .mockup-adjustments {

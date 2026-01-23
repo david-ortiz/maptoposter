@@ -42,7 +42,8 @@
       "Bash(powershell \"Get-ChildItem -Path ''c:\\\\laragon\\\\www\\\\maptoposter'' -Force | Select-Object Name, Attributes, LinkType\")",
       "Bash(powershell \"Remove-Item -Path ''c:\\\\laragon\\\\www\\\\maptoposter\\\\nul'' -Force -ErrorAction SilentlyContinue; if \\(Test-Path ''c:\\\\laragon\\\\www\\\\maptoposter\\\\nul''\\) { Write-Host ''File still exists'' } else { Write-Host ''File removed successfully'' }\")",
       "Bash(powershell:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(node -c:*)"
     ]
   }
 }

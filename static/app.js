@@ -35,6 +35,8 @@ let themeCatalog = {};
 let themeList = [];
 let themesByCategory = {};
 let currentCategory = "all";
+let themePickerViewMode = "category";  // "category" or "collection"
+let currentCollectionFilter = null;    // Collection ID for carousel filtering
 
 // ===== FONT LIST =====
 let fontList = [];
@@ -42,6 +44,11 @@ let fontList = [];
 // ===== STARRED ITEMS =====
 let starredFonts = [];
 let starredThemes = [];
+
+// ===== THEME COLLECTIONS =====
+let themeCollectionList = [];  // Array of {id, name, color, created_at}
+let themeCollectionItems = {}; // Map of collectionId -> [themeIds]
+let drawerCollectionFilter = null;  // Current collection filter in theme drawer
 
 // ===== PRESETS =====
 let presetList = [];
@@ -64,9 +71,10 @@ let selectedPosterForMockup = null;
 // Mockup Creator State
 let mockupCreatorImage = null;
 let mockupCreatorRect = { x: 0, y: 0, width: 0, height: 0 };
-let mockupCreatorDrawing = false;
-let mockupCreatorStartX = 0;
-let mockupCreatorStartY = 0;
+let mockupCreatorClickState = 0;  // 0 = no clicks, 1 = first corner set, 2 = complete
+let mockupCreatorCorner1 = { x: 0, y: 0 };
+let mockupCreatorCorner2 = { x: 0, y: 0 };
+let mockupCreatorZoom = 1.0;  // Zoom level (1.0 = fit to container)
 
 // Mockup Preview State
 let mockupPreviewTemplate = null;  // { id, poster_rect, ... }
@@ -79,14 +87,20 @@ let mockupPreviewOffsetY = 0;
 let mockupPreviewDragging = false;
 let mockupPreviewDragStartX = 0;
 let mockupPreviewDragStartY = 0;
+let mockupPreviewZoom = 1.0;  // Zoom level for preview canvas
 
 // Mockup Labels State
 let mockupLabels = [];  // Array of { id, text, x, y, font, size, color, shadow }
 let mockupLabelIdCounter = 0;
-let mockupSelectedLayer = "poster";  // "poster" or label id number
+let mockupSelectedLayer = "poster";  // "poster" or label id number or "asset-N"
 let mockupLabelDragging = false;
 let mockupLabelDragStartX = 0;
 let mockupLabelDragStartY = 0;
+
+// Mockup Assets State
+let mockupAssets = [];  // Array of { id, src, filename, x, y, width, opacity, image }
+let mockupAssetIdCounter = 0;
+let mockupAssetDragging = false;
 
 // Mockup Guides State
 let mockupGuides = [];  // Array of { id, type: 'h'|'v', position: 0-100 }
@@ -185,6 +199,7 @@ const elements = {
   headerGalleryBtn: document.getElementById("header-gallery-btn"),
 
   // Theme elements
+  themeViewToggle: document.getElementById("theme-view-toggle"),
   themeCategoryTabs: document.getElementById("theme-category-tabs"),
   themeCarousel: document.getElementById("theme-carousel"),
   themeCarouselWrap: document.getElementById("theme-carousel-wrap"),
@@ -271,6 +286,11 @@ const elements = {
   rectY: document.getElementById("rect-y"),
   rectW: document.getElementById("rect-w"),
   rectH: document.getElementById("rect-h"),
+  // Creator zoom controls
+  creatorZoomIn: document.getElementById("creator-zoom-in"),
+  creatorZoomOut: document.getElementById("creator-zoom-out"),
+  creatorZoomFit: document.getElementById("creator-zoom-fit"),
+  creatorZoomLevel: document.getElementById("creator-zoom-level"),
 
   // Mockup Preview
   mockupPreview: document.getElementById("mockup-preview"),
@@ -278,6 +298,11 @@ const elements = {
   mockupPreviewCanvas: document.getElementById("mockup-preview-canvas"),
   mockupScaleSlider: document.getElementById("mockup-scale-slider"),
   mockupScaleValue: document.getElementById("mockup-scale-value"),
+  // Preview zoom controls
+  previewZoomIn: document.getElementById("preview-zoom-in"),
+  previewZoomOut: document.getElementById("preview-zoom-out"),
+  previewZoomFit: document.getElementById("preview-zoom-fit"),
+  previewZoomLevel: document.getElementById("preview-zoom-level"),
   mockupXSlider: document.getElementById("mockup-x-slider"),
   mockupXValue: document.getElementById("mockup-x-value"),
   mockupYSlider: document.getElementById("mockup-y-slider"),
@@ -295,7 +320,15 @@ const elements = {
   addFontLabel: document.getElementById("add-font-label"),
   addAspectLabel: document.getElementById("add-aspect-label"),
   addCustomLabel: document.getElementById("add-custom-label"),
+  addAssetLayer: document.getElementById("add-asset-layer"),
+  assetFileInput: document.getElementById("asset-file-input"),
   mockupLabelsList: document.getElementById("mockup-labels-list"),
+  // Asset controls
+  mockupAssetControls: document.getElementById("mockup-asset-controls"),
+  assetWidthSlider: document.getElementById("asset-width-slider"),
+  assetWidthValue: document.getElementById("asset-width-value"),
+  assetOpacitySlider: document.getElementById("asset-opacity-slider"),
+  assetOpacityValue: document.getElementById("asset-opacity-value"),
 
   // Mockup Guides
   addHGuide: document.getElementById("add-h-guide"),
@@ -379,6 +412,7 @@ const stageLabels = {
 async function initApp() {
   initLeafletMap();
   await loadStarred();
+  await loadThemeCollections();
   loadThemes();
   loadFonts();
   await loadPresets();
@@ -441,6 +475,272 @@ async function toggleStarTheme(themeId, e) {
   } catch (err) {
     console.error("Failed to toggle star:", err);
   }
+}
+
+// ===== THEME COLLECTIONS =====
+async function loadThemeCollections() {
+  try {
+    const response = await fetch("/api/theme-collections");
+    const data = await response.json();
+    themeCollectionList = data.collections || [];
+    themeCollectionItems = data.items || {};
+  } catch (err) {
+    console.error("Failed to load theme collections:", err);
+    themeCollectionList = [];
+    themeCollectionItems = {};
+  }
+}
+
+async function createThemeCollection() {
+  const name = prompt("Enter collection name:");
+  if (!name || !name.trim()) return;
+
+  try {
+    const response = await fetch("/api/theme-collections", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: name.trim() }),
+    });
+
+    if (response.ok) {
+      const newCollection = await response.json();
+      themeCollectionList.push(newCollection);
+      themeCollectionItems[newCollection.id] = [];
+      renderThemeCollectionTabs();
+      renderThemeDrawer(themeList);
+    }
+  } catch (err) {
+    console.error("Failed to create theme collection:", err);
+  }
+}
+
+async function renameThemeCollection(collId) {
+  const coll = themeCollectionList.find(c => c.id === collId);
+  if (!coll) return;
+
+  const newName = prompt("Enter new name:", coll.name);
+  if (!newName || !newName.trim() || newName.trim() === coll.name) return;
+
+  try {
+    const response = await fetch(`/api/theme-collections/${collId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: newName.trim() }),
+    });
+
+    if (response.ok) {
+      coll.name = newName.trim();
+      renderThemeCollectionTabs();
+    }
+  } catch (err) {
+    console.error("Failed to rename theme collection:", err);
+  }
+}
+
+async function deleteThemeCollection(collId) {
+  if (!confirm("Delete this collection? Themes will not be deleted.")) return;
+
+  try {
+    const response = await fetch(`/api/theme-collections/${collId}`, {
+      method: "DELETE",
+    });
+
+    if (response.ok) {
+      themeCollectionList = themeCollectionList.filter(c => c.id !== collId);
+      delete themeCollectionItems[collId];
+      if (drawerCollectionFilter === collId) {
+        drawerCollectionFilter = null;
+      }
+      renderThemeCollectionTabs();
+      renderThemeDrawer(themeList);
+    }
+  } catch (err) {
+    console.error("Failed to delete theme collection:", err);
+  }
+}
+
+async function addThemeToCollection(themeId, collId) {
+  try {
+    await fetch(`/api/theme-collections/${collId}/themes/${encodeURIComponent(themeId)}`, {
+      method: "POST",
+    });
+
+    if (!themeCollectionItems[collId]) {
+      themeCollectionItems[collId] = [];
+    }
+    if (!themeCollectionItems[collId].includes(themeId)) {
+      themeCollectionItems[collId].push(themeId);
+    }
+    renderThemeCollectionTabs();
+    renderThemeDrawer(themeList);
+  } catch (err) {
+    console.error("Failed to add theme to collection:", err);
+  }
+}
+
+async function removeThemeFromCollection(themeId, collId) {
+  try {
+    await fetch(`/api/theme-collections/${collId}/themes/${encodeURIComponent(themeId)}`, {
+      method: "DELETE",
+    });
+
+    if (themeCollectionItems[collId]) {
+      themeCollectionItems[collId] = themeCollectionItems[collId].filter(id => id !== themeId);
+    }
+    renderThemeCollectionTabs();
+    renderThemeDrawer(themeList);
+  } catch (err) {
+    console.error("Failed to remove theme from collection:", err);
+  }
+}
+
+function getThemeCollections(themeId) {
+  const collections = [];
+  for (const [collId, themes] of Object.entries(themeCollectionItems)) {
+    if (themes.includes(themeId)) {
+      collections.push(collId);
+    }
+  }
+  return collections;
+}
+
+function filterThemesByCollection(collId) {
+  drawerCollectionFilter = collId;
+  renderThemeCollectionTabs();
+  renderThemeDrawer(themeList);
+}
+
+function renderThemeCollectionTabs() {
+  const container = document.getElementById("theme-collection-tabs");
+  if (!container) return;
+
+  container.innerHTML = "";
+
+  // "All" tab
+  const allTab = document.createElement("button");
+  allTab.type = "button";
+  allTab.className = "collection-tab" + (drawerCollectionFilter === null ? " active" : "");
+  allTab.innerHTML = `<span>All</span><span class="tab-count">${themeList.length}</span>`;
+  allTab.addEventListener("click", () => filterThemesByCollection(null));
+  container.appendChild(allTab);
+
+  // "Starred" tab
+  const starredTab = document.createElement("button");
+  starredTab.type = "button";
+  starredTab.className = "collection-tab" + (drawerCollectionFilter === "starred" ? " active" : "");
+  starredTab.innerHTML = `<span>Starred</span><span class="tab-count">${starredThemes.length}</span>`;
+  starredTab.addEventListener("click", () => filterThemesByCollection("starred"));
+  container.appendChild(starredTab);
+
+  // Collection tabs
+  themeCollectionList.forEach(coll => {
+    const count = (themeCollectionItems[coll.id] || []).length;
+    const tab = document.createElement("button");
+    tab.type = "button";
+    tab.className = "collection-tab" + (drawerCollectionFilter === coll.id ? " active" : "");
+    tab.innerHTML = `
+      <span>${escapeHtml(coll.name)}</span>
+      <span class="tab-count">${count}</span>
+      <span class="tab-actions">
+        <button type="button" class="tab-action rename" title="Rename">
+          <svg viewBox="0 0 24 24" width="12" height="12"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+        </button>
+        <button type="button" class="tab-action delete" title="Delete">
+          <svg viewBox="0 0 24 24" width="12" height="12"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </span>
+    `;
+    tab.addEventListener("click", (e) => {
+      if (!e.target.closest(".tab-action")) {
+        filterThemesByCollection(coll.id);
+      }
+    });
+    tab.querySelector(".rename")?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      renameThemeCollection(coll.id);
+    });
+    tab.querySelector(".delete")?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      deleteThemeCollection(coll.id);
+    });
+    container.appendChild(tab);
+  });
+
+  // "New Collection" button
+  const newBtn = document.createElement("button");
+  newBtn.type = "button";
+  newBtn.className = "collection-tab new-collection-btn";
+  newBtn.innerHTML = `<span>+ New</span>`;
+  newBtn.addEventListener("click", createThemeCollection);
+  container.appendChild(newBtn);
+
+  // Also update carousel tabs if in collection view mode
+  if (themePickerViewMode === "collection") {
+    renderCategoryTabs();
+    updateThemeCarouselForCurrentFilter();
+  }
+}
+
+function openThemeCollectionMenu(themeId, buttonElement) {
+  // Remove any existing menu
+  document.querySelectorAll(".collection-menu").forEach(m => m.remove());
+
+  const menu = document.createElement("div");
+  menu.className = "collection-menu";
+
+  // Get which collections this theme is already in
+  const themeColls = getThemeCollections(themeId);
+
+  if (themeCollectionList.length === 0) {
+    menu.innerHTML = `<div class="collection-menu-empty">No collections yet</div>`;
+  } else {
+    themeCollectionList.forEach(coll => {
+      const isInCollection = themeColls.includes(coll.id);
+      const item = document.createElement("label");
+      item.className = "collection-menu-item";
+      item.innerHTML = `
+        <input type="checkbox" ${isInCollection ? "checked" : ""}>
+        <span>${escapeHtml(coll.name)}</span>
+      `;
+      item.querySelector("input").addEventListener("change", (e) => {
+        if (e.target.checked) {
+          addThemeToCollection(themeId, coll.id);
+        } else {
+          removeThemeFromCollection(themeId, coll.id);
+        }
+      });
+      menu.appendChild(item);
+    });
+  }
+
+  // Add "New Collection" option
+  const newItem = document.createElement("button");
+  newItem.type = "button";
+  newItem.className = "collection-menu-new";
+  newItem.textContent = "+ New Collection";
+  newItem.addEventListener("click", async () => {
+    menu.remove();
+    await createThemeCollection();
+  });
+  menu.appendChild(newItem);
+
+  // Position the menu
+  const rect = buttonElement.getBoundingClientRect();
+  menu.style.position = "fixed";
+  menu.style.top = `${rect.bottom + 4}px`;
+  menu.style.left = `${rect.left}px`;
+  menu.style.zIndex = "1000";
+
+  document.body.appendChild(menu);
+
+  // Close on click outside
+  const closeMenu = (e) => {
+    if (!menu.contains(e.target) && e.target !== buttonElement) {
+      menu.remove();
+      document.removeEventListener("click", closeMenu);
+    }
+  };
+  setTimeout(() => document.addEventListener("click", closeMenu), 0);
 }
 
 // ===== PRESETS =====
@@ -2412,6 +2712,14 @@ function renderCategoryTabs() {
 
   elements.themeCategoryTabs.innerHTML = "";
 
+  if (themePickerViewMode === "collection") {
+    renderCollectionTabs();
+  } else {
+    renderCategoryTabsInner();
+  }
+}
+
+function renderCategoryTabsInner() {
   // Only show categories that have themes
   const availableCategories = CATEGORY_ORDER.filter(
     (cat) => themesByCategory[cat] && themesByCategory[cat].length > 0
@@ -2433,6 +2741,88 @@ function renderCategoryTabs() {
   });
 }
 
+function renderCollectionTabs() {
+  // Always add "All" tab first
+  const allTab = document.createElement("button");
+  allTab.className = "theme-category-tab" + (currentCollectionFilter === null ? " active" : "");
+  allTab.type = "button";
+  allTab.dataset.collection = "all";
+  allTab.textContent = "All";
+  allTab.addEventListener("click", () => {
+    setCollectionFilter(null);
+  });
+  elements.themeCategoryTabs.appendChild(allTab);
+
+  // Add collection tabs
+  themeCollectionList.forEach(coll => {
+    const count = (themeCollectionItems[coll.id] || []).length;
+    const tab = document.createElement("button");
+    tab.className = "theme-category-tab" + (currentCollectionFilter === coll.id ? " active" : "");
+    tab.type = "button";
+    tab.dataset.collection = coll.id;
+    tab.textContent = `${coll.name} (${count})`;
+    tab.addEventListener("click", () => {
+      setCollectionFilter(coll.id);
+    });
+    elements.themeCategoryTabs.appendChild(tab);
+  });
+}
+
+function setThemePickerViewMode(mode) {
+  themePickerViewMode = mode;
+
+  // Reset filters when switching modes
+  if (mode === "category") {
+    currentCollectionFilter = null;
+    currentCategory = "all";
+  } else {
+    currentCollectionFilter = null;
+  }
+
+  // Update toggle button states
+  document.querySelectorAll(".view-toggle-btn").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.view === mode);
+  });
+
+  // Re-render tabs and carousel
+  renderCategoryTabs();
+  updateThemeCarouselForCurrentFilter();
+}
+
+function setCollectionFilter(collId) {
+  currentCollectionFilter = collId;
+
+  // Update tab active state
+  document.querySelectorAll(".theme-category-tab").forEach((tab) => {
+    const tabColl = tab.dataset.collection;
+    const isActive = (collId === null && tabColl === "all") || tabColl === collId;
+    tab.classList.toggle("active", isActive);
+    if (isActive) {
+      tab.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+    }
+  });
+
+  updateThemeCarouselForCurrentFilter();
+}
+
+function updateThemeCarouselForCurrentFilter() {
+  let themes;
+
+  if (themePickerViewMode === "collection") {
+    if (currentCollectionFilter === null) {
+      themes = themeList;
+    } else {
+      const themeIds = themeCollectionItems[currentCollectionFilter] || [];
+      themes = themeList.filter(t => themeIds.includes(t.id));
+    }
+  } else {
+    themes = themesByCategory[currentCategory] || themeList;
+  }
+
+  renderThemeCarousel(themes);
+  initCarouselDrag();
+}
+
 function setThemeCategory(category) {
   currentCategory = category;
 
@@ -2445,10 +2835,7 @@ function setThemeCategory(category) {
     }
   });
 
-  // Re-render carousel with filtered themes
-  const themes = themesByCategory[category] || themeList;
-  renderThemeCarousel(themes);
-  initCarouselDrag();
+  updateThemeCarouselForCurrentFilter();
 }
 
 function renderThemeCarousel(themes) {
@@ -2602,9 +2989,17 @@ function renderThemeDrawer(themes) {
 
   elements.themeGridFull.innerHTML = "";
 
+  // Filter themes based on collection filter
+  let filteredThemes = themes;
+  if (drawerCollectionFilter === "starred") {
+    filteredThemes = themes.filter(t => starredThemes.includes(t.id));
+  } else if (drawerCollectionFilter && themeCollectionItems[drawerCollectionFilter]) {
+    filteredThemes = themes.filter(t => themeCollectionItems[drawerCollectionFilter].includes(t.id));
+  }
+
   // Group themes by category for drawer
   const grouped = {};
-  themes.forEach((theme) => {
+  filteredThemes.forEach((theme) => {
     const cat = theme.category || "other";
     if (!grouped[cat]) {
       grouped[cat] = [];
@@ -2637,6 +3032,16 @@ function renderThemeDrawer(themes) {
     group.appendChild(grid);
     elements.themeGridFull.appendChild(group);
   });
+
+  // Show empty state if no themes
+  if (filteredThemes.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "theme-drawer-empty";
+    empty.textContent = drawerCollectionFilter === "starred"
+      ? "No starred themes yet"
+      : "No themes in this collection";
+    elements.themeGridFull.appendChild(empty);
+  }
 }
 
 function createThemeCardForDrawer(theme) {
@@ -2671,8 +3076,21 @@ function createThemeCardForDrawer(theme) {
   starBtn.title = isStarred ? "Remove from favorites" : "Add to favorites";
   starBtn.addEventListener("click", (e) => toggleStarTheme(theme.id, e));
 
+  // Collection button
+  const themeColls = getThemeCollections(theme.id);
+  const collBtn = document.createElement("button");
+  collBtn.type = "button";
+  collBtn.className = `collection-btn ${themeColls.length > 0 ? "has-collections" : ""}`;
+  collBtn.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>`;
+  collBtn.title = "Add to collection";
+  collBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    openThemeCollectionMenu(theme.id, collBtn);
+  });
+
   header.appendChild(name);
   header.appendChild(starBtn);
+  header.appendChild(collBtn);
 
   const desc = document.createElement("div");
   desc.className = "theme-card-desc";
@@ -2683,7 +3101,7 @@ function createThemeCardForDrawer(theme) {
   card.appendChild(desc);
 
   card.addEventListener("click", (e) => {
-    if (e.target.closest(".star-btn")) return;
+    if (e.target.closest(".star-btn") || e.target.closest(".collection-btn")) return;
     selectTheme(theme.id);
     closeThemeDrawer();
   });
@@ -2731,6 +3149,8 @@ function openThemeDrawer() {
   elements.themeDrawer.setAttribute("aria-hidden", "false");
   document.body.style.overflow = "hidden";
   elements.themeSearch.value = "";
+  drawerCollectionFilter = null;  // Reset filter
+  renderThemeCollectionTabs();
   filterThemes("");
 }
 
@@ -3436,6 +3856,14 @@ function initEventListeners() {
   elements.drawerClose?.addEventListener("click", closeThemeDrawer);
   elements.themeSearch?.addEventListener("input", (e) => filterThemes(e.target.value));
 
+  // Theme view toggle (category/collection)
+  elements.themeViewToggle?.addEventListener("click", (e) => {
+    const btn = e.target.closest(".view-toggle-btn");
+    if (btn && btn.dataset.view) {
+      setThemePickerViewMode(btn.dataset.view);
+    }
+  });
+
   // Close theme drawer on backdrop click
   elements.themeDrawer?.addEventListener("click", (e) => {
     if (e.target === elements.themeDrawer) {
@@ -3506,10 +3934,15 @@ function initEventListeners() {
   elements.mockupTemplateName?.addEventListener("input", updateMockupSaveBtn);
   elements.mockupSaveBtn?.addEventListener("click", saveMockupTemplate);
 
-  // Canvas drawing (creator)
-  elements.mockupCreatorCanvas?.addEventListener("mousedown", handleMockupCanvasMouseDown);
+  // Canvas drawing (creator) - two-point click selection
+  elements.mockupCreatorCanvas?.addEventListener("click", handleMockupCanvasClick);
   elements.mockupCreatorCanvas?.addEventListener("mousemove", handleMockupCanvasMouseMove);
-  elements.mockupCreatorCanvas?.addEventListener("mouseup", handleMockupCanvasMouseUp);
+  elements.mockupCreatorCanvas?.addEventListener("wheel", handleCreatorWheel, { passive: false });
+
+  // Creator zoom controls
+  elements.creatorZoomIn?.addEventListener("click", zoomCreatorIn);
+  elements.creatorZoomOut?.addEventListener("click", zoomCreatorOut);
+  elements.creatorZoomFit?.addEventListener("click", zoomCreatorFit);
 
   // Mockup preview
   elements.mockupPreviewClose?.addEventListener("click", closeMockupPreview);
@@ -3529,7 +3962,12 @@ function initEventListeners() {
   elements.mockupPreviewCanvas?.addEventListener("mousemove", handlePreviewCanvasMouseMove);
   elements.mockupPreviewCanvas?.addEventListener("mouseup", handlePreviewCanvasMouseUp);
   elements.mockupPreviewCanvas?.addEventListener("mouseleave", handlePreviewCanvasMouseUp);
-  elements.mockupCreatorCanvas?.addEventListener("mouseleave", handleMockupCanvasMouseUp);
+  elements.mockupPreviewCanvas?.addEventListener("wheel", handlePreviewWheel, { passive: false });
+
+  // Preview zoom controls
+  elements.previewZoomIn?.addEventListener("click", zoomPreviewIn);
+  elements.previewZoomOut?.addEventListener("click", zoomPreviewOut);
+  elements.previewZoomFit?.addEventListener("click", zoomPreviewFit);
 
   // Mockup label buttons
   elements.addThemeLabel?.addEventListener("click", () => {
@@ -3549,6 +3987,40 @@ function initEventListeners() {
     const text = prompt("Enter custom label text:");
     if (text && text.trim()) {
       addMockupLabel(text.trim(), "custom");
+    }
+  });
+
+  // Asset upload
+  elements.addAssetLayer?.addEventListener("click", () => {
+    elements.assetFileInput?.click();
+  });
+  elements.assetFileInput?.addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      addMockupAsset(file);
+      e.target.value = "";  // Reset for next upload
+    }
+  });
+
+  // Asset controls
+  elements.assetWidthSlider?.addEventListener("input", (e) => {
+    const selectedAsset = mockupAssets.find(a => mockupSelectedLayer === "asset-" + a.id);
+    if (selectedAsset) {
+      selectedAsset.width = parseFloat(e.target.value);
+      if (elements.assetWidthValue) {
+        elements.assetWidthValue.textContent = `${Math.round(selectedAsset.width)}%`;
+      }
+      renderMockupPreview();
+    }
+  });
+  elements.assetOpacitySlider?.addEventListener("input", (e) => {
+    const selectedAsset = mockupAssets.find(a => mockupSelectedLayer === "asset-" + a.id);
+    if (selectedAsset) {
+      selectedAsset.opacity = parseFloat(e.target.value);
+      if (elements.assetOpacityValue) {
+        elements.assetOpacityValue.textContent = `${Math.round(selectedAsset.opacity * 100)}%`;
+      }
+      renderMockupPreview();
     }
   });
 
@@ -3747,6 +4219,12 @@ async function openMockupPreview(mockup, poster = null) {
   mockupPreviewScale = 1.0;
   mockupPreviewOffsetX = 0;
   mockupPreviewOffsetY = 0;
+  mockupPreviewZoom = 1.0;
+
+  // Reset drag states
+  mockupPreviewDragging = false;
+  mockupLabelDragging = false;
+  mockupAssetDragging = false;
 
   // Reset sliders
   if (elements.mockupScaleSlider) {
@@ -3762,9 +4240,13 @@ async function openMockupPreview(mockup, poster = null) {
     elements.mockupYValue.value = "0px";
   }
 
-  // Load saved guides and labels from template
+  // Reset zoom display
+  updatePreviewZoomDisplay();
+
+  // Load saved guides, labels, and assets from template
   loadMockupGuides(mockup.guides || []);
   loadMockupLabels(mockup.labels || []);
+  loadMockupAssets(mockup.assets || []);
 
   // Close mockup modal and show preview
   closeMockupModal();
@@ -3876,11 +4358,16 @@ function renderMockupPreview() {
   // Set canvas size to template size (scaled for display)
   const maxWidth = 900;
   const maxHeight = 700;
-  const displayScale = Math.min(maxWidth / template.width, maxHeight / template.height, 1);
+  const baseScale = Math.min(maxWidth / template.width, maxHeight / template.height, 1);
+
+  // Apply user zoom on top of base scale
+  const displayScale = baseScale * mockupPreviewZoom;
 
   canvas.width = template.width * displayScale;
   canvas.height = template.height * displayScale;
   canvas.dataset.displayScale = displayScale;
+  canvas.dataset.baseScale = baseScale;
+  canvas.dataset.zoom = mockupPreviewZoom;
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -3936,6 +4423,29 @@ function renderMockupPreview() {
       ctx.stroke();
     }
     ctx.setLineDash([]);
+  });
+
+  // Draw assets (before labels, so labels appear on top)
+  mockupAssets.forEach(asset => {
+    if (!asset.image) return;
+
+    const x = (asset.x / 100) * canvas.width;
+    const y = (asset.y / 100) * canvas.height;
+    const w = (asset.width / 100) * canvas.width;
+    const h = (w / asset.image.width) * asset.image.height;
+
+    ctx.globalAlpha = asset.opacity;
+    ctx.drawImage(asset.image, x - w/2, y - h/2, w, h);
+    ctx.globalAlpha = 1.0;
+
+    // Draw selection indicator
+    if (mockupSelectedLayer === "asset-" + asset.id) {
+      ctx.strokeStyle = "#00aaff";
+      ctx.lineWidth = 2;
+      ctx.setLineDash([4, 4]);
+      ctx.strokeRect(x - w/2 - 2, y - h/2 - 2, w + 4, h + 4);
+      ctx.setLineDash([]);
+    }
   });
 
   // Draw labels
@@ -4054,6 +4564,7 @@ function handlePreviewCanvasMouseMove(e) {
 function handlePreviewCanvasMouseUp() {
   mockupPreviewDragging = false;
   mockupLabelDragging = false;
+  mockupAssetDragging = false;
   if (elements.mockupPreviewCanvas) {
     elements.mockupPreviewCanvas.style.cursor = "grab";
   }
@@ -4132,6 +4643,31 @@ function renderMockupLabelsListUI() {
   posterItem.addEventListener("click", () => selectMockupLayer("poster"));
   list.appendChild(posterItem);
 
+  // Add asset layers
+  mockupAssets.forEach(asset => {
+    const item = document.createElement("div");
+    item.className = "mockup-layer-item asset-layer" + (mockupSelectedLayer === "asset-" + asset.id ? " selected" : "");
+    item.innerHTML = `
+      <span class="layer-icon asset-icon">
+        <svg viewBox="0 0 24 24" width="14" height="14">
+          <path fill="currentColor" d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
+        </svg>
+      </span>
+      <span class="layer-text">${escapeHtml(asset.filename)}</span>
+      <button type="button" class="layer-remove" title="Remove">×</button>
+    `;
+    item.addEventListener("click", (e) => {
+      if (!e.target.classList.contains("layer-remove")) {
+        selectMockupLayer("asset-" + asset.id);
+      }
+    });
+    item.querySelector(".layer-remove").addEventListener("click", (e) => {
+      e.stopPropagation();
+      removeMockupAsset(asset.id);
+    });
+    list.appendChild(item);
+  });
+
   // Add label layers
   mockupLabels.forEach(label => {
     const item = document.createElement("div");
@@ -4156,6 +4692,9 @@ function renderMockupLabelsListUI() {
     });
     list.appendChild(item);
   });
+
+  // Update asset controls visibility
+  updateAssetControls();
 }
 
 function getLabelAtPosition(canvasX, canvasY) {
@@ -4184,6 +4723,128 @@ function getLabelAtPosition(canvasX, canvasY) {
   return null;
 }
 
+// ===== MOCKUP ASSET FUNCTIONS =====
+function addMockupAsset(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = () => {
+      const asset = {
+        id: ++mockupAssetIdCounter,
+        type: "asset",
+        src: e.target.result,
+        filename: file.name,
+        image: img,
+        x: 50,  // Center position (percentage)
+        y: 50,
+        width: 20,  // Percentage of canvas width
+        opacity: 1.0
+      };
+      mockupAssets.push(asset);
+      // Reset drag state to prevent accidental dragging
+      mockupAssetDragging = false;
+      mockupLabelDragging = false;
+      renderMockupLabelsListUI();
+      renderMockupPreview();
+      selectMockupLayer("asset-" + asset.id);
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeMockupAsset(assetId) {
+  mockupAssets = mockupAssets.filter(a => a.id !== assetId);
+  if (mockupSelectedLayer === "asset-" + assetId) {
+    mockupSelectedLayer = "poster";
+  }
+  renderMockupLabelsListUI();
+  renderMockupPreview();
+}
+
+function getAssetAtPosition(canvasX, canvasY) {
+  const canvas = elements.mockupPreviewCanvas;
+  if (!canvas) return null;
+
+  // Check assets in reverse order (top-most first)
+  for (let i = mockupAssets.length - 1; i >= 0; i--) {
+    const asset = mockupAssets[i];
+    if (!asset.image) continue;
+
+    const x = (asset.x / 100) * canvas.width;
+    const y = (asset.y / 100) * canvas.height;
+    const w = (asset.width / 100) * canvas.width;
+    const h = (w / asset.image.width) * asset.image.height;
+
+    // Check if click is within asset bounds (centered on position)
+    if (canvasX >= x - w/2 && canvasX <= x + w/2 &&
+        canvasY >= y - h/2 && canvasY <= y + h/2) {
+      return asset;
+    }
+  }
+  return null;
+}
+
+function updateAssetControls() {
+  const selectedAsset = mockupAssets.find(a => mockupSelectedLayer === "asset-" + a.id);
+
+  if (selectedAsset) {
+    if (elements.mockupAssetControls) {
+      elements.mockupAssetControls.style.display = "block";
+    }
+    if (elements.assetWidthSlider) {
+      elements.assetWidthSlider.value = selectedAsset.width;
+    }
+    if (elements.assetWidthValue) {
+      elements.assetWidthValue.textContent = `${Math.round(selectedAsset.width)}%`;
+    }
+    if (elements.assetOpacitySlider) {
+      elements.assetOpacitySlider.value = selectedAsset.opacity;
+    }
+    if (elements.assetOpacityValue) {
+      elements.assetOpacityValue.textContent = `${Math.round(selectedAsset.opacity * 100)}%`;
+    }
+  } else {
+    if (elements.mockupAssetControls) {
+      elements.mockupAssetControls.style.display = "none";
+    }
+  }
+}
+
+function clearMockupAssets() {
+  mockupAssets = [];
+  mockupAssetIdCounter = 0;
+}
+
+function loadMockupAssets(assetsData) {
+  mockupAssets = [];
+  mockupAssetIdCounter = 0;
+  mockupAssetDragging = false;  // Reset drag state
+
+  if (!assetsData || !assetsData.length) return;
+
+  assetsData.forEach(data => {
+    const img = new Image();
+    img.onload = () => {
+      const asset = {
+        id: ++mockupAssetIdCounter,
+        type: "asset",
+        src: data.src,
+        filename: data.filename,
+        image: img,
+        x: data.x || 50,
+        y: data.y || 50,
+        width: data.width || 20,
+        opacity: data.opacity !== undefined ? data.opacity : 1.0
+      };
+      mockupAssets.push(asset);
+      renderMockupLabelsListUI();
+      renderMockupPreview();
+    };
+    img.src = data.src;
+  });
+}
+
 function handleLabelCanvasMouseDown(e) {
   const canvas = elements.mockupPreviewCanvas;
   if (!canvas) return false;
@@ -4192,8 +4853,20 @@ function handleLabelCanvasMouseDown(e) {
   const canvasX = e.clientX - rect.left;
   const canvasY = e.clientY - rect.top;
 
-  const label = getLabelAtPosition(canvasX, canvasY);
+  // Check assets first (they're drawn first, so labels are on top)
+  const asset = getAssetAtPosition(canvasX, canvasY);
+  if (asset) {
+    e.stopPropagation();
+    selectMockupLayer("asset-" + asset.id);
+    mockupAssetDragging = true;
+    mockupLabelDragStartX = e.clientX;
+    mockupLabelDragStartY = e.clientY;
+    canvas.style.cursor = "move";
+    return true;
+  }
 
+  // Then check labels
+  const label = getLabelAtPosition(canvasX, canvasY);
   if (label) {
     e.stopPropagation();
     selectMockupLayer(label.id);
@@ -4207,11 +4880,34 @@ function handleLabelCanvasMouseDown(e) {
 }
 
 function handleLabelCanvasMouseMove(e) {
-  // Only handle if dragging a label layer (not poster)
-  if (!mockupLabelDragging || mockupSelectedLayer === "poster") return false;
-
   const canvas = elements.mockupPreviewCanvas;
   if (!canvas) return false;
+
+  // Handle asset dragging
+  if (mockupAssetDragging && mockupSelectedLayer.startsWith("asset-")) {
+    const assetId = parseInt(mockupSelectedLayer.replace("asset-", ""), 10);
+    const asset = mockupAssets.find(a => a.id === assetId);
+
+    if (asset) {
+      const dx = e.clientX - mockupLabelDragStartX;
+      const dy = e.clientY - mockupLabelDragStartY;
+
+      asset.x += (dx / canvas.width) * 100;
+      asset.y += (dy / canvas.height) * 100;
+
+      asset.x = Math.max(0, Math.min(100, asset.x));
+      asset.y = Math.max(0, Math.min(100, asset.y));
+
+      mockupLabelDragStartX = e.clientX;
+      mockupLabelDragStartY = e.clientY;
+
+      renderMockupPreview();
+    }
+    return true;
+  }
+
+  // Handle label dragging
+  if (!mockupLabelDragging || mockupSelectedLayer === "poster") return false;
 
   const dx = e.clientX - mockupLabelDragStartX;
   const dy = e.clientY - mockupLabelDragStartY;
@@ -4255,12 +4951,18 @@ function handleLabelCanvasMouseMove(e) {
 
 function handleLabelKeyDown(e) {
   if (e.key === "Delete" || e.key === "Backspace") {
-    // Only delete label layers, not the poster
+    // Only delete label/asset layers, not the poster
     if (mockupSelectedLayer && mockupSelectedLayer !== "poster" && elements.mockupPreview?.classList.contains("open")) {
       // Don't delete if user is typing in an input
       if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
       e.preventDefault();
-      removeMockupLabel(mockupSelectedLayer);
+
+      if (mockupSelectedLayer.startsWith("asset-")) {
+        const assetId = parseInt(mockupSelectedLayer.replace("asset-", ""), 10);
+        removeMockupAsset(assetId);
+      } else {
+        removeMockupLabel(mockupSelectedLayer);
+      }
     }
   }
 }
@@ -4357,11 +5059,21 @@ async function saveMockupTemplateData() {
     shadow: l.shadow,
   }));
 
+  // Prepare assets data (strip internal image objects)
+  const assetsData = mockupAssets.map(a => ({
+    src: a.src,
+    filename: a.filename,
+    x: a.x,
+    y: a.y,
+    width: a.width,
+    opacity: a.opacity,
+  }));
+
   try {
     await fetch(`/api/mockups/${mockupPreviewTemplate.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ guides: guidesData, labels: labelsData })
+      body: JSON.stringify({ guides: guidesData, labels: labelsData, assets: assetsData })
     });
 
     // Update the template in mockupList so it persists in memory too
@@ -4369,6 +5081,7 @@ async function saveMockupTemplateData() {
     if (template) {
       template.guides = guidesData;
       template.labels = labelsData;
+      template.assets = assetsData;
     }
   } catch (err) {
     console.error("Failed to save mockup template data:", err);
@@ -4546,6 +5259,20 @@ function renderMockupFullResolution() {
   // Draw poster on top of template
   ctx.drawImage(poster, finalX, finalY, scaledWidth, scaledHeight);
 
+  // Draw assets at full resolution (before labels, so labels appear on top)
+  mockupAssets.forEach(asset => {
+    if (!asset.image) return;
+
+    const x = (asset.x / 100) * canvas.width;
+    const y = (asset.y / 100) * canvas.height;
+    const w = (asset.width / 100) * canvas.width;
+    const h = (w / asset.image.width) * asset.image.height;
+
+    ctx.globalAlpha = asset.opacity;
+    ctx.drawImage(asset.image, x - w/2, y - h/2, w, h);
+    ctx.globalAlpha = 1.0;
+  });
+
   // Draw labels at full resolution (scale font sizes proportionally)
   const displayScale = parseFloat(elements.mockupPreviewCanvas?.dataset.displayScale) || 1;
   const fontScale = 1 / displayScale;  // Scale up fonts for full resolution
@@ -4698,18 +5425,17 @@ function setupMockupCanvas() {
   if (!mockupCreatorImage || !elements.mockupCreatorCanvas) return;
 
   const canvas = elements.mockupCreatorCanvas;
-  const container = canvas.parentElement;
 
-  // Calculate scale to fit in container while maintaining aspect ratio
-  const maxWidth = container.clientWidth - 40;
-  const maxHeight = 500;
-  const scale = Math.min(maxWidth / mockupCreatorImage.width, maxHeight / mockupCreatorImage.height, 1);
+  // Reset click state and zoom for new image
+  mockupCreatorClickState = 0;
+  mockupCreatorCorner1 = { x: 0, y: 0 };
+  mockupCreatorCorner2 = { x: 0, y: 0 };
+  mockupCreatorRect = { x: 0, y: 0, width: 0, height: 0 };
+  mockupCreatorZoom = 1.0;
 
-  canvas.width = mockupCreatorImage.width * scale;
-  canvas.height = mockupCreatorImage.height * scale;
-
-  // Store scale factor for coordinate conversion
-  canvas.dataset.scale = scale;
+  // Update canvas size with zoom
+  updateCreatorCanvasSize();
+  updateCreatorZoomDisplay();
 
   // Show canvas, hide placeholder
   canvas.style.display = "block";
@@ -4726,13 +5452,15 @@ function drawMockupCanvas() {
 
   const canvas = elements.mockupCreatorCanvas;
   const ctx = canvas.getContext("2d");
-  const scale = parseFloat(canvas.dataset.scale) || 1;
+  const baseScale = parseFloat(canvas.dataset.baseScale) || 1;
+  const zoom = parseFloat(canvas.dataset.zoom) || 1;
+  const scale = baseScale * zoom;  // Full scale from image to canvas
 
   // Clear and draw image
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.drawImage(mockupCreatorImage, 0, 0, canvas.width, canvas.height);
 
-  // Draw rectangle overlay
+  // Draw rectangle overlay (rect coordinates are in original image pixels)
   if (mockupCreatorRect.width > 0 && mockupCreatorRect.height > 0) {
     const x = mockupCreatorRect.x * scale;
     const y = mockupCreatorRect.y * scale;
@@ -4755,48 +5483,251 @@ function drawMockupCanvas() {
     ctx.font = "bold 14px sans-serif";
     ctx.fillText("Poster Area", x + 8, y + 20);
   }
+
+  // Draw first corner indicator when in state 1 (waiting for second corner)
+  if (mockupCreatorClickState === 1) {
+    const cx = mockupCreatorCorner1.x * scale;  // corner1 is in image coordinates
+    const cy = mockupCreatorCorner1.y * scale;
+
+    // Draw crosshair at first corner
+    ctx.strokeStyle = "#ef4444";
+    ctx.lineWidth = 2;
+    ctx.setLineDash([]);
+    ctx.beginPath();
+    ctx.moveTo(cx - 12, cy);
+    ctx.lineTo(cx + 12, cy);
+    ctx.moveTo(cx, cy - 12);
+    ctx.lineTo(cx, cy + 12);
+    ctx.stroke();
+
+    // Draw circle at corner
+    ctx.beginPath();
+    ctx.arc(cx, cy, 6, 0, Math.PI * 2);
+    ctx.strokeStyle = "#ef4444";
+    ctx.stroke();
+    ctx.fillStyle = "rgba(239, 68, 68, 0.3)";
+    ctx.fill();
+  }
+
+  // Draw instruction text
+  ctx.font = "13px system-ui, sans-serif";
+  const padding = 10;
+  let instructionText = "";
+
+  if (mockupCreatorClickState === 0) {
+    instructionText = "Click to set first corner";
+  } else if (mockupCreatorClickState === 1) {
+    instructionText = "Click to set second corner";
+  } else if (mockupCreatorClickState === 2) {
+    instructionText = "Click to start over";
+  }
+
+  if (instructionText) {
+    const textWidth = ctx.measureText(instructionText).width;
+    // Background pill
+    ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+    ctx.beginPath();
+    ctx.roundRect(padding, canvas.height - 32, textWidth + 16, 24, 4);
+    ctx.fill();
+    // Text
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText(instructionText, padding + 8, canvas.height - 15);
+  }
 }
 
-function handleMockupCanvasMouseDown(e) {
+function handleMockupCanvasClick(e) {
   if (!mockupCreatorImage) return;
 
   const canvas = elements.mockupCreatorCanvas;
   const rect = canvas.getBoundingClientRect();
-  const scale = parseFloat(canvas.dataset.scale) || 1;
+  const baseScale = parseFloat(canvas.dataset.baseScale) || 1;
 
-  mockupCreatorStartX = (e.clientX - rect.left) / scale;
-  mockupCreatorStartY = (e.clientY - rect.top) / scale;
-  mockupCreatorDrawing = true;
+  // Convert screen coordinates to image coordinates
+  // The canvas displays the image at (baseScale * zoom) scale
+  // We need to convert click position to original image coordinates
+  const canvasX = e.clientX - rect.left;
+  const canvasY = e.clientY - rect.top;
 
-  // Reset rect
-  mockupCreatorRect = { x: mockupCreatorStartX, y: mockupCreatorStartY, width: 0, height: 0 };
+  // Convert from canvas coordinates to original image coordinates
+  const x = Math.round(canvasX / baseScale / mockupCreatorZoom);
+  const y = Math.round(canvasY / baseScale / mockupCreatorZoom);
+
+  if (mockupCreatorClickState === 0) {
+    // First click - set first corner
+    mockupCreatorCorner1 = { x, y };
+    mockupCreatorClickState = 1;
+    mockupCreatorRect = { x: 0, y: 0, width: 0, height: 0 };
+    drawMockupCanvas();
+    updateMockupRectDisplay();
+  } else if (mockupCreatorClickState === 1) {
+    // Second click - set second corner and finalize rectangle
+    mockupCreatorCorner2 = { x, y };
+    mockupCreatorClickState = 2;
+
+    // Calculate rect from two corners (handle any corner ordering)
+    const minX = Math.min(mockupCreatorCorner1.x, mockupCreatorCorner2.x);
+    const minY = Math.min(mockupCreatorCorner1.y, mockupCreatorCorner2.y);
+    const maxX = Math.max(mockupCreatorCorner1.x, mockupCreatorCorner2.x);
+    const maxY = Math.max(mockupCreatorCorner1.y, mockupCreatorCorner2.y);
+
+    mockupCreatorRect = {
+      x: minX,
+      y: minY,
+      width: maxX - minX,
+      height: maxY - minY
+    };
+
+    drawMockupCanvas();
+    updateMockupRectDisplay();
+    updateMockupSaveBtn();
+  } else {
+    // Third click - reset and start over with this as first corner
+    mockupCreatorCorner1 = { x, y };
+    mockupCreatorCorner2 = { x: 0, y: 0 };
+    mockupCreatorClickState = 1;
+    mockupCreatorRect = { x: 0, y: 0, width: 0, height: 0 };
+    drawMockupCanvas();
+    updateMockupRectDisplay();
+    updateMockupSaveBtn();
+  }
 }
 
 function handleMockupCanvasMouseMove(e) {
-  if (!mockupCreatorDrawing || !mockupCreatorImage) return;
+  // Only show preview when first corner is set
+  if (mockupCreatorClickState !== 1 || !mockupCreatorImage) return;
 
   const canvas = elements.mockupCreatorCanvas;
   const rect = canvas.getBoundingClientRect();
-  const scale = parseFloat(canvas.dataset.scale) || 1;
+  const baseScale = parseFloat(canvas.dataset.baseScale) || 1;
 
-  const currentX = (e.clientX - rect.left) / scale;
-  const currentY = (e.clientY - rect.top) / scale;
+  // Convert screen coordinates to image coordinates
+  const canvasX = e.clientX - rect.left;
+  const canvasY = e.clientY - rect.top;
+  const currentX = Math.round(canvasX / baseScale / mockupCreatorZoom);
+  const currentY = Math.round(canvasY / baseScale / mockupCreatorZoom);
 
-  // Calculate rect (handle negative dimensions)
-  const x = Math.min(mockupCreatorStartX, currentX);
-  const y = Math.min(mockupCreatorStartY, currentY);
-  const w = Math.abs(currentX - mockupCreatorStartX);
-  const h = Math.abs(currentY - mockupCreatorStartY);
+  // Calculate preview rect from corner1 to current position
+  const minX = Math.min(mockupCreatorCorner1.x, currentX);
+  const minY = Math.min(mockupCreatorCorner1.y, currentY);
+  const maxX = Math.max(mockupCreatorCorner1.x, currentX);
+  const maxY = Math.max(mockupCreatorCorner1.y, currentY);
 
-  mockupCreatorRect = { x: Math.round(x), y: Math.round(y), width: Math.round(w), height: Math.round(h) };
+  mockupCreatorRect = {
+    x: minX,
+    y: minY,
+    width: maxX - minX,
+    height: maxY - minY
+  };
 
   drawMockupCanvas();
   updateMockupRectDisplay();
 }
 
-function handleMockupCanvasMouseUp() {
-  mockupCreatorDrawing = false;
+function resetMockupCreatorRect() {
+  mockupCreatorClickState = 0;
+  mockupCreatorCorner1 = { x: 0, y: 0 };
+  mockupCreatorCorner2 = { x: 0, y: 0 };
+  mockupCreatorRect = { x: 0, y: 0, width: 0, height: 0 };
+  drawMockupCanvas();
+  updateMockupRectDisplay();
   updateMockupSaveBtn();
+}
+
+// ===== MOCKUP CREATOR ZOOM FUNCTIONS =====
+function setCreatorZoom(newZoom) {
+  const minZoom = 0.25;
+  const maxZoom = 4.0;
+  mockupCreatorZoom = Math.max(minZoom, Math.min(maxZoom, newZoom));
+  updateCreatorCanvasSize();
+  drawMockupCanvas();
+  updateCreatorZoomDisplay();
+}
+
+function zoomCreatorIn() {
+  setCreatorZoom(mockupCreatorZoom * 1.25);
+}
+
+function zoomCreatorOut() {
+  setCreatorZoom(mockupCreatorZoom / 1.25);
+}
+
+function zoomCreatorFit() {
+  mockupCreatorZoom = 1.0;
+  updateCreatorCanvasSize();
+  drawMockupCanvas();
+  updateCreatorZoomDisplay();
+}
+
+function updateCreatorZoomDisplay() {
+  if (elements.creatorZoomLevel) {
+    elements.creatorZoomLevel.textContent = `${Math.round(mockupCreatorZoom * 100)}%`;
+  }
+}
+
+function updateCreatorCanvasSize() {
+  if (!mockupCreatorImage || !elements.mockupCreatorCanvas) return;
+
+  const canvas = elements.mockupCreatorCanvas;
+  const container = canvas.parentElement;
+
+  // Calculate base scale to fit in container at zoom 1.0
+  const maxWidth = container.clientWidth - 40;
+  const maxHeight = 500;
+  const baseScale = Math.min(maxWidth / mockupCreatorImage.width, maxHeight / mockupCreatorImage.height, 1);
+
+  // Apply user zoom on top of base scale - allow canvas to grow beyond container
+  const effectiveScale = baseScale * mockupCreatorZoom;
+
+  // Set canvas dimensions (can exceed container size when zoomed)
+  canvas.width = mockupCreatorImage.width * effectiveScale;
+  canvas.height = mockupCreatorImage.height * effectiveScale;
+
+  // Store scales for coordinate conversion
+  // Note: we divide by effectiveScale to get image coordinates from canvas coordinates
+  canvas.dataset.baseScale = baseScale;
+  canvas.dataset.zoom = mockupCreatorZoom;
+  canvas.dataset.scale = effectiveScale;
+}
+
+function handleCreatorWheel(e) {
+  e.preventDefault();
+  const delta = e.deltaY > 0 ? 0.9 : 1.1;
+  setCreatorZoom(mockupCreatorZoom * delta);
+}
+
+// ===== MOCKUP PREVIEW ZOOM FUNCTIONS =====
+function setPreviewZoom(newZoom) {
+  const minZoom = 0.25;
+  const maxZoom = 4.0;
+  mockupPreviewZoom = Math.max(minZoom, Math.min(maxZoom, newZoom));
+  renderMockupPreview();
+  updatePreviewZoomDisplay();
+}
+
+function zoomPreviewIn() {
+  setPreviewZoom(mockupPreviewZoom * 1.25);
+}
+
+function zoomPreviewOut() {
+  setPreviewZoom(mockupPreviewZoom / 1.25);
+}
+
+function zoomPreviewFit() {
+  mockupPreviewZoom = 1.0;
+  renderMockupPreview();
+  updatePreviewZoomDisplay();
+}
+
+function updatePreviewZoomDisplay() {
+  if (elements.previewZoomLevel) {
+    elements.previewZoomLevel.textContent = `${Math.round(mockupPreviewZoom * 100)}%`;
+  }
+}
+
+function handlePreviewWheel(e) {
+  e.preventDefault();
+  const delta = e.deltaY > 0 ? 0.9 : 1.1;
+  setPreviewZoom(mockupPreviewZoom * delta);
 }
 
 function updateMockupRectDisplay() {

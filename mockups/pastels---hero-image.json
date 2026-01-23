@@ -1,0 +1,16 @@
+{
+  "name": "Pastels - Hero Image",
+  "poster_rect": {
+    "x": 463,
+    "y": 405,
+    "width": 701,
+    "height": 1085
+  },
+  "poster_rotation": 0,
+  "output_size": [
+    1620,
+    2025
+  ],
+  "guides": [],
+  "labels": []
+}
