@@ -3,16 +3,81 @@
     "feature_based",
     "brutalist",
     "obsidian_night",
-    "featurebased_shading_with_david_tweaks"
+    "featurebased_shading_with_david_tweaks",
+    "obsidian_night_mod",
+    "contrast_zones"
   ],
-  "pastel": [],
-  "neons": [],
-  "vintage": [],
-  "luxury": [],
+  "pastel": [
+    "greek_island",
+    "sapphire_royal",
+    "powder_puff",
+    "watercolor_wash",
+    "sea_foam",
+    "dusty_rose",
+    "cherry_blossom",
+    "candy_shop",
+    "bubblegum_pop",
+    "skyline",
+    "metro_system",
+    "desert_night"
+  ],
+  "neons": [
+    "witch_hour",
+    "volcanic",
+    "phantom_purple",
+    "neon_tokyo",
+    "neon_cyberpunk",
+    "gothic_dark",
+    "firefly_night",
+    "electric_storm",
+    "dark_matter",
+    "cyber_grid",
+    "blood_moon",
+    "bioluminescent",
+    "vegas_strip",
+    "synthwave",
+    "rave_party",
+    "electric_lime",
+    "retro_synthwave",
+    "neon_district",
+    "sahara_sunset"
+  ],
+  "vintage": [
+    "persian_carpet",
+    "dutch_masters",
+    "bronze_age",
+    "dusty_rose",
+    "mango_tango",
+    "vintage_map",
+    "sepia_classic",
+    "typewriter",
+    "antique_atlas",
+    "rust_belt",
+    "military_tactical",
+    "terracotta",
+    "burnt_sienna"
+  ],
+  "luxury": [
+    "wine_country",
+    "champagne",
+    "peach_cobbler",
+    "dusty_rose",
+    "urban_concrete",
+    "savanna_gold",
+    "sage_garden",
+    "canyon_sunset"
+  ],
   "pop-art": [
     "pop_art",
     "bubblegum_pop",
     "beach_party",
-    "candy_crush"
+    "candy_crush",
+    "graffiti_alley",
+    "tropical_paradise",
+    "electric_sunset"
+  ],
+  "need-improvement": [
+    "rose_gold",
+    "macaron"
   ]
 }
