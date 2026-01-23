@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Theme Editor - Chikai Maps</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+    <link rel="stylesheet" href="/static/theme-editor.css" />
+  </head>
+  <body class="theme-editor-body">
+    <div class="editor-container">
+      <!-- Header -->
+      <header class="editor-header">
+        <a href="/" class="editor-back-btn" title="Back to Generator">
+          <svg viewBox="0 0 24 24" width="20" height="20">
+            <path fill="currentColor" d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+          </svg>
+          <span>Back</span>
+        </a>
+        <h1 class="editor-title">Theme Editor</h1>
+        <div class="editor-header-actions">
+          <button id="new-theme-btn" class="editor-btn secondary" type="button" title="New Theme">
+            <svg viewBox="0 0 24 24" width="16" height="16">
+              <path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+            </svg>
+            New
+          </button>
+          <button id="duplicate-btn" class="editor-btn secondary" type="button" disabled title="Duplicate Theme">
+            <svg viewBox="0 0 24 24" width="16" height="16">
+              <path fill="currentColor" d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+            </svg>
+            Duplicate
+          </button>
+          <button id="save-as-btn" class="editor-btn secondary" type="button" disabled title="Save As New Theme">
+            <svg viewBox="0 0 24 24" width="16" height="16">
+              <path fill="currentColor" d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/>
+            </svg>
+            Save As
+          </button>
+          <button id="save-theme-btn" class="editor-btn primary" type="button" disabled title="Save Theme (Ctrl+S)">
+            <svg viewBox="0 0 24 24" width="16" height="16">
+              <path fill="currentColor" d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/>
+            </svg>
+            Save
+          </button>
+          <button id="delete-btn" class="editor-btn danger" type="button" disabled title="Delete Theme">
+            <svg viewBox="0 0 24 24" width="16" height="16">
+              <path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+            </svg>
+            Delete
+          </button>
+        </div>
+      </header>
+
+      <!-- Main Content -->
+      <main class="editor-main">
+        <!-- Controls Panel (Left Widget) -->
+        <aside class="editor-controls-widget">
+          <!-- Theme Selector Section -->
+          <section class="editor-section">
+            <div class="section-header">
+              <h2 class="section-title">Select Theme</h2>
+            </div>
+            <div class="theme-selector-wrapper">
+              <div class="theme-filter-row">
+                <input type="text" id="theme-search" class="theme-search-input" placeholder="Search themes...">
+              </div>
+              <div class="theme-filter-row">
+                <select id="category-filter" class="filter-select">
+                  <option value="">All Categories</option>
+                  <option value="dark">Dark</option>
+                  <option value="light">Light</option>
+                  <option value="nature">Nature</option>
+                  <option value="urban">Urban</option>
+                  <option value="vintage">Vintage</option>
+                  <option value="vibrant">Vibrant</option>
+                  <option value="pastel">Pastel</option>
+                  <option value="luxury">Luxury</option>
+                  <option value="monochrome">Monochrome</option>
+                  <option value="cultural">Cultural</option>
+                  <option value="other">Other</option>
+                </select>
+                <select id="collection-filter" class="filter-select">
+                  <option value="">All Collections</option>
+                  <!-- Collections will be loaded dynamically -->
+                </select>
+              </div>
+              <div class="theme-list-container" id="theme-list-container">
+                <!-- Theme items will be rendered here -->
+              </div>
+            </div>
+          </section>
+
+          <!-- Metadata Section -->
+          <section class="editor-section">
+            <div class="section-header">
+              <h2 class="section-title">Theme Details</h2>
+              <span class="unsaved-indicator" id="unsaved-indicator">Unsaved changes</span>
+            </div>
+            <div class="metadata-form">
+              <div class="form-row">
+                <label class="form-label">Name</label>
+                <input type="text" id="theme-name" class="form-input" placeholder="Theme name">
+              </div>
+              <div class="form-row">
+                <label class="form-label">Category</label>
+                <select id="theme-category" class="form-select">
+                  <option value="dark">Dark</option>
+                  <option value="light">Light</option>
+                  <option value="nature">Nature</option>
+                  <option value="urban">Urban</option>
+                  <option value="vintage">Vintage</option>
+                  <option value="vibrant">Vibrant</option>
+                  <option value="pastel">Pastel</option>
+                  <option value="luxury">Luxury</option>
+                  <option value="monochrome">Monochrome</option>
+                  <option value="cultural">Cultural</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div class="form-row">
+                <label class="form-label">Description</label>
+                <textarea id="theme-description" class="form-textarea" placeholder="Optional description" rows="2"></textarea>
+              </div>
+            </div>
+          </section>
+
+        </aside>
+
+        <!-- Preview Panel (Center) -->
+        <div class="editor-preview-panel">
+          <div class="preview-frame">
+            <div class="preview-aspect-wrapper" id="preview-aspect-wrapper">
+              <!-- SVG will be loaded here -->
+            </div>
+          </div>
+          <div class="preview-controls">
+            <label class="preview-control-label">Preview Aspect:</label>
+            <select id="preview-aspect-select" class="preview-aspect-select">
+              <option value="2:3" selected>2:3 Poster (24x36")</option>
+              <option value="3:4">3:4 Photo (18x24")</option>
+              <option value="4:5">4:5 Frame (16x20")</option>
+              <option value="5:7">5:7 Frame (5x7")</option>
+              <option value="11:14">11:14 Frame</option>
+              <option value="1:1">1:1 Square</option>
+              <option value="16:9">16:9 Landscape</option>
+              <option value="9:16">9:16 Portrait</option>
+              <option value="A4">A4 (ISO)</option>
+              <option value="A3">A3 (ISO)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Color Editor Panel (Right) -->
+        <aside class="editor-color-panel">
+          <!-- Draggable Palette -->
+          <div class="palette-section">
+            <div class="palette-header">
+              <h3 class="palette-title">Palette</h3>
+              <span class="palette-hint">Drag to assign</span>
+            </div>
+            <div class="palette-swatches" id="palette-bar">
+              <!-- Palette swatches will be rendered here -->
+            </div>
+          </div>
+
+          <!-- Color Properties -->
+          <div class="color-properties-section">
+            <div class="color-properties" id="color-properties">
+              <!-- Base Colors -->
+              <div class="color-group">
+                <div class="color-group-title">Base Colors</div>
+                <div class="color-property-row" data-property="bg">
+                  <label class="color-label">Background</label>
+                  <div class="color-controls">
+                    <input type="text" class="color-hex" value="#FFFFFF" maxlength="7">
+                    <input type="color" class="color-picker" value="#FFFFFF">
+                  </div>
+                </div>
+                <div class="color-property-row" data-property="text">
+                  <label class="color-label">Text & Frame</label>
+                  <div class="color-controls">
+                    <input type="text" class="color-hex" value="#000000" maxlength="7">
+                    <input type="color" class="color-picker" value="#000000">
+                  </div>
+                </div>
+                <div class="color-property-row" data-property="gradient_color">
+                  <label class="color-label">Gradient</label>
+                  <div class="color-controls">
+                    <input type="text" class="color-hex" value="#FFFFFF" maxlength="7">
+                    <input type="color" class="color-picker" value="#FFFFFF">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Map Features -->
+              <div class="color-group">
+                <div class="color-group-title">Map Features</div>
+                <div class="color-property-row" data-property="water">
+                  <label class="color-label">Water</label>
+                  <div class="color-controls">
+                    <input type="text" class="color-hex" value="#C0C0C0" maxlength="7">
+                    <input type="color" class="color-picker" value="#C0C0C0">
+                  </div>
+                </div>
+                <div class="color-property-row" data-property="parks">
+                  <label class="color-label">Parks</label>
+                  <div class="color-controls">
+                    <input type="text" class="color-hex" value="#F0F0F0" maxlength="7">
+                    <input type="color" class="color-picker" value="#F0F0F0">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Roads -->
+              <div class="color-group">
+                <div class="color-group-title">Roads</div>
+                <div class="color-property-row" data-property="road_motorway">
+                  <label class="color-label">Motorway</label>
+                  <div class="color-controls">
+                    <input type="text" class="color-hex" value="#0A0A0A" maxlength="7">
+                    <input type="color" class="color-picker" value="#0A0A0A">
+                  </div>
+                </div>
+                <div class="color-property-row" data-property="road_primary">
+                  <label class="color-label">Primary</label>
+                  <div class="color-controls">
+                    <input type="text" class="color-hex" value="#1A1A1A" maxlength="7">
+                    <input type="color" class="color-picker" value="#1A1A1A">
+                  </div>
+                </div>
+                <div class="color-property-row" data-property="road_secondary">
+                  <label class="color-label">Secondary</label>
+                  <div class="color-controls">
+                    <input type="text" class="color-hex" value="#2A2A2A" maxlength="7">
+                    <input type="color" class="color-picker" value="#2A2A2A">
+                  </div>
+                </div>
+                <div class="color-property-row" data-property="road_tertiary">
+                  <label class="color-label">Tertiary</label>
+                  <div class="color-controls">
+                    <input type="text" class="color-hex" value="#3A3A3A" maxlength="7">
+                    <input type="color" class="color-picker" value="#3A3A3A">
+                  </div>
+                </div>
+                <div class="color-property-row" data-property="road_residential">
+                  <label class="color-label">Residential</label>
+                  <div class="color-controls">
+                    <input type="text" class="color-hex" value="#4A4A4A" maxlength="7">
+                    <input type="color" class="color-picker" value="#4A4A4A">
+                  </div>
+                </div>
+                <div class="color-property-row" data-property="road_default">
+                  <label class="color-label">Default</label>
+                  <div class="color-controls">
+                    <input type="text" class="color-hex" value="#3A3A3A" maxlength="7">
+                    <input type="color" class="color-picker" value="#3A3A3A">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </main>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">
+      <span class="toast-message" id="toast-message"></span>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div class="confirm-modal" id="confirm-modal">
+      <div class="confirm-modal-backdrop"></div>
+      <div class="confirm-modal-content">
+        <h3 class="confirm-modal-title" id="confirm-modal-title">Confirm</h3>
+        <p class="confirm-modal-message" id="confirm-modal-message">Are you sure?</p>
+        <div class="confirm-modal-actions">
+          <button class="editor-btn secondary" id="confirm-cancel-btn">Cancel</button>
+          <button class="editor-btn danger" id="confirm-ok-btn">Delete</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Save As Modal -->
+    <div class="save-as-modal" id="save-as-modal">
+      <div class="save-as-modal-backdrop"></div>
+      <div class="save-as-modal-content">
+        <h3 class="save-as-modal-title">Save Theme As</h3>
+        <div class="form-row">
+          <label class="form-label">New Theme Name</label>
+          <input type="text" id="save-as-name" class="form-input" placeholder="My Custom Theme">
+        </div>
+        <div class="save-as-modal-actions">
+          <button class="editor-btn secondary" id="save-as-cancel-btn">Cancel</button>
+          <button class="editor-btn primary" id="save-as-confirm-btn">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="/static/theme-editor.js"></script>
+  </body>
+</html>

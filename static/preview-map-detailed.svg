@@ -1,0 +1,189 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 400" id="preview-svg">
+  <!-- Background -->
+  <rect id="preview-bg" x="0" y="0" width="300" height="400" fill="#FAFAF8"/>
+
+  <!-- Map area with clip -->
+  <defs>
+    <clipPath id="map-clip">
+      <rect x="15" y="15" width="270" height="310" rx="4"/>
+    </clipPath>
+  </defs>
+
+  <g clip-path="url(#map-clip)">
+    <!-- Water bodies - River winding through city -->
+    <g id="preview-water">
+      <!-- Main river -->
+      <path id="preview-water-river" d="M-10 145 Q30 140, 60 160 Q90 180, 120 165 Q150 150, 180 170 Q210 190, 240 175 Q270 160, 310 180"
+            fill="none" stroke="#B8D4E3" stroke-width="28" stroke-linecap="round"/>
+      <!-- River tributary -->
+      <path id="preview-water-tributary" d="M145 -10 Q150 30, 140 60 Q130 90, 145 120 Q155 140, 150 165"
+            fill="none" stroke="#B8D4E3" stroke-width="12" stroke-linecap="round"/>
+      <!-- Small lake -->
+      <ellipse id="preview-water-lake1" cx="65" cy="75" rx="22" ry="16" fill="#B8D4E3"/>
+      <!-- Pond -->
+      <ellipse id="preview-water-lake2" cx="230" cy="280" rx="18" ry="14" fill="#B8D4E3"/>
+      <!-- Harbor/dock area -->
+      <rect id="preview-water-harbor" x="240" y="165" width="35" height="25" rx="3" fill="#B8D4E3"/>
+    </g>
+
+    <!-- Parks and green spaces -->
+    <g id="preview-parks">
+      <!-- Large central park -->
+      <path id="preview-parks-central" d="M80 220 Q100 210, 130 220 Q140 235, 130 255 Q100 265, 80 255 Q70 240, 80 220 Z" fill="#C5DEB8"/>
+      <!-- Botanical garden -->
+      <rect id="preview-parks-botanical" x="190" y="50" width="55" height="45" rx="5" fill="#C5DEB8"/>
+      <!-- Small park north -->
+      <rect id="preview-parks-north" x="45" y="30" width="35" height="30" rx="3" fill="#C5DEB8"/>
+      <!-- Sports field -->
+      <ellipse id="preview-parks-sports" cx="220" cy="245" rx="30" ry="20" fill="#C5DEB8"/>
+      <!-- Cemetery/memorial -->
+      <rect id="preview-parks-memorial" x="30" y="260" width="40" height="35" rx="2" fill="#C5DEB8"/>
+      <!-- Riverside park -->
+      <path id="preview-parks-riverside" d="M155 190 Q175 185, 195 195 Q200 210, 190 220 Q170 225, 155 215 Q150 200, 155 190 Z" fill="#C5DEB8"/>
+      <!-- Small green near river -->
+      <rect id="preview-parks-small1" x="95" y="105" width="25" height="20" rx="2" fill="#C5DEB8"/>
+      <!-- University quad -->
+      <rect id="preview-parks-quad" x="240" y="110" width="30" height="25" rx="2" fill="#C5DEB8"/>
+    </g>
+
+    <!-- Roads - Motorway (thickest, highway style) -->
+    <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <!-- Main E-W motorway -->
+      <path id="preview-road-motorway-1" d="M-10 95 Q50 90, 100 100 Q150 110, 200 95 Q250 80, 310 90" stroke="#1A1A1A" stroke-width="5"/>
+      <!-- N-S motorway -->
+      <path id="preview-road-motorway-2" d="M175 -10 Q180 40, 175 80 Q170 120, 185 200 Q195 260, 180 330" stroke="#1A1A1A" stroke-width="5"/>
+      <!-- Motorway interchange -->
+      <path id="preview-road-motorway-3" d="M160 100 Q175 105, 190 95" stroke="#1A1A1A" stroke-width="4"/>
+    </g>
+
+    <!-- Roads - Primary (main arterials) -->
+    <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <!-- Western arterial -->
+      <path id="preview-road-primary-1" d="M50 -10 Q55 50, 45 100 Q35 150, 55 200 Q70 250, 50 330" stroke="#2A2A2A" stroke-width="3.5"/>
+      <!-- Eastern arterial -->
+      <path id="preview-road-primary-2" d="M250 -10 Q245 60, 260 120 Q270 180, 250 240 Q235 290, 260 330" stroke="#2A2A2A" stroke-width="3.5"/>
+      <!-- Southern cross street -->
+      <path id="preview-road-primary-3" d="M-10 270 Q80 265, 150 280 Q220 295, 310 275" stroke="#2A2A2A" stroke-width="3.5"/>
+      <!-- Northern cross street -->
+      <path id="preview-road-primary-4" d="M-10 45 Q70 50, 140 40 Q200 35, 250 50 Q280 60, 310 55" stroke="#2A2A2A" stroke-width="3.5"/>
+      <!-- City center diagonal -->
+      <path id="preview-road-primary-5" d="M80 200 Q120 190, 160 210" stroke="#2A2A2A" stroke-width="3"/>
+    </g>
+
+    <!-- Roads - Secondary (collectors) -->
+    <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <!-- Secondary network -->
+      <path id="preview-road-secondary-1" d="M100 -10 Q105 40, 95 80 Q90 120, 105 160" stroke="#4A4A4A" stroke-width="2"/>
+      <path id="preview-road-secondary-2" d="M-10 130 Q40 125, 80 135 Q120 145, 160 130" stroke="#4A4A4A" stroke-width="2"/>
+      <path id="preview-road-secondary-3" d="M-10 200 Q50 210, 90 195" stroke="#4A4A4A" stroke-width="2"/>
+      <path id="preview-road-secondary-4" d="M200 200 Q230 205, 260 195 Q285 185, 310 200" stroke="#4A4A4A" stroke-width="2"/>
+      <path id="preview-road-secondary-5" d="M120 260 Q135 250, 155 265" stroke="#4A4A4A" stroke-width="2"/>
+      <path id="preview-road-secondary-6" d="M-10 300 Q50 295, 100 310 Q150 320, 200 300 Q250 285, 310 305" stroke="#4A4A4A" stroke-width="2"/>
+      <path id="preview-road-secondary-7" d="M135 -10 Q140 30, 130 60" stroke="#4A4A4A" stroke-width="2"/>
+      <path id="preview-road-secondary-8" d="M210 140 Q225 150, 240 135" stroke="#4A4A4A" stroke-width="2"/>
+    </g>
+
+    <!-- Roads - Tertiary (local streets) -->
+    <g fill="none" stroke-linecap="round">
+      <path id="preview-road-tertiary-1" d="M70 50 Q85 55, 95 45" stroke="#6A6A6A" stroke-width="1.2"/>
+      <path id="preview-road-tertiary-2" d="M25 80 Q45 75, 55 90" stroke="#6A6A6A" stroke-width="1.2"/>
+      <path id="preview-road-tertiary-3" d="M200 70 Q215 65, 225 80" stroke="#6A6A6A" stroke-width="1.2"/>
+      <path id="preview-road-tertiary-4" d="M30 150 Q50 145, 65 160" stroke="#6A6A6A" stroke-width="1.2"/>
+      <path id="preview-road-tertiary-5" d="M230 225 Q245 220, 260 235" stroke="#6A6A6A" stroke-width="1.2"/>
+      <path id="preview-road-tertiary-6" d="M60 290 Q80 285, 95 295" stroke="#6A6A6A" stroke-width="1.2"/>
+      <path id="preview-road-tertiary-7" d="M165 240 Q180 235, 195 245" stroke="#6A6A6A" stroke-width="1.2"/>
+      <path id="preview-road-tertiary-8" d="M130 290 Q150 285, 165 295" stroke="#6A6A6A" stroke-width="1.2"/>
+      <path id="preview-road-tertiary-9" d="M240 290 Q255 285, 270 295" stroke="#6A6A6A" stroke-width="1.2"/>
+      <path id="preview-road-tertiary-10" d="M25 230 Q40 225, 50 240" stroke="#6A6A6A" stroke-width="1.2"/>
+    </g>
+
+    <!-- Roads - Residential (neighborhood streets) -->
+    <g fill="none" stroke-linecap="round">
+      <!-- Dense residential grid areas -->
+      <!-- NW neighborhood -->
+      <path id="preview-road-residential-1" d="M25 60 L25 110" stroke="#8A8A8A" stroke-width="0.7"/>
+      <path id="preview-road-residential-2" d="M40 55 L40 105" stroke="#8A8A8A" stroke-width="0.7"/>
+      <path id="preview-road-residential-3" d="M20 70 L55 70" stroke="#8A8A8A" stroke-width="0.7"/>
+      <path id="preview-road-residential-4" d="M20 85 L55 85" stroke="#8A8A8A" stroke-width="0.7"/>
+
+      <!-- NE neighborhood -->
+      <path id="preview-road-residential-5" d="M215 55 L215 90" stroke="#8A8A8A" stroke-width="0.7"/>
+      <path id="preview-road-residential-6" d="M230 50 L230 85" stroke="#8A8A8A" stroke-width="0.7"/>
+      <path id="preview-road-residential-7" d="M210 65 L245 65" stroke="#8A8A8A" stroke-width="0.7"/>
+      <path id="preview-road-residential-8" d="M210 80 L240 80" stroke="#8A8A8A" stroke-width="0.7"/>
+
+      <!-- Central neighborhood -->
+      <path id="preview-road-residential-9" d="M110 115 L110 145" stroke="#8A8A8A" stroke-width="0.7"/>
+      <path id="preview-road-residential-10" d="M125 110 L125 140" stroke="#8A8A8A" stroke-width="0.7"/>
+      <path id="preview-road-residential-11" d="M105 125 L140 125" stroke="#8A8A8A" stroke-width="0.7"/>
+
+      <!-- SW neighborhood -->
+      <path id="preview-road-residential-12" d="M30 200 L30 250" stroke="#8A8A8A" stroke-width="0.7"/>
+      <path id="preview-road-residential-13" d="M45 195 L45 245" stroke="#8A8A8A" stroke-width="0.7"/>
+      <path id="preview-road-residential-14" d="M60 200 L60 250" stroke="#8A8A8A" stroke-width="0.7"/>
+      <path id="preview-road-residential-15" d="M25 215 L70 215" stroke="#8A8A8A" stroke-width="0.7"/>
+      <path id="preview-road-residential-16" d="M25 235 L65 235" stroke="#8A8A8A" stroke-width="0.7"/>
+
+      <!-- SE neighborhood -->
+      <path id="preview-road-residential-17" d="M230 205 L230 240" stroke="#8A8A8A" stroke-width="0.7"/>
+      <path id="preview-road-residential-18" d="M245 200 L245 235" stroke="#8A8A8A" stroke-width="0.7"/>
+      <path id="preview-road-residential-19" d="M260 205 L260 240" stroke="#8A8A8A" stroke-width="0.7"/>
+      <path id="preview-road-residential-20" d="M225 220 L270 220" stroke="#8A8A8A" stroke-width="0.7"/>
+
+      <!-- S central neighborhood -->
+      <path id="preview-road-residential-21" d="M140 275 L140 310" stroke="#8A8A8A" stroke-width="0.7"/>
+      <path id="preview-road-residential-22" d="M155 270 L155 305" stroke="#8A8A8A" stroke-width="0.7"/>
+      <path id="preview-road-residential-23" d="M170 275 L170 310" stroke="#8A8A8A" stroke-width="0.7"/>
+      <path id="preview-road-residential-24" d="M135 285 L180 285" stroke="#8A8A8A" stroke-width="0.7"/>
+      <path id="preview-road-residential-25" d="M135 300 L175 300" stroke="#8A8A8A" stroke-width="0.7"/>
+    </g>
+
+    <!-- Roads - Default (service roads, alleys) -->
+    <g fill="none" stroke-linecap="round">
+      <path id="preview-road-default-1" d="M75 80 L90 75" stroke="#9A9A9A" stroke-width="0.5"/>
+      <path id="preview-road-default-2" d="M195 58 L205 62" stroke="#9A9A9A" stroke-width="0.5"/>
+      <path id="preview-road-default-3" d="M255 130 L265 125" stroke="#9A9A9A" stroke-width="0.5"/>
+      <path id="preview-road-default-4" d="M35 175 L50 170" stroke="#9A9A9A" stroke-width="0.5"/>
+      <path id="preview-road-default-5" d="M190 230 L200 235" stroke="#9A9A9A" stroke-width="0.5"/>
+      <path id="preview-road-default-6" d="M95 245 L105 250" stroke="#9A9A9A" stroke-width="0.5"/>
+      <path id="preview-road-default-7" d="M215 295 L225 290" stroke="#9A9A9A" stroke-width="0.5"/>
+      <path id="preview-road-default-8" d="M85 315 L100 310" stroke="#9A9A9A" stroke-width="0.5"/>
+    </g>
+  </g>
+
+  <!-- Center Pin Icons (only one visible at a time) -->
+  <g id="preview-pin" transform="translate(150, 155)">
+    <!-- Marker pin -->
+    <g id="pin-marker" class="pin-icon" style="display: none;">
+      <path d="M0 12 C-8 0, -8 -12, 0 -16 C8 -12, 8 0, 0 12 Z" fill="#1A1A1A" stroke="white" stroke-width="1"/>
+      <circle cx="0" cy="-8" r="4" fill="white"/>
+    </g>
+    <!-- Heart pin -->
+    <g id="pin-heart" class="pin-icon" style="display: none;">
+      <path d="M0 10 C-12 0, -12 -8, -6 -12 C-3 -14, 0 -12, 0 -8 C0 -12, 3 -14, 6 -12 C12 -8, 12 0, 0 10 Z" fill="#1A1A1A" stroke="white" stroke-width="1"/>
+    </g>
+    <!-- Star pin -->
+    <g id="pin-star" class="pin-icon" style="display: none;">
+      <path d="M0 -12 L3 -4 L12 -4 L5 2 L8 10 L0 5 L-8 10 L-5 2 L-12 -4 L-3 -4 Z" fill="#1A1A1A" stroke="white" stroke-width="1"/>
+    </g>
+    <!-- Home pin -->
+    <g id="pin-home" class="pin-icon" style="display: none;">
+      <path d="M-10 0 L0 -10 L10 0 L10 10 L-10 10 Z" fill="#1A1A1A" stroke="white" stroke-width="1"/>
+      <rect x="-3" y="3" width="6" height="7" fill="white"/>
+    </g>
+    <!-- Circle pin -->
+    <g id="pin-circle" class="pin-icon" style="display: none;">
+      <circle cx="0" cy="0" r="8" fill="#1A1A1A" stroke="white" stroke-width="1.5"/>
+    </g>
+  </g>
+
+  <!-- Border frame -->
+  <rect id="preview-border" x="15" y="15" width="270" height="310" rx="4" fill="none" stroke="#1A1A1A" stroke-width="2"/>
+
+  <!-- Text area -->
+  <g id="preview-text">
+    <text id="preview-city" x="150" y="355" text-anchor="middle" font-size="24" font-weight="700" fill="#1A1A1A">LONDON</text>
+    <text id="preview-country" x="150" y="375" text-anchor="middle" font-size="11" font-weight="400" fill="#1A1A1A" letter-spacing="3">UNITED KINGDOM</text>
+    <text id="preview-coords" x="150" y="392" text-anchor="middle" font-size="8" font-weight="300" fill="#888888">51.5074° N / 0.1278° W</text>
+  </g>
+</svg>

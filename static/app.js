@@ -243,6 +243,14 @@ const elements = {
   collectionModalTabs: document.getElementById("collection-modal-tabs"),
   collectionModalGrid: document.getElementById("collection-modal-grid"),
   addCollectionModalBtn: document.getElementById("add-collection-modal-btn"),
+  // Gallery multi-select
+  galleryMultiselectBtn: document.getElementById("gallery-multiselect-btn"),
+  galleryBulkActions: document.getElementById("gallery-bulk-actions"),
+  gallerySelectAllBtn: document.getElementById("gallery-select-all-btn"),
+  bulkSelectionCount: document.getElementById("bulk-selection-count"),
+  bulkCreateCompositeBtn: document.getElementById("bulk-create-composite-btn"),
+  bulkDeleteBtn: document.getElementById("bulk-delete-btn"),
+  galleryCancelSelectBtn: document.getElementById("gallery-cancel-select-btn"),
 
   // Floating elements
   bottomBarFloat: document.getElementById("bottom-bar-float"),
@@ -966,6 +974,8 @@ async function deletePoster(filename) {
 
 let modalCollectionFilter = null; // Track selected collection in modal
 let galleryLoadedForModal = false;
+let galleryMultiselectMode = false;
+let gallerySelectedItems = new Set(); // Store selected filenames
 
 async function openCollectionModal() {
   elements.collectionModal?.classList.add("open");
@@ -989,6 +999,15 @@ async function openCollectionModal() {
 
 function closeCollectionModal() {
   elements.collectionModal?.classList.remove("open");
+
+  // Reset multi-select mode
+  if (galleryMultiselectMode) {
+    galleryMultiselectMode = false;
+    gallerySelectedItems.clear();
+    elements.galleryMultiselectBtn?.classList.remove("active");
+    elements.galleryBulkActions?.classList.remove("visible");
+    elements.collectionModal?.classList.remove("multiselect-mode");
+  }
 
   // Show floating elements again
   document.getElementById("bottom-bar-float")?.classList.remove("hidden-by-modal");
@@ -1067,6 +1086,13 @@ function renderCollectionModalGrid() {
   items.forEach(item => {
     const card = document.createElement("div");
     card.className = "collection-poster-card";
+    card.dataset.filename = item.filename;
+    if (galleryMultiselectMode) {
+      card.classList.add("multiselect-mode");
+      if (gallerySelectedItems.has(item.filename)) {
+        card.classList.add("selected");
+      }
+    }
 
     // Build collection options
     let collectionOptions = '<option value="">No collection</option>';
@@ -1083,7 +1109,14 @@ function renderCollectionModalGrid() {
     const format = (item.config?.format || "png").toUpperCase();
     const dpi = item.config?.dpi || 300;
 
+    const isSelected = gallerySelectedItems.has(item.filename);
+
     card.innerHTML = `
+      <div class="collection-poster-checkbox ${galleryMultiselectMode ? 'visible' : ''}">
+        <div class="poster-checkbox ${isSelected ? 'checked' : ''}">
+          <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+        </div>
+      </div>
       <div class="collection-poster-image">
         <img src="${item.thumb_url}?t=${item.mtime}" alt="${item.filename}" loading="lazy">
         <div class="collection-poster-specs">${escapeHtml(aspectRatio)} · ${format} · ${dpi}</div>
@@ -1092,7 +1125,7 @@ function renderCollectionModalGrid() {
           <span class="collection-poster-meta">${themeFormatted ? escapeHtml(themeFormatted) : ''}${themeFormatted && fontName ? ' · ' : ''}${fontName ? escapeHtml(fontName) : ''}</span>
         </div>
       </div>
-      <div class="collection-poster-actions">
+      <div class="collection-poster-actions ${galleryMultiselectMode ? 'hidden' : ''}">
         <button class="poster-action-btn poster-view-btn" title="View full size">
           <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
         </button>
@@ -1111,8 +1144,18 @@ function renderCollectionModalGrid() {
       </div>
     `;
 
-    // Click on image loads settings
-    card.querySelector('.collection-poster-image').addEventListener("click", () => {
+    // Click handler depends on mode
+    card.addEventListener("click", (e) => {
+      if (galleryMultiselectMode) {
+        // In multiselect mode, toggle selection
+        if (e.target.closest('.poster-action-btn') || e.target.closest('.poster-collection-select')) return;
+        toggleGalleryItemSelection(item.filename, card);
+      }
+    });
+
+    // Click on image loads settings (only in normal mode)
+    card.querySelector('.collection-poster-image').addEventListener("click", (e) => {
+      if (galleryMultiselectMode) return; // Handled by card click
       closeCollectionModal();
       if (item.config) {
         loadConfigFromGallery(item.config);
@@ -1163,6 +1206,171 @@ function renderCollectionModalGrid() {
   });
 
   elements.collectionModalGrid.appendChild(fragment);
+}
+
+// ===== GALLERY MULTI-SELECT =====
+function toggleGalleryMultiselect() {
+  galleryMultiselectMode = !galleryMultiselectMode;
+  gallerySelectedItems.clear();
+
+  // Update UI
+  elements.galleryMultiselectBtn?.classList.toggle("active", galleryMultiselectMode);
+  elements.galleryBulkActions?.classList.toggle("visible", galleryMultiselectMode);
+  elements.collectionModal?.classList.toggle("multiselect-mode", galleryMultiselectMode);
+
+  updateGallerySelectionCount();
+  renderCollectionModalGrid();
+}
+
+function toggleGalleryItemSelection(filename, card) {
+  if (gallerySelectedItems.has(filename)) {
+    gallerySelectedItems.delete(filename);
+    card.classList.remove("selected");
+    card.querySelector(".poster-checkbox")?.classList.remove("checked");
+  } else {
+    gallerySelectedItems.add(filename);
+    card.classList.add("selected");
+    card.querySelector(".poster-checkbox")?.classList.add("checked");
+  }
+  updateGallerySelectionCount();
+}
+
+function updateGallerySelectionCount() {
+  const count = gallerySelectedItems.size;
+  if (elements.bulkSelectionCount) {
+    elements.bulkSelectionCount.textContent = `${count} selected`;
+  }
+  // Enable/disable bulk action buttons based on selection
+  if (elements.bulkDeleteBtn) {
+    elements.bulkDeleteBtn.disabled = count === 0;
+  }
+  if (elements.bulkCreateCompositeBtn) {
+    elements.bulkCreateCompositeBtn.disabled = count === 0;
+  }
+  // Update select all button text
+  const visibleItems = modalCollectionFilter === null
+    ? window.galleryItems || []
+    : (window.galleryItems || []).filter(item => item.config?.collection === modalCollectionFilter);
+  const allSelected = visibleItems.length > 0 && visibleItems.every(item => gallerySelectedItems.has(item.filename));
+  if (elements.gallerySelectAllBtn) {
+    elements.gallerySelectAllBtn.textContent = allSelected ? "Deselect All" : "Select All";
+  }
+}
+
+function selectAllGalleryItems() {
+  const visibleItems = modalCollectionFilter === null
+    ? window.galleryItems || []
+    : (window.galleryItems || []).filter(item => item.config?.collection === modalCollectionFilter);
+
+  const allSelected = visibleItems.every(item => gallerySelectedItems.has(item.filename));
+
+  if (allSelected) {
+    // Deselect all
+    visibleItems.forEach(item => gallerySelectedItems.delete(item.filename));
+  } else {
+    // Select all
+    visibleItems.forEach(item => gallerySelectedItems.add(item.filename));
+  }
+
+  updateGallerySelectionCount();
+  renderCollectionModalGrid();
+}
+
+async function bulkDeleteSelected() {
+  if (gallerySelectedItems.size === 0) return;
+
+  const count = gallerySelectedItems.size;
+  if (!confirm(`Delete ${count} poster${count !== 1 ? 's' : ''}? This cannot be undone.`)) {
+    return;
+  }
+
+  const filenames = Array.from(gallerySelectedItems);
+  let deleted = 0;
+
+  for (const filename of filenames) {
+    try {
+      const response = await fetch(`/api/posters/${encodeURIComponent(filename)}`, { method: "DELETE" });
+      if (response.ok) {
+        window.galleryItems = window.galleryItems.filter(item => item.filename !== filename);
+        deleted++;
+      }
+    } catch (err) {
+      console.error(`Failed to delete ${filename}:`, err);
+    }
+  }
+
+  gallerySelectedItems.clear();
+  updateGallerySelectionCount();
+  renderCollectionModalTabs();
+  renderCollectionModalGrid();
+
+  if (deleted > 0) {
+    console.log(`Deleted ${deleted} poster(s)`);
+  }
+}
+
+async function createCompositeImage() {
+  if (gallerySelectedItems.size === 0) return;
+
+  const filenames = Array.from(gallerySelectedItems);
+
+  // Show loading state
+  if (elements.bulkCreateCompositeBtn) {
+    elements.bulkCreateCompositeBtn.disabled = true;
+    elements.bulkCreateCompositeBtn.innerHTML = `
+      <svg class="spinner" viewBox="0 0 24 24" width="16" height="16"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none" stroke-dasharray="31.4" stroke-dashoffset="10"/></svg>
+      Creating...
+    `;
+  }
+
+  try {
+    const response = await fetch("/api/composite", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ filenames })
+    });
+
+    if (response.ok) {
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `composite_${Date.now()}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } else {
+      const err = await response.json();
+      alert(err.error || "Failed to create composite image");
+    }
+  } catch (err) {
+    console.error("Failed to create composite:", err);
+    alert("Failed to create composite image");
+  } finally {
+    // Reset button
+    if (elements.bulkCreateCompositeBtn) {
+      elements.bulkCreateCompositeBtn.disabled = false;
+      elements.bulkCreateCompositeBtn.innerHTML = `
+        <svg viewBox="0 0 24 24" width="16" height="16">
+          <path fill="currentColor" d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"/>
+        </svg>
+        Create Composite
+      `;
+    }
+  }
+}
+
+function cancelGalleryMultiselect() {
+  galleryMultiselectMode = false;
+  gallerySelectedItems.clear();
+
+  elements.galleryMultiselectBtn?.classList.remove("active");
+  elements.galleryBulkActions?.classList.remove("visible");
+  elements.collectionModal?.classList.remove("multiselect-mode");
+
+  updateGallerySelectionCount();
+  renderCollectionModalGrid();
 }
 
 async function deleteCollection(collId) {
@@ -1391,6 +1599,9 @@ function toggleVariationMode() {
   const themes = themesByCategory[currentCategory] || themeList;
   renderThemeCarousel(themes);
 
+  // Re-render theme drawer to show/hide Select All buttons
+  renderThemeDrawer(themeList);
+
   // Update generate button
   updateVariationButton();
 }
@@ -1406,12 +1617,58 @@ function toggleThemeSelection(themeId) {
   }
 
   // Update UI
+  updateThemeSelectionUI();
+  updateVariationButton();
+}
+
+function updateThemeSelectionUI() {
+  // Update carousel cards
   document.querySelectorAll(".theme-carousel-card").forEach(card => {
     const isSelected = selectedThemes.includes(card.dataset.themeId);
     card.classList.toggle("variation-selected", isSelected);
   });
+  // Update drawer cards
+  document.querySelectorAll(".theme-card-expanded").forEach(card => {
+    const isSelected = selectedThemes.includes(card.dataset.themeId);
+    card.classList.toggle("variation-selected", isSelected);
+  });
+  // Update category select all buttons
+  updateCategorySelectButtons();
+}
 
+function toggleCategorySelection(category) {
+  if (!variationMode) return;
+
+  // Get all theme IDs in this category
+  const categoryThemes = themeList.filter(t => (t.category || "other") === category).map(t => t.id);
+
+  // Check if all themes in category are already selected
+  const allSelected = categoryThemes.every(id => selectedThemes.includes(id));
+
+  if (allSelected) {
+    // Deselect all themes in this category
+    selectedThemes = selectedThemes.filter(id => !categoryThemes.includes(id));
+  } else {
+    // Select all themes in this category (add ones not already selected)
+    categoryThemes.forEach(id => {
+      if (!selectedThemes.includes(id)) {
+        selectedThemes.push(id);
+      }
+    });
+  }
+
+  updateThemeSelectionUI();
   updateVariationButton();
+}
+
+function updateCategorySelectButtons() {
+  document.querySelectorAll(".category-select-all-btn").forEach(btn => {
+    const category = btn.dataset.category;
+    const categoryThemes = themeList.filter(t => (t.category || "other") === category).map(t => t.id);
+    const allSelected = categoryThemes.length > 0 && categoryThemes.every(id => selectedThemes.includes(id));
+    btn.textContent = allSelected ? "Deselect All" : "Select All";
+    btn.classList.toggle("all-selected", allSelected);
+  });
 }
 
 function updateVariationButton() {
@@ -3015,10 +3272,23 @@ function renderThemeDrawer(themes) {
 
     const titleEl = document.createElement("div");
     titleEl.className = "theme-category-title";
+    const categoryThemes = grouped[cat].map(t => t.id);
+    const allSelected = variationMode && categoryThemes.length > 0 && categoryThemes.every(id => selectedThemes.includes(id));
     titleEl.innerHTML = `
-      ${CATEGORY_LABELS[cat] || cat}
-      <span class="theme-category-count">(${grouped[cat].length})</span>
+      <span class="theme-category-label">
+        ${CATEGORY_LABELS[cat] || cat}
+        <span class="theme-category-count">(${grouped[cat].length})</span>
+      </span>
+      ${variationMode ? `<button class="category-select-all-btn${allSelected ? ' all-selected' : ''}" data-category="${cat}">${allSelected ? 'Deselect All' : 'Select All'}</button>` : ''}
     `;
+    // Add click handler for select all button
+    const selectAllBtn = titleEl.querySelector(".category-select-all-btn");
+    if (selectAllBtn) {
+      selectAllBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        toggleCategorySelection(cat);
+      });
+    }
     group.appendChild(titleEl);
 
     const grid = document.createElement("div");
@@ -3051,6 +3321,9 @@ function createThemeCardForDrawer(theme) {
   card.dataset.themeId = theme.id;
   if (theme.id === state.theme) {
     card.classList.add("selected");
+  }
+  if (variationMode && selectedThemes.includes(theme.id)) {
+    card.classList.add("variation-selected");
   }
 
   const preview = document.createElement("div");
@@ -3102,8 +3375,12 @@ function createThemeCardForDrawer(theme) {
 
   card.addEventListener("click", (e) => {
     if (e.target.closest(".star-btn") || e.target.closest(".collection-btn")) return;
-    selectTheme(theme.id);
-    closeThemeDrawer();
+    if (variationMode) {
+      toggleThemeSelection(theme.id);
+    } else {
+      selectTheme(theme.id);
+      closeThemeDrawer();
+    }
   });
 
   return card;
@@ -3797,6 +4074,13 @@ function initEventListeners() {
       closeCollectionModal();
     }
   });
+
+  // Gallery multi-select
+  elements.galleryMultiselectBtn?.addEventListener("click", toggleGalleryMultiselect);
+  elements.gallerySelectAllBtn?.addEventListener("click", selectAllGalleryItems);
+  elements.bulkDeleteBtn?.addEventListener("click", bulkDeleteSelected);
+  elements.bulkCreateCompositeBtn?.addEventListener("click", createCompositeImage);
+  elements.galleryCancelSelectBtn?.addEventListener("click", cancelGalleryMultiselect);
 
   // Queue
   elements.addQueueBtn?.addEventListener("click", addToQueue);

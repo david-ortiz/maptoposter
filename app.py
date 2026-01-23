@@ -23,7 +23,6 @@ JOBS_LOCK = threading.Lock()
 JOB_QUEUE = queue.Queue()
 WORKER_STARTED = False
 MAX_CONCURRENT_JOBS = 1  # Can be increased for multi-worker setup
-MAX_QUEUED_JOBS = 50  # Maximum jobs in queue
 
 
 def load_theme_catalog():
@@ -231,6 +230,359 @@ def theme_samples():
 @app.route("/api/themes")
 def api_themes():
     return jsonify(load_theme_catalog())
+
+
+@app.route("/api/themes/categories")
+def api_theme_categories():
+    """Return list of valid theme categories."""
+    return jsonify([
+        "dark", "light", "nature", "urban", "vintage",
+        "vibrant", "pastel", "luxury", "monochrome", "cultural", "other"
+    ])
+
+
+@app.route("/api/themes/<theme_id>", methods=["GET"])
+def api_theme_get(theme_id):
+    """Get a single theme by ID."""
+    safe_id = os.path.basename(theme_id)
+    theme_path = os.path.join(poster.THEMES_DIR, f"{safe_id}.json")
+
+    if not os.path.exists(theme_path):
+        return jsonify({"error": "Theme not found"}), 404
+
+    try:
+        with open(theme_path, "r", encoding="utf-8") as f:
+            theme_data = json.load(f)
+        theme_data["id"] = safe_id
+        return jsonify(theme_data)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/themes", methods=["POST"])
+def api_theme_create():
+    """Create a new theme."""
+    payload = request.get_json(silent=True) or {}
+
+    name = (payload.get("name") or "").strip()
+    if not name:
+        return jsonify({"error": "Theme name is required"}), 400
+
+    # Generate ID from name
+    theme_id = name.lower().replace(" ", "_")
+    theme_id = "".join(c for c in theme_id if c.isalnum() or c == "_")
+    theme_id = theme_id[:50]
+
+    if not theme_id:
+        return jsonify({"error": "Invalid theme name"}), 400
+
+    theme_path = os.path.join(poster.THEMES_DIR, f"{theme_id}.json")
+
+    # Check if already exists
+    if os.path.exists(theme_path):
+        return jsonify({"error": "A theme with this name already exists"}), 409
+
+    # Build theme data
+    theme_data = {
+        "name": name,
+        "description": payload.get("description", ""),
+        "category": payload.get("category", "other"),
+        "bg": payload.get("bg", "#FFFFFF"),
+        "text": payload.get("text", "#000000"),
+        "gradient_color": payload.get("gradient_color", "#FFFFFF"),
+        "water": payload.get("water", "#C0C0C0"),
+        "parks": payload.get("parks", "#F0F0F0"),
+        "road_motorway": payload.get("road_motorway", "#0A0A0A"),
+        "road_primary": payload.get("road_primary", "#1A1A1A"),
+        "road_secondary": payload.get("road_secondary", "#2A2A2A"),
+        "road_tertiary": payload.get("road_tertiary", "#3A3A3A"),
+        "road_residential": payload.get("road_residential", "#4A4A4A"),
+        "road_default": payload.get("road_default", "#3A3A3A"),
+    }
+
+    try:
+        with open(theme_path, "w", encoding="utf-8") as f:
+            json.dump(theme_data, f, indent=2)
+        return jsonify({"ok": True, "id": theme_id, "name": name})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/themes/<theme_id>", methods=["PUT"])
+def api_theme_update(theme_id):
+    """Update an existing theme."""
+    safe_id = os.path.basename(theme_id)
+    theme_path = os.path.join(poster.THEMES_DIR, f"{safe_id}.json")
+
+    if not os.path.exists(theme_path):
+        return jsonify({"error": "Theme not found"}), 404
+
+    payload = request.get_json(silent=True) or {}
+
+    # Load existing theme to preserve any extra fields
+    try:
+        with open(theme_path, "r", encoding="utf-8") as f:
+            theme_data = json.load(f)
+    except Exception:
+        theme_data = {}
+
+    # Update fields
+    if "name" in payload:
+        theme_data["name"] = payload["name"]
+    if "description" in payload:
+        theme_data["description"] = payload["description"]
+    if "category" in payload:
+        theme_data["category"] = payload["category"]
+
+    # Color fields
+    color_fields = [
+        "bg", "text", "gradient_color", "water", "parks",
+        "road_motorway", "road_primary", "road_secondary",
+        "road_tertiary", "road_residential", "road_default"
+    ]
+    for field in color_fields:
+        if field in payload:
+            theme_data[field] = payload[field]
+
+    try:
+        with open(theme_path, "w", encoding="utf-8") as f:
+            json.dump(theme_data, f, indent=2)
+        return jsonify({"ok": True, "id": safe_id})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/themes/<theme_id>", methods=["DELETE"])
+def api_theme_delete(theme_id):
+    """Delete a theme."""
+    safe_id = os.path.basename(theme_id)
+    theme_path = os.path.join(poster.THEMES_DIR, f"{safe_id}.json")
+
+    if not os.path.exists(theme_path):
+        return jsonify({"error": "Theme not found"}), 404
+
+    try:
+        os.remove(theme_path)
+        return jsonify({"ok": True})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/themes/<theme_id>/duplicate", methods=["POST"])
+def api_theme_duplicate(theme_id):
+    """Duplicate a theme with a new name."""
+    safe_id = os.path.basename(theme_id)
+    theme_path = os.path.join(poster.THEMES_DIR, f"{safe_id}.json")
+
+    if not os.path.exists(theme_path):
+        return jsonify({"error": "Theme not found"}), 404
+
+    payload = request.get_json(silent=True) or {}
+    new_name = (payload.get("name") or f"{safe_id}_copy").strip()
+
+    # Generate new ID
+    new_id = new_name.lower().replace(" ", "_")
+    new_id = "".join(c for c in new_id if c.isalnum() or c == "_")
+    new_id = new_id[:50]
+
+    if not new_id:
+        return jsonify({"error": "Invalid theme name"}), 400
+
+    new_path = os.path.join(poster.THEMES_DIR, f"{new_id}.json")
+
+    # Ensure unique ID
+    counter = 1
+    while os.path.exists(new_path):
+        new_id = f"{new_id}_{counter}"
+        new_path = os.path.join(poster.THEMES_DIR, f"{new_id}.json")
+        counter += 1
+
+    try:
+        with open(theme_path, "r", encoding="utf-8") as f:
+            theme_data = json.load(f)
+
+        theme_data["name"] = new_name
+
+        with open(new_path, "w", encoding="utf-8") as f:
+            json.dump(theme_data, f, indent=2)
+
+        return jsonify({"ok": True, "id": new_id, "name": new_name})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/editor")
+def theme_editor():
+    """Serve the theme editor page."""
+    return render_template("theme-editor.html")
+
+
+@app.route("/api/editor-preview-svg")
+def api_editor_preview_svg():
+    """
+    Generate a real map SVG preview from cached geometry.
+    Uses a sample cached map for the preview.
+    """
+    import pickle
+    import io
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+    from matplotlib.patches import Rectangle, Polygon as MplPolygon
+    import osmnx as ox
+
+    # Find a good sample cached map
+    cache_dir = os.path.join(os.path.dirname(__file__), "cache", "map_data")
+    cache_files = glob.glob(os.path.join(cache_dir, "*.pkl"))
+
+    if not cache_files:
+        return jsonify({"error": "No cached maps available"}), 404
+
+    # Prefer a medium-sized map (around 5000m)
+    sample_file = None
+    for f in cache_files:
+        if "_5000_" in f or "_4000_" in f or "_6000_" in f:
+            sample_file = f
+            break
+    if not sample_file:
+        sample_file = cache_files[0]
+
+    # Load cached geometry
+    try:
+        with open(sample_file, "rb") as f:
+            data = pickle.load(f)
+        graph = data["graph"]
+        water = data.get("water")
+        parks = data.get("parks")
+    except Exception as e:
+        return jsonify({"error": f"Failed to load cache: {e}"}), 500
+
+    # Create figure
+    fig, ax = plt.subplots(figsize=(6, 8))
+    ax.set_aspect('equal')
+    ax.axis('off')
+
+    # Get bounds from graph
+    nodes = ox.graph_to_gdfs(graph, edges=False)
+    minx, miny, maxx, maxy = nodes.total_bounds
+    padding = (maxx - minx) * 0.02
+    ax.set_xlim(minx - padding, maxx + padding)
+    ax.set_ylim(miny - padding, maxy + padding)
+
+    # Draw background with gid
+    bg = Rectangle((minx - padding, miny - padding),
+                   (maxx - minx) + 2*padding, (maxy - miny) + 2*padding,
+                   facecolor='#FFFFFF', edgecolor='none', zorder=0)
+    bg.set_gid('preview-bg')
+    ax.add_patch(bg)
+
+    # Draw water
+    if water is not None and len(water) > 0:
+        for idx, (_, row) in enumerate(water.iterrows()):
+            geom = row.geometry
+            if geom.geom_type == 'Polygon':
+                patch = MplPolygon(list(geom.exterior.coords), closed=True,
+                                  facecolor='#C0C0C0', edgecolor='none', zorder=1)
+                patch.set_gid(f'preview-water-{idx}')
+                ax.add_patch(patch)
+            elif geom.geom_type == 'MultiPolygon':
+                for j, poly in enumerate(geom.geoms):
+                    patch = MplPolygon(list(poly.exterior.coords), closed=True,
+                                      facecolor='#C0C0C0', edgecolor='none', zorder=1)
+                    patch.set_gid(f'preview-water-{idx}-{j}')
+                    ax.add_patch(patch)
+
+    # Draw parks
+    if parks is not None and len(parks) > 0:
+        for idx, (_, row) in enumerate(parks.iterrows()):
+            geom = row.geometry
+            if geom.geom_type == 'Polygon':
+                patch = MplPolygon(list(geom.exterior.coords), closed=True,
+                                  facecolor='#F0F0F0', edgecolor='none', zorder=2)
+                patch.set_gid(f'preview-parks-{idx}')
+                ax.add_patch(patch)
+            elif geom.geom_type == 'MultiPolygon':
+                for j, poly in enumerate(geom.geoms):
+                    patch = MplPolygon(list(poly.exterior.coords), closed=True,
+                                      facecolor='#F0F0F0', edgecolor='none', zorder=2)
+                    patch.set_gid(f'preview-parks-{idx}-{j}')
+                    ax.add_patch(patch)
+
+    # Draw roads by type with different gids
+    road_types = {
+        'motorway': (['motorway', 'motorway_link'], 2.5, '#0A0A0A'),
+        'primary': (['trunk', 'trunk_link', 'primary', 'primary_link'], 1.8, '#1A1A1A'),
+        'secondary': (['secondary', 'secondary_link'], 1.2, '#2A2A2A'),
+        'tertiary': (['tertiary', 'tertiary_link'], 0.8, '#3A3A3A'),
+        'residential': (['residential', 'living_street', 'unclassified'], 0.5, '#4A4A4A'),
+    }
+
+    edges = ox.graph_to_gdfs(graph, nodes=False)
+
+    for road_name, (types, width, color) in road_types.items():
+        road_edges = edges[edges['highway'].apply(
+            lambda x: any(t in (x if isinstance(x, list) else [x]) for t in types)
+        )]
+        if len(road_edges) > 0:
+            for idx, (_, edge) in enumerate(road_edges.iterrows()):
+                xs, ys = edge.geometry.xy
+                line, = ax.plot(xs, ys, color=color, linewidth=width, solid_capstyle='round', zorder=3)
+                line.set_gid(f'preview-road-{road_name}-{idx}')
+
+    # Draw default roads (anything not matched above)
+    matched_types = [t for types, _, _ in road_types.values() for t in types]
+    default_edges = edges[~edges['highway'].apply(
+        lambda x: any(t in (x if isinstance(x, list) else [x]) for t in matched_types)
+    )]
+    if len(default_edges) > 0:
+        for idx, (_, edge) in enumerate(default_edges.iterrows()):
+            xs, ys = edge.geometry.xy
+            line, = ax.plot(xs, ys, color='#3A3A3A', linewidth=0.4, solid_capstyle='round', zorder=3)
+            line.set_gid(f'preview-road-default-{idx}')
+
+    plt.tight_layout(pad=0)
+
+    # Save to SVG
+    svg_buffer = io.BytesIO()
+    fig.savefig(svg_buffer, format='svg', bbox_inches='tight', pad_inches=0,
+                transparent=True, dpi=100)
+    plt.close(fig)
+
+    svg_buffer.seek(0)
+    svg_content = svg_buffer.read().decode('utf-8')
+
+    return Response(svg_content, mimetype='image/svg+xml')
+
+
+@app.route("/api/cached-maps")
+def api_cached_maps():
+    """List available cached maps for preview selection."""
+    cache_dir = os.path.join(os.path.dirname(__file__), "cache", "map_data")
+    cache_files = glob.glob(os.path.join(cache_dir, "*.pkl"))
+
+    maps = []
+    for f in cache_files:
+        basename = os.path.basename(f)
+        # Parse the filename: map_lat_lon_dist_hash.pkl
+        parts = basename.replace('.pkl', '').split('_')
+        if len(parts) >= 4:
+            try:
+                lat = float(parts[1])
+                lon = float(parts[2])
+                dist = int(parts[3])
+                maps.append({
+                    "file": basename,
+                    "lat": lat,
+                    "lon": lon,
+                    "dist": dist,
+                    "label": f"{lat:.2f}, {lon:.2f} ({dist}m)"
+                })
+            except:
+                pass
+
+    # Sort by distance (medium maps first)
+    maps.sort(key=lambda x: abs(x['dist'] - 5000))
+    return jsonify(maps)
 
 
 @app.route("/api/fonts")
@@ -780,10 +1132,8 @@ def api_jobs():
     }
 
     with JOBS_LOCK:
-        # Count queued and running jobs
+        # Count queued jobs for position calculation
         queued_count = sum(1 for j in JOBS.values() if j["status"] == "queued")
-        if queued_count >= MAX_QUEUED_JOBS:
-            return jsonify({"error": f"Queue is full ({MAX_QUEUED_JOBS} jobs max)."}), 409
 
         # Calculate queue position
         job["queue_position"] = queued_count + 1
@@ -867,7 +1217,6 @@ def api_queue_status():
             } for j in running],
             "queued_count": len(queued),
             "running_count": len(running),
-            "max_queued": MAX_QUEUED_JOBS,
         })
 
 
@@ -910,8 +1259,6 @@ def api_variations():
     themes = payload.get("themes", [])
     if not themes:
         return jsonify({"error": "At least one theme is required."}), 400
-    if len(themes) > 20:
-        return jsonify({"error": "Maximum 20 themes per batch."}), 400
 
     # Validate required fields
     city = (payload.get("city") or "").strip()
@@ -936,10 +1283,8 @@ def api_variations():
     job_ids = []
 
     with JOBS_LOCK:
-        # Check queue capacity
+        # Count queued jobs for position calculation
         queued_count = sum(1 for j in JOBS.values() if j["status"] == "queued")
-        if queued_count + len(themes) > MAX_QUEUED_JOBS:
-            return jsonify({"error": f"Queue would exceed limit ({MAX_QUEUED_JOBS} max)."}), 409
 
         for i, theme in enumerate(themes):
             job_id = uuid.uuid4().hex
@@ -1512,6 +1857,129 @@ def delete_poster(filename):
     except OSError as exc:
         return jsonify({"error": str(exc)}), 500
     return jsonify({"ok": True})
+
+
+@app.route("/api/composite", methods=["POST"])
+def create_composite():
+    """Create a composite image from multiple poster thumbnails."""
+    from PIL import Image, ImageDraw, ImageFont
+    import io
+
+    payload = request.get_json(silent=True) or {}
+    filenames = payload.get("filenames", [])
+
+    if not filenames:
+        return jsonify({"error": "No files specified"}), 400
+
+    posters_dir = poster.POSTERS_DIR
+    images_data = []
+
+    # Load thumbnails and configs
+    for filename in filenames:
+        safe_name = os.path.basename(filename)
+        base_name = safe_name.rsplit('.', 1)[0]
+        thumb_path = os.path.join(posters_dir, f"{base_name}_thumb.png")
+        config_path = os.path.join(posters_dir, f"{base_name}_config.json")
+
+        if not os.path.exists(thumb_path):
+            continue
+
+        # Load config
+        config = {}
+        if os.path.exists(config_path):
+            try:
+                with open(config_path, "r") as f:
+                    config = json.load(f)
+            except Exception:
+                pass
+
+        try:
+            img = Image.open(thumb_path)
+            images_data.append({
+                "image": img,
+                "theme": config.get("theme", "unknown"),
+                "aspect_ratio": config.get("aspect_ratio", "2:3"),
+                "font": config.get("font", "unknown")
+            })
+        except Exception as e:
+            print(f"Failed to load {thumb_path}: {e}")
+            continue
+
+    if not images_data:
+        return jsonify({"error": "No valid images found"}), 400
+
+    # Calculate grid layout (max 5 per row)
+    max_per_row = 5
+    num_images = len(images_data)
+    cols = min(num_images, max_per_row)
+    rows = (num_images + cols - 1) // cols
+
+    # Find max dimensions for uniform sizing
+    max_width = max(d["image"].width for d in images_data)
+    max_height = max(d["image"].height for d in images_data)
+
+    # Add padding for text overlay
+    text_height = 60
+    padding = 10
+
+    # Create composite canvas
+    canvas_width = cols * (max_width + padding) + padding
+    canvas_height = rows * (max_height + text_height + padding) + padding
+    composite = Image.new("RGB", (canvas_width, canvas_height), (30, 30, 30))
+    draw = ImageDraw.Draw(composite)
+
+    # Try to load a font, fall back to default
+    try:
+        font = ImageFont.truetype("arial.ttf", 14)
+        font_small = ImageFont.truetype("arial.ttf", 11)
+    except Exception:
+        try:
+            font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 14)
+            font_small = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 11)
+        except Exception:
+            font = ImageFont.load_default()
+            font_small = font
+
+    # Place images with overlay text
+    for idx, data in enumerate(images_data):
+        row = idx // cols
+        col = idx % cols
+
+        x = padding + col * (max_width + padding)
+        y = padding + row * (max_height + text_height + padding)
+
+        img = data["image"]
+
+        # Center image if smaller than max dimensions
+        offset_x = (max_width - img.width) // 2
+        offset_y = (max_height - img.height) // 2
+
+        composite.paste(img, (x + offset_x, y + offset_y))
+
+        # Draw semi-transparent overlay for text background
+        overlay_y = y
+        draw.rectangle(
+            [(x, overlay_y), (x + max_width, overlay_y + text_height - 5)],
+            fill=(0, 0, 0, 180)
+        )
+
+        # Draw text overlay
+        theme_text = data["theme"].replace("_", " ").title()
+        info_text = f"{data['aspect_ratio']} | {data['font']}"
+
+        draw.text((x + 8, overlay_y + 8), theme_text, fill=(255, 255, 255), font=font)
+        draw.text((x + 8, overlay_y + 28), info_text, fill=(200, 200, 200), font=font_small)
+
+    # Save to bytes
+    output = io.BytesIO()
+    composite.save(output, format="PNG", optimize=True)
+    output.seek(0)
+
+    return Response(
+        output.getvalue(),
+        mimetype="image/png",
+        headers={"Content-Disposition": f"attachment; filename=composite_{int(time.time())}.png"}
+    )
 
 
 if __name__ == "__main__":
