@@ -127,6 +127,11 @@ async function loadPreviewSvg() {
       const svgText = await response.text();
       elements.previewAspectWrapper.innerHTML = svgText;
       editorState.previewSvg = elements.previewAspectWrapper.querySelector('svg');
+      // Remove inline width/height to let CSS control sizing
+      if (editorState.previewSvg) {
+        editorState.previewSvg.removeAttribute('width');
+        editorState.previewSvg.removeAttribute('height');
+      }
       editorState.useRealMap = true;
       console.log('Loaded map preview');
     } else {
