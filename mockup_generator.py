@@ -33,6 +33,8 @@ def list_mockups():
                 image_file = MOCKUPS_DIR / f"{mockup_id}.jpg"
 
             if image_file.exists():
+                # Get modification time for sorting
+                mtime = json_file.stat().st_mtime
                 mockups.append({
                     "id": mockup_id,
                     "name": metadata.get("name", mockup_id),
@@ -41,12 +43,15 @@ def list_mockups():
                     "output_size": metadata.get("output_size"),
                     "thumbnail": f"/mockups/{image_file.name}",
                     "guides": metadata.get("guides", []),
-                    "labels": metadata.get("labels", [])
+                    "labels": metadata.get("labels", []),
+                    "mtime": mtime
                 })
         except (json.JSONDecodeError, IOError) as e:
             print(f"Error loading mockup {json_file}: {e}")
             continue
 
+    # Sort by creation date, newest first
+    mockups.sort(key=lambda x: x.get("mtime", 0), reverse=True)
     return mockups
 
 

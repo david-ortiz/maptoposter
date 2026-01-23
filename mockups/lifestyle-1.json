@@ -1,0 +1,17 @@
+{
+  "name": "Lifestyle 1",
+  "poster_rect": {
+    "x": 532,
+    "y": 276,
+    "width": 407,
+    "height": 572
+  },
+  "poster_rotation": 0,
+  "output_size": [
+    1620,
+    1620
+  ],
+  "guides": [],
+  "labels": [],
+  "assets": []
+}

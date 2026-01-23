@@ -154,6 +154,13 @@ const elements = {
   recentClose: document.getElementById("recent-close"),
   recentGrid: document.getElementById("recent-grid"),
 
+  // City bookmarks
+  bookmarksToggle: document.getElementById("bookmarks-toggle"),
+  bookmarksPanel: document.getElementById("city-bookmarks-panel"),
+  bookmarksClose: document.getElementById("bookmarks-close"),
+  bookmarksSearch: document.getElementById("bookmarks-search"),
+  bookmarksContent: document.getElementById("bookmarks-content"),
+
   // Coordinates display
   selectedCoords: document.getElementById("selected-coords"),
   suggestedLocation: document.getElementById("suggested-location"),
@@ -2010,6 +2017,9 @@ function openRecentPanel() {
   const panel = elements.recentPanel;
   if (!panel) return;
 
+  // Close bookmarks panel if open
+  closeBookmarksPanel();
+
   panel.setAttribute("aria-hidden", "false");
   renderRecentGenerations();
 }
@@ -2167,6 +2177,217 @@ function loadConfigFromGalleryItem(item) {
   updateGenerateButton();
   updateAspectRatioRect();
   updatePreview();
+}
+
+// ===== CITY BOOKMARKS =====
+
+let cityBookmarksData = null;
+let bookmarksSearchTerm = "";
+
+async function loadCityBookmarks() {
+  try {
+    const response = await fetch("/static/data/city-bookmarks.json");
+    if (response.ok) {
+      cityBookmarksData = await response.json();
+      console.log("Loaded city bookmarks:", cityBookmarksData?.continents?.length, "continents");
+    }
+  } catch (err) {
+    console.error("Failed to load city bookmarks:", err);
+  }
+}
+
+function toggleBookmarksPanel() {
+  const panel = elements.bookmarksPanel;
+  if (!panel) return;
+
+  const isHidden = panel.getAttribute("aria-hidden") === "true";
+  if (isHidden) {
+    openBookmarksPanel();
+  } else {
+    closeBookmarksPanel();
+  }
+}
+
+function openBookmarksPanel() {
+  const panel = elements.bookmarksPanel;
+  if (!panel) return;
+
+  // Close recent panel if open
+  closeRecentPanel();
+
+  panel.setAttribute("aria-hidden", "false");
+  elements.bookmarksToggle?.classList.add("active");
+
+  // Load data if needed and render
+  if (!cityBookmarksData) {
+    loadCityBookmarks().then(() => renderBookmarks());
+  } else {
+    renderBookmarks();
+  }
+
+  // Focus search input
+  setTimeout(() => elements.bookmarksSearch?.focus(), 100);
+}
+
+function closeBookmarksPanel() {
+  const panel = elements.bookmarksPanel;
+  if (!panel) return;
+
+  panel.setAttribute("aria-hidden", "true");
+  elements.bookmarksToggle?.classList.remove("active");
+
+  // Clear search
+  if (elements.bookmarksSearch) {
+    elements.bookmarksSearch.value = "";
+  }
+  bookmarksSearchTerm = "";
+}
+
+function renderBookmarks() {
+  const container = elements.bookmarksContent;
+  if (!container || !cityBookmarksData) return;
+
+  container.innerHTML = "";
+
+  const searchTerm = bookmarksSearchTerm.toLowerCase().trim();
+
+  if (!cityBookmarksData.continents || cityBookmarksData.continents.length === 0) {
+    container.innerHTML = '<div class="bookmarks-empty">No bookmarks available</div>';
+    return;
+  }
+
+  let totalMatches = 0;
+
+  cityBookmarksData.continents.forEach((continent) => {
+    // Filter cities by search term
+    let cities = continent.cities;
+    if (searchTerm) {
+      cities = cities.filter((city) => {
+        const cityMatch = city.city.toLowerCase().includes(searchTerm);
+        const countryMatch = city.country.toLowerCase().includes(searchTerm);
+        const aliasMatch = city.aliases?.some((a) => a.toLowerCase().includes(searchTerm));
+        return cityMatch || countryMatch || aliasMatch;
+      });
+    }
+
+    if (cities.length === 0) return;
+    totalMatches += cities.length;
+
+    const continentDiv = document.createElement("div");
+    continentDiv.className = "bookmarks-continent";
+    // Start expanded if searching, collapsed otherwise
+    if (!searchTerm) {
+      continentDiv.classList.add("collapsed");
+    }
+
+    continentDiv.innerHTML = `
+      <div class="bookmarks-continent-header">
+        <span class="bookmarks-continent-name">${escapeHtml(continent.name)}</span>
+        <span class="bookmarks-continent-count">${cities.length}</span>
+        <svg class="bookmarks-continent-toggle" viewBox="0 0 24 24" width="16" height="16">
+          <path fill="currentColor" d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/>
+        </svg>
+      </div>
+      <div class="bookmarks-city-list"></div>
+    `;
+
+    const header = continentDiv.querySelector(".bookmarks-continent-header");
+    header.addEventListener("click", () => {
+      continentDiv.classList.toggle("collapsed");
+    });
+
+    const cityList = continentDiv.querySelector(".bookmarks-city-list");
+    cities.forEach((city) => {
+      const cityDiv = document.createElement("div");
+      cityDiv.className = "bookmarks-city";
+      if (searchTerm) {
+        cityDiv.classList.add("search-match");
+      }
+
+      // Highlight matching text
+      let displayName = escapeHtml(city.city);
+      if (searchTerm) {
+        const regex = new RegExp(`(${escapeRegex(searchTerm)})`, "gi");
+        displayName = displayName.replace(regex, '<span class="highlight">$1</span>');
+      }
+
+      cityDiv.innerHTML = `
+        <div class="bookmarks-city-icon">
+          <svg viewBox="0 0 24 24" width="14" height="14">
+            <path fill="currentColor" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+          </svg>
+        </div>
+        <div class="bookmarks-city-info">
+          <div class="bookmarks-city-name">${displayName}</div>
+          <div class="bookmarks-city-country">${escapeHtml(city.country)}</div>
+        </div>
+      `;
+
+      cityDiv.addEventListener("click", () => {
+        selectCityBookmark(city);
+      });
+
+      cityList.appendChild(cityDiv);
+    });
+
+    container.appendChild(continentDiv);
+  });
+
+  if (totalMatches === 0 && searchTerm) {
+    container.innerHTML = '<div class="bookmarks-empty">No cities match your search</div>';
+  }
+}
+
+function escapeRegex(string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function selectCityBookmark(city) {
+  // Pan map to city coordinates
+  if (leafletMap && city.lat !== undefined && city.lng !== undefined) {
+    // Update state
+    state.selectedLat = city.lat;
+    state.selectedLng = city.lng;
+
+    // Update poster text
+    state.posterCity = city.city;
+    state.posterCountry = city.country;
+    state.posterTagline = ""; // Reset tagline to use coordinates
+
+    if (elements.posterCity) elements.posterCity.value = city.city;
+    if (elements.posterCountry) elements.posterCountry.value = city.country;
+    if (elements.posterTagline) elements.posterTagline.value = "";
+
+    // Also update suggested values
+    state.suggestedCity = city.city;
+    state.suggestedCountry = city.country;
+
+    // Pan to location
+    leafletMap.setView([city.lat, city.lng], 12, { animate: true });
+
+    // Show/update circle and marker
+    if (radiusCircle && centerMarker) {
+      if (!leafletMap.hasLayer(radiusCircle)) {
+        radiusCircle.addTo(leafletMap);
+        centerMarker.addTo(leafletMap);
+      }
+      radiusCircle.setLatLng([city.lat, city.lng]);
+      centerMarker.setLatLng([city.lat, city.lng]);
+    }
+
+    // Update UI
+    updateGenerateButton();
+    updateAspectRatioRect();
+    updatePreview();
+  }
+
+  // Close the panel
+  closeBookmarksPanel();
+}
+
+function handleBookmarksSearch() {
+  bookmarksSearchTerm = elements.bookmarksSearch?.value || "";
+  renderBookmarks();
 }
 
 // ===== POSTER TEXT (decoupled from map) =====
@@ -4007,6 +4228,14 @@ function initEventListeners() {
   // Recent generations panel
   elements.recentToggle?.addEventListener("click", toggleRecentPanel);
   elements.recentClose?.addEventListener("click", closeRecentPanel);
+
+  // City bookmarks panel
+  elements.bookmarksToggle?.addEventListener("click", toggleBookmarksPanel);
+  elements.bookmarksClose?.addEventListener("click", closeBookmarksPanel);
+  elements.bookmarksSearch?.addEventListener("input", handleBookmarksSearch);
+
+  // Preload city bookmarks
+  loadCityBookmarks();
 
   // Sync buttons
   elements.syncCity?.addEventListener("click", syncCityFromSuggestion);
@@ -6262,10 +6491,12 @@ function renderMockupStudioPosters() {
     const aspectRatio = poster.config?.aspect_ratio || "2:3";
     const dpi = poster.config?.dpi || 300;
     const format = (poster.config?.format || "png").toUpperCase();
+    // Use thumbnail if available, otherwise fall back to full image
+    const imgSrc = poster.thumb_url || poster.url;
 
     card.innerHTML = `
       <div class="mockup-studio-poster-image">
-        <img src="${poster.thumb_url}?t=${poster.mtime}" alt="${escapeHtml(poster.filename)}" loading="lazy">
+        <img src="${imgSrc}?t=${poster.mtime}" alt="${escapeHtml(poster.filename)}" loading="lazy">
         <div class="mockup-studio-poster-specs">${escapeHtml(aspectRatio)} · ${dpi} DPI</div>
       </div>
       <div class="mockup-studio-poster-info">

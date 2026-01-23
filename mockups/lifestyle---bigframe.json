@@ -1,0 +1,14 @@
+{
+  "name": "Lifestyle - Bigframe",
+  "poster_rect": {
+    "x": 330,
+    "y": 827,
+    "width": 937,
+    "height": 1234
+  },
+  "poster_rotation": 0,
+  "output_size": [
+    1620,
+    2880
+  ]
+}
