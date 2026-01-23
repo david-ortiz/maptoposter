@@ -1026,6 +1026,155 @@ def api_theme_collection_item(coll_id, theme_id):
         return jsonify({"ok": True, "action": "removed"})
 
 
+# ===== FONT COLLECTIONS =====
+FONT_COLLECTIONS_FILE = os.path.join(os.path.dirname(__file__), "font_collections.json")
+FONT_COLLECTION_ITEMS_FILE = os.path.join(os.path.dirname(__file__), "font_collection_items.json")
+
+
+def load_font_collections():
+    """Load font collections from JSON file."""
+    if not os.path.exists(FONT_COLLECTIONS_FILE):
+        return []
+    try:
+        with open(FONT_COLLECTIONS_FILE, "r") as f:
+            return json.load(f)
+    except Exception:
+        return []
+
+
+def save_font_collections(collections):
+    """Save font collections to JSON file."""
+    with open(FONT_COLLECTIONS_FILE, "w") as f:
+        json.dump(collections, f, indent=2)
+
+
+def load_font_collection_items():
+    """Load font-to-collection mappings."""
+    if not os.path.exists(FONT_COLLECTION_ITEMS_FILE):
+        return {}
+    try:
+        with open(FONT_COLLECTION_ITEMS_FILE, "r") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
+def save_font_collection_items(items):
+    """Save font-to-collection mappings."""
+    with open(FONT_COLLECTION_ITEMS_FILE, "w") as f:
+        json.dump(items, f, indent=2)
+
+
+@app.route("/api/font-collections")
+def api_font_collections_list():
+    """List all font collections with their items."""
+    collections = load_font_collections()
+    items = load_font_collection_items()
+    return jsonify({"collections": collections, "items": items})
+
+
+@app.route("/api/font-collections", methods=["POST"])
+def api_font_collections_create():
+    """Create a new font collection."""
+    payload = request.get_json(silent=True) or {}
+    name = (payload.get("name") or "").strip()
+
+    if not name:
+        return jsonify({"error": "Collection name is required."}), 400
+
+    collections = load_font_collections()
+
+    # Generate ID from name
+    import re
+    coll_id = re.sub(r'[^\w\s-]', '', name.lower())
+    coll_id = re.sub(r'[\s]+', '-', coll_id)[:30]
+
+    # Ensure unique ID
+    base_id = coll_id
+    counter = 1
+    while any(c["id"] == coll_id for c in collections):
+        coll_id = f"{base_id}-{counter}"
+        counter += 1
+
+    collection = {
+        "id": coll_id,
+        "name": name,
+        "color": payload.get("color", "#667eea"),
+        "created_at": time.strftime("%Y-%m-%d %H:%M:%S"),
+    }
+
+    collections.append(collection)
+    save_font_collections(collections)
+
+    # Initialize empty items list for this collection
+    items = load_font_collection_items()
+    items[coll_id] = []
+    save_font_collection_items(items)
+
+    return jsonify(collection)
+
+
+@app.route("/api/font-collections/<coll_id>", methods=["DELETE", "PATCH"])
+def api_font_collections_modify(coll_id):
+    """Delete or rename a font collection."""
+    if request.method == "DELETE":
+        collections = load_font_collections()
+        collections = [c for c in collections if c["id"] != coll_id]
+        save_font_collections(collections)
+
+        # Remove items for this collection
+        items = load_font_collection_items()
+        if coll_id in items:
+            del items[coll_id]
+        save_font_collection_items(items)
+
+        return jsonify({"ok": True})
+
+    else:  # PATCH - rename
+        payload = request.get_json(silent=True) or {}
+        new_name = (payload.get("name") or "").strip()
+
+        if not new_name:
+            return jsonify({"error": "Name is required."}), 400
+
+        collections = load_font_collections()
+        found = False
+        for coll in collections:
+            if coll["id"] == coll_id:
+                coll["name"] = new_name
+                found = True
+                break
+
+        if not found:
+            return jsonify({"error": "Collection not found."}), 404
+
+        save_font_collections(collections)
+        return jsonify({"ok": True, "id": coll_id, "name": new_name})
+
+
+@app.route("/api/font-collections/<coll_id>/fonts/<path:font_name>", methods=["POST", "DELETE"])
+def api_font_collection_item(coll_id, font_name):
+    """Add or remove a font from a collection."""
+    items = load_font_collection_items()
+
+    if coll_id not in items:
+        items[coll_id] = []
+
+    if request.method == "POST":
+        # Add font to collection
+        if font_name not in items[coll_id]:
+            items[coll_id].append(font_name)
+        save_font_collection_items(items)
+        return jsonify({"ok": True, "action": "added"})
+
+    else:  # DELETE
+        # Remove font from collection
+        if font_name in items[coll_id]:
+            items[coll_id].remove(font_name)
+        save_font_collection_items(items)
+        return jsonify({"ok": True, "action": "removed"})
+
+
 @app.route("/fonts/<path:filename>")
 def serve_font(filename):
     """Serve font files from the fonts directory."""

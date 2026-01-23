@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Chikai Maps</title>
-    <link rel="stylesheet" href="/static/styles.css?v=21" />
+    <link rel="stylesheet" href="/static/styles.css?v=23" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
   </head>
   <body>
@@ -92,6 +92,7 @@
         <section class="widget-section">
           <div class="slider-header">
             <label class="section-label" for="radius-slider">Radius</label>
+            <span class="section-hint-inline">4-6km districts, 8-12km downtown, 15-20km metros</span>
             <span id="radius-value" class="slider-value">29 km</span>
           </div>
           <input
@@ -102,7 +103,6 @@
             step="500"
             value="29000"
           />
-          <p class="section-hint">4-6km districts, 8-12km downtown, 15-20km metros</p>
         </section>
 
         <!-- DPI Slider -->
@@ -167,17 +167,26 @@
           </section>
 
           <!-- Font -->
-          <section class="widget-section inline-row">
-            <label class="inline-label">Font</label>
-            <div id="font-picker" class="font-picker inline-picker">
-              <button type="button" id="font-picker-toggle" class="font-picker-toggle">
-                <span id="font-picker-label">Loading...</span>
-                <svg viewBox="0 0 24 24" width="16" height="16">
-                  <path fill="currentColor" d="M7 10l5 5 5-5z"/>
-                </svg>
-              </button>
-              <div id="font-picker-dropdown" class="font-picker-dropdown" aria-hidden="true">
-                <div id="font-picker-options" class="font-picker-options"></div>
+          <section class="widget-section font-section">
+            <div class="font-header">
+              <label class="section-label">Font</label>
+              <button id="browse-fonts-btn" class="browse-link" type="button">Browse All</button>
+            </div>
+            <div class="font-controls">
+              <select id="font-collection-filter" class="inline-select font-collection-filter">
+                <option value="">All Fonts</option>
+                <option value="starred">Starred</option>
+              </select>
+              <div id="font-picker" class="font-picker inline-picker">
+                <button type="button" id="font-picker-toggle" class="font-picker-toggle">
+                  <span id="font-picker-label">Loading...</span>
+                  <svg viewBox="0 0 24 24" width="16" height="16">
+                    <path fill="currentColor" d="M7 10l5 5 5-5z"/>
+                  </svg>
+                </button>
+                <div id="font-picker-dropdown" class="font-picker-dropdown" aria-hidden="true">
+                  <div id="font-picker-options" class="font-picker-options"></div>
+                </div>
               </div>
             </div>
           </section>
@@ -421,6 +430,21 @@
       </div>
       <div id="theme-collection-tabs" class="theme-collection-tabs"></div>
       <div id="theme-grid-full" class="theme-grid-expanded"></div>
+    </div>
+
+    <!-- FONT DRAWER (Full-screen overlay) -->
+    <div id="font-drawer" class="font-drawer" aria-hidden="true">
+      <div class="drawer-header">
+        <h3>Browse Fonts</h3>
+        <input type="text" id="font-search" placeholder="Filter fonts..." />
+        <button id="font-drawer-close" class="drawer-close" type="button" aria-label="Close">
+          <svg viewBox="0 0 24 24" width="24" height="24">
+            <path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+          </svg>
+        </button>
+      </div>
+      <div id="font-collection-tabs" class="font-collection-tabs"></div>
+      <div id="font-grid-full" class="font-grid-expanded"></div>
     </div>
 
     <!-- GALLERY / COLLECTIONS MODAL -->

@@ -50,6 +50,12 @@ let themeCollectionList = [];  // Array of {id, name, color, created_at}
 let themeCollectionItems = {}; // Map of collectionId -> [themeIds]
 let drawerCollectionFilter = null;  // Current collection filter in theme drawer
 
+// ===== FONT COLLECTIONS =====
+let fontCollectionList = [];  // Array of {id, name, color, created_at}
+let fontCollectionItems = {}; // Map of collectionId -> [fontNames]
+let fontDrawerCollectionFilter = null;  // Current collection filter in font drawer
+let currentFontCollectionFilter = null;  // Collection filter for main picker
+
 // ===== PRESETS =====
 let presetList = [];
 
@@ -429,6 +435,7 @@ async function initApp() {
   initLeafletMap();
   await loadStarred();
   await loadThemeCollections();
+  await loadFontCollections();
   loadThemes();
   loadFonts();
   await loadPresets();
@@ -504,6 +511,19 @@ async function loadThemeCollections() {
     console.error("Failed to load theme collections:", err);
     themeCollectionList = [];
     themeCollectionItems = {};
+  }
+}
+
+async function loadFontCollections() {
+  try {
+    const response = await fetch("/api/font-collections");
+    const data = await response.json();
+    fontCollectionList = data.collections || [];
+    fontCollectionItems = data.items || {};
+  } catch (err) {
+    console.error("Failed to load font collections:", err);
+    fontCollectionList = [];
+    fontCollectionItems = {};
   }
 }
 
@@ -624,6 +644,133 @@ function filterThemesByCollection(collId) {
   drawerCollectionFilter = collId;
   renderThemeCollectionTabs();
   renderThemeDrawer(themeList);
+}
+
+// ===== FONT COLLECTIONS =====
+async function createFontCollection() {
+  const name = prompt("Enter collection name:");
+  if (!name || !name.trim()) return;
+
+  try {
+    const response = await fetch("/api/font-collections", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: name.trim() }),
+    });
+
+    if (response.ok) {
+      const newCollection = await response.json();
+      fontCollectionList.push(newCollection);
+      fontCollectionItems[newCollection.id] = [];
+      renderFontCollectionTabs();
+      renderFontDrawer();
+      updateFontCollectionFilter();
+    }
+  } catch (err) {
+    console.error("Failed to create font collection:", err);
+  }
+}
+
+async function renameFontCollection(collId) {
+  const coll = fontCollectionList.find(c => c.id === collId);
+  if (!coll) return;
+
+  const newName = prompt("Enter new name:", coll.name);
+  if (!newName || !newName.trim() || newName.trim() === coll.name) return;
+
+  try {
+    const response = await fetch(`/api/font-collections/${collId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: newName.trim() }),
+    });
+
+    if (response.ok) {
+      coll.name = newName.trim();
+      renderFontCollectionTabs();
+      updateFontCollectionFilter();
+    }
+  } catch (err) {
+    console.error("Failed to rename font collection:", err);
+  }
+}
+
+async function deleteFontCollection(collId) {
+  if (!confirm("Delete this collection? Fonts will not be deleted.")) return;
+
+  try {
+    const response = await fetch(`/api/font-collections/${collId}`, {
+      method: "DELETE",
+    });
+
+    if (response.ok) {
+      fontCollectionList = fontCollectionList.filter(c => c.id !== collId);
+      delete fontCollectionItems[collId];
+      if (fontDrawerCollectionFilter === collId) {
+        fontDrawerCollectionFilter = null;
+      }
+      if (currentFontCollectionFilter === collId) {
+        currentFontCollectionFilter = null;
+      }
+      renderFontCollectionTabs();
+      renderFontDrawer();
+      updateFontCollectionFilter();
+      renderFontSelector(fontList);
+    }
+  } catch (err) {
+    console.error("Failed to delete font collection:", err);
+  }
+}
+
+async function addFontToCollection(fontName, collId) {
+  try {
+    await fetch(`/api/font-collections/${collId}/fonts/${encodeURIComponent(fontName)}`, {
+      method: "POST",
+    });
+
+    if (!fontCollectionItems[collId]) {
+      fontCollectionItems[collId] = [];
+    }
+    if (!fontCollectionItems[collId].includes(fontName)) {
+      fontCollectionItems[collId].push(fontName);
+    }
+    renderFontCollectionTabs();
+    renderFontDrawer();
+  } catch (err) {
+    console.error("Failed to add font to collection:", err);
+  }
+}
+
+async function removeFontFromCollection(fontName, collId) {
+  try {
+    await fetch(`/api/font-collections/${collId}/fonts/${encodeURIComponent(fontName)}`, {
+      method: "DELETE",
+    });
+
+    if (fontCollectionItems[collId]) {
+      fontCollectionItems[collId] = fontCollectionItems[collId].filter(f => f !== fontName);
+    }
+    renderFontCollectionTabs();
+    renderFontDrawer();
+  } catch (err) {
+    console.error("Failed to remove font from collection:", err);
+  }
+}
+
+function getFontCollections(fontName) {
+  const collections = [];
+  for (const [collId, fonts] of Object.entries(fontCollectionItems)) {
+    if (fonts.includes(fontName)) {
+      collections.push(collId);
+    }
+  }
+  return collections;
+}
+
+function filterFontsByCollection(collId) {
+  fontDrawerCollectionFilter = collId;
+  renderFontCollectionTabs();
+  renderFontDrawer();
 }
 
 function renderThemeCollectionTabs() {
@@ -2572,11 +2719,13 @@ async function loadFonts() {
     loadFontFaces(fonts);
     renderFontSelector(fonts);
     initFontPicker();
+    initFontDrawer();
     populateMockupLabelFonts();
   } catch (err) {
     console.error("Failed to load fonts:", err);
     renderFontSelector([]);
     initFontPicker();
+    initFontDrawer();
     populateMockupLabelFonts();
   }
 }
@@ -2608,13 +2757,21 @@ function renderFontSelector(fonts) {
 
   elements.fontPickerOptions.innerHTML = "";
 
+  // Filter fonts based on collection filter
+  let filteredFonts = [...fonts];
+  if (currentFontCollectionFilter === "starred") {
+    filteredFonts = fonts.filter(f => starredFonts.includes(f));
+  } else if (currentFontCollectionFilter && fontCollectionItems[currentFontCollectionFilter]) {
+    filteredFonts = fonts.filter(f => fontCollectionItems[currentFontCollectionFilter].includes(f));
+  }
+
   // Default option
   const defaultFont = fonts.length > 0 ? fonts[0] : "Roboto";
   const defaultOpt = createFontOption("", `Default (${defaultFont})`, defaultFont, false);
   elements.fontPickerOptions.appendChild(defaultOpt);
 
   // Sort fonts: starred first, then alphabetically
-  const sortedFonts = [...fonts].sort((a, b) => {
+  const sortedFonts = [...filteredFonts].sort((a, b) => {
     const aStarred = starredFonts.includes(a);
     const bStarred = starredFonts.includes(b);
     if (aStarred && !bStarred) return -1;
@@ -2646,7 +2803,7 @@ function createFontOption(value, name, previewFont, isStarred = false) {
 
   const nameEl = document.createElement("div");
   nameEl.className = "font-picker-option-name";
-  nameEl.textContent = name;
+  nameEl.textContent = name.toUpperCase();
 
   header.appendChild(nameEl);
 
@@ -2664,7 +2821,7 @@ function createFontOption(value, name, previewFont, isStarred = false) {
   const previewEl = document.createElement("div");
   previewEl.className = "font-picker-option-preview";
   previewEl.style.fontFamily = `"${previewFont}", sans-serif`;
-  previewEl.textContent = "The quick brown fox";
+  previewEl.textContent = "THE QUICK BROWN FOX";
 
   opt.appendChild(header);
   opt.appendChild(previewEl);
@@ -2733,6 +2890,306 @@ function openFontPicker() {
 function closeFontPicker() {
   elements.fontPicker?.classList.remove("open");
   elements.fontPickerDropdown?.setAttribute("aria-hidden", "true");
+}
+
+// ============================================================
+// FONT DRAWER
+// ============================================================
+
+function openFontDrawer() {
+  const drawer = document.getElementById("font-drawer");
+  if (drawer) {
+    drawer.classList.add("open");
+    drawer.setAttribute("aria-hidden", "false");
+    renderFontCollectionTabs();
+    renderFontDrawer();
+  }
+}
+
+function closeFontDrawer() {
+  const drawer = document.getElementById("font-drawer");
+  if (drawer) {
+    drawer.classList.remove("open");
+    drawer.setAttribute("aria-hidden", "true");
+  }
+}
+
+function renderFontCollectionTabs() {
+  const container = document.getElementById("font-collection-tabs");
+  if (!container) return;
+
+  container.innerHTML = "";
+
+  // "All" tab
+  const allTab = document.createElement("button");
+  allTab.type = "button";
+  allTab.className = "collection-tab" + (fontDrawerCollectionFilter === null ? " active" : "");
+  allTab.innerHTML = `<span>All</span><span class="tab-count">${fontList.length}</span>`;
+  allTab.addEventListener("click", () => filterFontsByCollection(null));
+  container.appendChild(allTab);
+
+  // "Starred" tab
+  const starredTab = document.createElement("button");
+  starredTab.type = "button";
+  starredTab.className = "collection-tab" + (fontDrawerCollectionFilter === "starred" ? " active" : "");
+  starredTab.innerHTML = `<span>Starred</span><span class="tab-count">${starredFonts.length}</span>`;
+  starredTab.addEventListener("click", () => filterFontsByCollection("starred"));
+  container.appendChild(starredTab);
+
+  // Collection tabs
+  fontCollectionList.forEach(coll => {
+    const count = (fontCollectionItems[coll.id] || []).length;
+    const tab = document.createElement("button");
+    tab.type = "button";
+    tab.className = "collection-tab" + (fontDrawerCollectionFilter === coll.id ? " active" : "");
+    tab.innerHTML = `
+      <span>${escapeHtml(coll.name)}</span>
+      <span class="tab-count">${count}</span>
+      <span class="tab-actions">
+        <button type="button" class="tab-action" data-action="rename" title="Rename">
+          <svg viewBox="0 0 24 24" width="12" height="12"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+        </button>
+        <button type="button" class="tab-action" data-action="delete" title="Delete">
+          <svg viewBox="0 0 24 24" width="12" height="12"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </span>
+    `;
+
+    tab.addEventListener("click", (e) => {
+      const action = e.target.closest("[data-action]")?.dataset.action;
+      if (action === "rename") {
+        e.stopPropagation();
+        renameFontCollection(coll.id);
+      } else if (action === "delete") {
+        e.stopPropagation();
+        deleteFontCollection(coll.id);
+      } else {
+        filterFontsByCollection(coll.id);
+      }
+    });
+
+    container.appendChild(tab);
+  });
+
+  // "New Collection" button
+  const newBtn = document.createElement("button");
+  newBtn.type = "button";
+  newBtn.className = "collection-tab new-collection-btn";
+  newBtn.innerHTML = `<span>+ New Collection</span>`;
+  newBtn.addEventListener("click", createFontCollection);
+  container.appendChild(newBtn);
+}
+
+function renderFontDrawer() {
+  const grid = document.getElementById("font-grid-full");
+  if (!grid) return;
+
+  grid.innerHTML = "";
+
+  // Filter fonts based on collection
+  let filteredFonts = [...fontList];
+
+  if (fontDrawerCollectionFilter === "starred") {
+    filteredFonts = fontList.filter(f => starredFonts.includes(f));
+  } else if (fontDrawerCollectionFilter && fontCollectionItems[fontDrawerCollectionFilter]) {
+    filteredFonts = fontList.filter(f => fontCollectionItems[fontDrawerCollectionFilter].includes(f));
+  }
+
+  // Apply search filter
+  const searchInput = document.getElementById("font-search");
+  const query = (searchInput?.value || "").toLowerCase().trim();
+  if (query) {
+    filteredFonts = filteredFonts.filter(f => f.toLowerCase().includes(query));
+  }
+
+  if (filteredFonts.length === 0) {
+    grid.innerHTML = `<div class="theme-drawer-empty">No fonts found</div>`;
+    return;
+  }
+
+  // Sort: starred first, then alphabetically
+  filteredFonts.sort((a, b) => {
+    const aStarred = starredFonts.includes(a);
+    const bStarred = starredFonts.includes(b);
+    if (aStarred && !bStarred) return -1;
+    if (!aStarred && bStarred) return 1;
+    return a.localeCompare(b);
+  });
+
+  filteredFonts.forEach(fontName => {
+    const card = createFontCard(fontName);
+    grid.appendChild(card);
+  });
+}
+
+function createFontCard(fontName) {
+  const card = document.createElement("div");
+  card.className = "font-card-expanded";
+  if (state.font === fontName) {
+    card.classList.add("selected");
+  }
+
+  const isStarred = starredFonts.includes(fontName);
+  const hasCollections = getFontCollections(fontName).length > 0;
+
+  card.innerHTML = `
+    <div class="font-card-preview" style="font-family: '${fontName}', sans-serif;">
+      ${state.posterCity || "LONDON"}
+    </div>
+    <div class="font-card-header">
+      <span class="font-card-name">${escapeHtml(fontName)}</span>
+      <div class="font-card-actions">
+        <button type="button" class="star-btn ${isStarred ? "starred" : ""}" title="${isStarred ? "Remove from favorites" : "Add to favorites"}">
+          <svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="${isStarred ? "M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" : "M22 9.24l-7.19-.62L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27 18.18 21l-1.63-7.03L22 9.24zM12 15.4l-3.76 2.27 1-4.28-3.32-2.88 4.38-.38L12 6.1l1.71 4.04 4.38.38-3.32 2.88 1 4.28L12 15.4z"}"/></svg>
+        </button>
+        <button type="button" class="collection-btn ${hasCollections ? "has-collections" : ""}" title="Add to collection">
+          <svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/></svg>
+        </button>
+      </div>
+    </div>
+  `;
+
+  // Event listeners
+  card.addEventListener("click", (e) => {
+    if (e.target.closest(".star-btn")) {
+      e.stopPropagation();
+      toggleStarFont(fontName);
+      renderFontDrawer();
+      renderFontCollectionTabs();
+      return;
+    }
+    if (e.target.closest(".collection-btn")) {
+      e.stopPropagation();
+      openFontCollectionMenu(fontName, e.target.closest(".collection-btn"));
+      return;
+    }
+    selectFont(fontName);
+    closeFontDrawer();
+  });
+
+  return card;
+}
+
+function openFontCollectionMenu(fontName, buttonEl) {
+  // Close any existing menu
+  document.querySelectorAll(".collection-menu").forEach(m => m.remove());
+
+  const menu = document.createElement("div");
+  menu.className = "collection-menu";
+
+  const fontCollections = getFontCollections(fontName);
+
+  if (fontCollectionList.length === 0) {
+    menu.innerHTML = `
+      <div style="padding: 12px; color: var(--ink-soft); font-size: 0.85rem;">
+        No collections yet
+      </div>
+    `;
+  } else {
+    fontCollectionList.forEach(coll => {
+      const isInCollection = fontCollections.includes(coll.id);
+      const item = document.createElement("label");
+      item.className = "collection-menu-item";
+      item.innerHTML = `
+        <input type="checkbox" ${isInCollection ? "checked" : ""}>
+        <span>${escapeHtml(coll.name)}</span>
+      `;
+
+      item.querySelector("input").addEventListener("change", async (e) => {
+        if (e.target.checked) {
+          await addFontToCollection(fontName, coll.id);
+        } else {
+          await removeFontFromCollection(fontName, coll.id);
+        }
+        // Update button state
+        const hasCollections = getFontCollections(fontName).length > 0;
+        buttonEl.classList.toggle("has-collections", hasCollections);
+      });
+
+      menu.appendChild(item);
+    });
+  }
+
+  // New collection button
+  const newBtn = document.createElement("button");
+  newBtn.type = "button";
+  newBtn.className = "collection-menu-new";
+  newBtn.textContent = "+ New Collection";
+  newBtn.addEventListener("click", async () => {
+    menu.remove();
+    await createFontCollection();
+  });
+  menu.appendChild(newBtn);
+
+  // Position menu
+  const rect = buttonEl.getBoundingClientRect();
+  menu.style.position = "fixed";
+  menu.style.top = `${rect.bottom + 4}px`;
+  menu.style.left = `${rect.left}px`;
+  menu.style.zIndex = "1000";
+
+  document.body.appendChild(menu);
+
+  // Close on outside click
+  const closeMenu = (e) => {
+    if (!menu.contains(e.target) && !buttonEl.contains(e.target)) {
+      menu.remove();
+      document.removeEventListener("click", closeMenu);
+    }
+  };
+  setTimeout(() => document.addEventListener("click", closeMenu), 0);
+}
+
+function updateFontCollectionFilter() {
+  const select = document.getElementById("font-collection-filter");
+  if (!select) return;
+
+  // Save current value
+  const currentValue = select.value;
+
+  // Clear and rebuild options
+  select.innerHTML = `
+    <option value="">All Fonts</option>
+    <option value="starred">Starred</option>
+  `;
+
+  fontCollectionList.forEach(coll => {
+    const option = document.createElement("option");
+    option.value = coll.id;
+    option.textContent = coll.name;
+    select.appendChild(option);
+  });
+
+  // Restore value if still valid
+  if (currentValue && (currentValue === "starred" || fontCollectionList.some(c => c.id === currentValue))) {
+    select.value = currentValue;
+  }
+}
+
+function initFontDrawer() {
+  // Close button
+  const closeBtn = document.getElementById("font-drawer-close");
+  closeBtn?.addEventListener("click", closeFontDrawer);
+
+  // Browse all button
+  const browseBtn = document.getElementById("browse-fonts-btn");
+  browseBtn?.addEventListener("click", openFontDrawer);
+
+  // Search input
+  const searchInput = document.getElementById("font-search");
+  searchInput?.addEventListener("input", () => {
+    renderFontDrawer();
+  });
+
+  // Collection filter in main panel
+  const filterSelect = document.getElementById("font-collection-filter");
+  filterSelect?.addEventListener("change", (e) => {
+    currentFontCollectionFilter = e.target.value || null;
+    renderFontSelector(fontList);
+  });
+
+  // Initial filter options
+  updateFontCollectionFilter();
 }
 
 // ============================================================
