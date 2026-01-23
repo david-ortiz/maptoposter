@@ -310,6 +310,7 @@ const elements = {
   // Mockup Preview
   mockupPreview: document.getElementById("mockup-preview"),
   mockupPreviewClose: document.getElementById("mockup-preview-close"),
+  mockupPreviewBack: document.getElementById("mockup-preview-back"),
   mockupPreviewCanvas: document.getElementById("mockup-preview-canvas"),
   mockupScaleSlider: document.getElementById("mockup-scale-slider"),
   mockupScaleValue: document.getElementById("mockup-scale-value"),
@@ -4459,6 +4460,10 @@ function initEventListeners() {
 
   // Mockup preview
   elements.mockupPreviewClose?.addEventListener("click", closeMockupPreview);
+  elements.mockupPreviewBack?.addEventListener("click", () => {
+    closeMockupPreview();
+    openMockupStudio();
+  });
   elements.mockupPreview?.addEventListener("click", (e) => {
     if (e.target.classList.contains("mockup-preview-backdrop")) {
       closeMockupPreview();
@@ -4467,6 +4472,23 @@ function initEventListeners() {
   elements.mockupScaleSlider?.addEventListener("input", handleMockupPreviewScale);
   elements.mockupXSlider?.addEventListener("input", handleMockupPreviewOffsetX);
   elements.mockupYSlider?.addEventListener("input", handleMockupPreviewOffsetY);
+
+  // Nudge buttons for fine adjustment
+  document.querySelectorAll(".nudge-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const targetId = btn.dataset.target;
+      const delta = parseInt(btn.dataset.delta, 10);
+      const slider = document.getElementById(targetId);
+      if (slider) {
+        const newValue = parseInt(slider.value, 10) + delta;
+        const min = parseInt(slider.min, 10);
+        const max = parseInt(slider.max, 10);
+        slider.value = Math.max(min, Math.min(max, newValue));
+        slider.dispatchEvent(new Event("input"));
+      }
+    });
+  });
+
   elements.mockupPreviewReset?.addEventListener("click", resetMockupPreview);
   elements.mockupPreviewGenerate?.addEventListener("click", generateMockupFromPreview);
 
