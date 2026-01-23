@@ -35,8 +35,8 @@ let themeCatalog = {};
 let themeList = [];
 let themesByCategory = {};
 let currentCategory = "all";
-let themePickerViewMode = "category";  // "category" or "collection"
-let currentCollectionFilter = null;    // Collection ID for carousel filtering
+let themePickerViewMode = "collection";  // "category" or "collection"
+let currentCollectionFilter = null;      // Collection ID for carousel filtering
 
 // ===== FONT LIST =====
 let fontList = [];
