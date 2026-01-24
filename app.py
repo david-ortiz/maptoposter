@@ -7,6 +7,7 @@ import uuid
 import subprocess
 import sys
 import time
+from datetime import datetime
 
 from flask import Flask, Response, jsonify, render_template, request, send_from_directory
 
@@ -1175,6 +1176,155 @@ def api_font_collection_item(coll_id, font_name):
         return jsonify({"ok": True, "action": "removed"})
 
 
+# ===== MOCKUP COLLECTIONS =====
+MOCKUP_COLLECTIONS_FILE = os.path.join(os.path.dirname(__file__), "mockup_collections.json")
+MOCKUP_COLLECTION_ITEMS_FILE = os.path.join(os.path.dirname(__file__), "mockup_collection_items.json")
+
+
+def load_mockup_collections():
+    """Load mockup collections from JSON file."""
+    if not os.path.exists(MOCKUP_COLLECTIONS_FILE):
+        return []
+    try:
+        with open(MOCKUP_COLLECTIONS_FILE, "r") as f:
+            return json.load(f)
+    except Exception:
+        return []
+
+
+def save_mockup_collections(collections):
+    """Save mockup collections to JSON file."""
+    with open(MOCKUP_COLLECTIONS_FILE, "w") as f:
+        json.dump(collections, f, indent=2)
+
+
+def load_mockup_collection_items():
+    """Load mockup-to-collection mappings."""
+    if not os.path.exists(MOCKUP_COLLECTION_ITEMS_FILE):
+        return {}
+    try:
+        with open(MOCKUP_COLLECTION_ITEMS_FILE, "r") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
+def save_mockup_collection_items(items):
+    """Save mockup-to-collection mappings."""
+    with open(MOCKUP_COLLECTION_ITEMS_FILE, "w") as f:
+        json.dump(items, f, indent=2)
+
+
+@app.route("/api/mockup-collections")
+def api_mockup_collections_list():
+    """List all mockup collections with their items."""
+    collections = load_mockup_collections()
+    items = load_mockup_collection_items()
+    return jsonify({"collections": collections, "items": items})
+
+
+@app.route("/api/mockup-collections", methods=["POST"])
+def api_mockup_collections_create():
+    """Create a new mockup collection."""
+    payload = request.get_json(silent=True) or {}
+    name = (payload.get("name") or "").strip()
+
+    if not name:
+        return jsonify({"error": "Collection name is required."}), 400
+
+    collections = load_mockup_collections()
+
+    # Generate ID from name
+    import re
+    coll_id = re.sub(r'[^\w\s-]', '', name.lower())
+    coll_id = re.sub(r'[\s]+', '-', coll_id)[:30]
+
+    # Ensure unique ID
+    base_id = coll_id
+    counter = 1
+    while any(c["id"] == coll_id for c in collections):
+        coll_id = f"{base_id}-{counter}"
+        counter += 1
+
+    collection = {
+        "id": coll_id,
+        "name": name,
+        "color": payload.get("color", "#667eea"),
+        "created_at": time.strftime("%Y-%m-%d %H:%M:%S"),
+    }
+
+    collections.append(collection)
+    save_mockup_collections(collections)
+
+    # Initialize empty items list for this collection
+    items = load_mockup_collection_items()
+    items[coll_id] = []
+    save_mockup_collection_items(items)
+
+    return jsonify(collection)
+
+
+@app.route("/api/mockup-collections/<coll_id>", methods=["DELETE", "PATCH"])
+def api_mockup_collections_modify(coll_id):
+    """Delete or rename a mockup collection."""
+    if request.method == "DELETE":
+        collections = load_mockup_collections()
+        collections = [c for c in collections if c["id"] != coll_id]
+        save_mockup_collections(collections)
+
+        # Remove items for this collection
+        items = load_mockup_collection_items()
+        if coll_id in items:
+            del items[coll_id]
+        save_mockup_collection_items(items)
+
+        return jsonify({"ok": True})
+
+    else:  # PATCH - rename
+        payload = request.get_json(silent=True) or {}
+        new_name = (payload.get("name") or "").strip()
+
+        if not new_name:
+            return jsonify({"error": "Name is required."}), 400
+
+        collections = load_mockup_collections()
+        found = False
+        for coll in collections:
+            if coll["id"] == coll_id:
+                coll["name"] = new_name
+                found = True
+                break
+
+        if not found:
+            return jsonify({"error": "Collection not found."}), 404
+
+        save_mockup_collections(collections)
+        return jsonify({"ok": True, "id": coll_id, "name": new_name})
+
+
+@app.route("/api/mockup-collections/<coll_id>/mockups/<mockup_id>", methods=["POST", "DELETE"])
+def api_mockup_collection_item(coll_id, mockup_id):
+    """Add or remove a mockup from a collection."""
+    items = load_mockup_collection_items()
+
+    if coll_id not in items:
+        items[coll_id] = []
+
+    if request.method == "POST":
+        # Add mockup to collection
+        if mockup_id not in items[coll_id]:
+            items[coll_id].append(mockup_id)
+        save_mockup_collection_items(items)
+        return jsonify({"ok": True, "action": "added"})
+
+    else:  # DELETE
+        # Remove mockup from collection
+        if mockup_id in items[coll_id]:
+            items[coll_id].remove(mockup_id)
+        save_mockup_collection_items(items)
+        return jsonify({"ok": True, "action": "removed"})
+
+
 @app.route("/fonts/<path:filename>")
 def serve_font(filename):
     """Serve font files from the fonts directory."""
@@ -1481,6 +1631,7 @@ def api_variations():
 # ===== MOCKUPS =====
 MOCKUPS_DIR = os.path.join(os.path.dirname(__file__), "mockups")
 MOCKUP_OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "mockup_output")
+LIBRARY_DIR = os.path.join(os.path.dirname(__file__), "library")
 
 
 def ensure_mockup_output_dir():
@@ -1498,6 +1649,39 @@ def serve_mockup_file(filename):
 def serve_mockup_output(filename):
     """Serve generated mockup images."""
     return send_from_directory(MOCKUP_OUTPUT_DIR, filename)
+
+
+@app.route("/library/<path:filename>")
+def serve_library_file(filename):
+    """Serve library asset files."""
+    return send_from_directory(LIBRARY_DIR, filename)
+
+
+@app.route("/api/library")
+def api_library_list():
+    """List all library assets (pre-set visual elements)."""
+    if not os.path.exists(LIBRARY_DIR):
+        os.makedirs(LIBRARY_DIR, exist_ok=True)
+        return jsonify({"items": []})
+
+    items = []
+    valid_extensions = (".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp")
+
+    for filename in os.listdir(LIBRARY_DIR):
+        if filename.lower().endswith(valid_extensions):
+            filepath = os.path.join(LIBRARY_DIR, filename)
+            name = os.path.splitext(filename)[0].replace("_", " ").replace("-", " ").title()
+            items.append({
+                "id": os.path.splitext(filename)[0],
+                "name": name,
+                "filename": filename,
+                "url": f"/library/{filename}",
+                "mtime": os.path.getmtime(filepath)
+            })
+
+    # Sort by name
+    items.sort(key=lambda x: x["name"])
+    return jsonify({"items": items})
 
 
 @app.route("/api/mockup_output")
@@ -1567,6 +1751,34 @@ def open_mockup_output_folder():
     return jsonify({"ok": True})
 
 
+@app.route("/api/mockup_output/save_edited", methods=["POST"])
+def save_edited_mockup():
+    """Save an edited/cropped mockup image."""
+    ensure_mockup_output_dir()
+
+    if "image" not in request.files:
+        return jsonify({"error": "No image uploaded."}), 400
+
+    image_file = request.files["image"]
+
+    # Generate unique filename with timestamp
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"edited_{timestamp}.png"
+    filepath = os.path.join(MOCKUP_OUTPUT_DIR, filename)
+
+    # Save the image
+    try:
+        image_file.save(filepath)
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 500
+
+    return jsonify({
+        "ok": True,
+        "filename": filename,
+        "url": f"/mockup_output/{filename}"
+    })
+
+
 @app.route("/api/mockups")
 def api_mockups_list():
     """List available mockup templates."""
@@ -1620,6 +1832,7 @@ def api_mockups_create():
         "poster_rect": rect.get("poster_rect", {"x": 0, "y": 0, "width": 400, "height": 600}),
         "poster_rotation": rect.get("poster_rotation", 0),
         "output_size": rect.get("output_size"),
+        "recommended_aspect": rect.get("recommended_aspect"),
     }
 
     # Save metadata
@@ -1667,6 +1880,22 @@ def api_mockups_modify(mockup_id):
         # Load existing metadata
         with open(metadata_path, "r", encoding="utf-8") as f:
             metadata = json.load(f)
+
+        # Update name if provided
+        if "name" in payload:
+            metadata["name"] = payload["name"]
+
+        # Update poster_rect if provided
+        if "poster_rect" in payload:
+            metadata["poster_rect"] = payload["poster_rect"]
+
+        # Update output_size if provided
+        if "output_size" in payload:
+            metadata["output_size"] = payload["output_size"]
+
+        # Update recommended_aspect if provided
+        if "recommended_aspect" in payload:
+            metadata["recommended_aspect"] = payload["recommended_aspect"]
 
         # Update guides if provided
         if "guides" in payload:

@@ -2,9 +2,9 @@
   "name": "Pop Art - Hero Image",
   "poster_rect": {
     "x": 483,
-    "y": 349,
-    "width": 667,
-    "height": 940
+    "y": 348,
+    "width": 668,
+    "height": 944
   },
   "poster_rotation": 0,
   "output_size": [
@@ -33,5 +33,6 @@
       "width": 20,
       "opacity": 0.8
     }
-  ]
+  ],
+  "recommended_aspect": "A4"
 }

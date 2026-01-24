@@ -1,10 +1,10 @@
 {
   "name": "Lifestyle 1",
   "poster_rect": {
-    "x": 532,
-    "y": 276,
-    "width": 407,
-    "height": 572
+    "x": 529,
+    "y": 270,
+    "width": 412,
+    "height": 583
   },
   "poster_rotation": 0,
   "output_size": [
@@ -13,5 +13,6 @@
   ],
   "guides": [],
   "labels": [],
-  "assets": []
+  "assets": [],
+  "recommended_aspect": "A4"
 }

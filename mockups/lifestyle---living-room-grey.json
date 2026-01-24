@@ -1,14 +1,15 @@
 {
   "name": "Lifestyle - Living Room Grey",
   "poster_rect": {
-    "x": 601,
-    "y": 263,
+    "x": 600,
+    "y": 258,
     "width": 429,
-    "height": 593
+    "height": 601
   },
   "poster_rotation": 0,
   "output_size": [
     1620,
     1620
-  ]
+  ],
+  "recommended_aspect": "5:7"
 }

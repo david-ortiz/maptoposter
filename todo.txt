@@ -1,0 +1,3 @@
+Next task, in the Generated Mockups Screen". Enable a new option that is Edit mockup. When clicked, a new modal opens up which takes the existing mockup image and provides basic image edition options. LEts the user specify a W and H for cropping the image, lets it zoom image in and out and drag and drop to reposition into the cropping. Then a button to save this as a new mockup. This is so we can generate mockups quickly directly from the application. 
+
+Also for the mockup studio, have a mockup template that is basically an empty image where the poster gets added and can be sized as the user wants. This is to allow the user to generate simple images where the only layout is the poster, and it can overlay things on top. 

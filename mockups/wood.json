@@ -1,10 +1,10 @@
 {
   "name": "Wood",
   "poster_rect": {
-    "x": 322,
-    "y": 244,
-    "width": 526,
-    "height": 761
+    "x": 314,
+    "y": 238,
+    "width": 543,
+    "height": 768
   },
   "poster_rotation": 0,
   "output_size": [
@@ -33,5 +33,6 @@
       "width": 29,
       "opacity": 0.7
     }
-  ]
+  ],
+  "recommended_aspect": "A4"
 }

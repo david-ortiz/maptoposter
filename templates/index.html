@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Chikai Maps</title>
-    <link rel="stylesheet" href="/static/styles.css?v=23" />
+    <link rel="stylesheet" href="/static/styles.css?v=41" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
   </head>
   <body>
@@ -23,30 +23,18 @@
             <span class="brand-text">Chikai Maps</span>
           </div>
           <div class="header-actions">
-            <button id="header-font-btn" class="header-icon-btn" type="button" title="Font Samples">
-              <svg viewBox="0 0 24 24" width="18" height="18">
-                <path fill="currentColor" d="M9.93 13.5h4.14L12 7.98 9.93 13.5zM20 2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-4.05 16.5l-1.14-3H9.17l-1.12 3H5.96l5.11-13h1.86l5.11 13h-2.09z"/>
-              </svg>
-            </button>
-            <button id="header-theme-btn" class="header-icon-btn" type="button" title="Theme Samples">
-              <svg viewBox="0 0 24 24" width="18" height="18">
-                <path fill="currentColor" d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
-              </svg>
-            </button>
             <button id="header-gallery-btn" class="header-icon-btn" type="button" title="Your Posters">
               <svg viewBox="0 0 24 24" width="18" height="18">
                 <path fill="currentColor" d="M22 16V4c0-1.1-.9-2-2-2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2zm-11-4l2.03 2.71L16 11l4 5H8l3-4zM2 6v14c0 1.1.9 2 2 2h14v-2H4V6H2z"/>
               </svg>
             </button>
-            <button id="header-mockup-btn" class="header-icon-btn" type="button" title="Mockup Studio">
-              <svg viewBox="0 0 24 24" width="18" height="18">
-                <path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-7-2h2v-4h4v-2h-4V7h-2v4H8v2h4z"/>
-              </svg>
-            </button>
-            <button id="header-mockup-gallery-btn" class="header-icon-btn" type="button" title="Mockup Gallery">
+            <button id="header-mockup-gallery-btn" class="header-icon-btn" type="button" title="Your Mockups">
               <svg viewBox="0 0 24 24" width="18" height="18">
                 <path fill="currentColor" d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"/>
               </svg>
+            </button>
+            <button id="header-mockup-btn" class="header-icon-btn" type="button" title="Mockup Studio">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <rect x="3" y="3" width="7" height="9"></rect> <rect x="14" y="3" width="7" height="5"></rect> <rect x="14" y="12" width="7" height="9"></rect> <rect x="3" y="16" width="7" height="5"></rect> </g></svg>
             </button>
             <a href="/editor" id="header-editor-btn" class="header-icon-btn" title="Theme Editor">
               <svg viewBox="0 0 24 24" width="18" height="18">
@@ -304,6 +292,17 @@
         <span class="preview-theme-name" id="preview-theme-name">Feature-Based</span>
       </div>
 
+      <!-- Selected Themes List (visible in multi-theme mode) -->
+      <div id="selected-themes-section" class="selected-themes-section" style="display: none;">
+        <div class="selected-themes-header">
+          <span>Selected Themes</span>
+          <span id="selected-themes-count" class="selected-themes-count">0</span>
+        </div>
+        <div id="selected-themes-list" class="selected-themes-list">
+          <!-- Selected themes rendered here -->
+        </div>
+      </div>
+
       <!-- Generate Button -->
       <div class="preview-generate-section">
         <div class="generate-buttons">
@@ -422,6 +421,11 @@
       <div class="drawer-header">
         <h3>Select Theme</h3>
         <input type="text" id="theme-search" placeholder="Filter themes..." />
+        <button id="theme-samples-btn" class="drawer-action-btn" type="button" title="Theme Samples">
+          <svg viewBox="0 0 24 24" width="20" height="20">
+            <path fill="currentColor" d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
+          </svg>
+        </button>
         <button id="drawer-close" class="drawer-close" type="button" aria-label="Close">
           <svg viewBox="0 0 24 24" width="24" height="24">
             <path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
@@ -437,6 +441,11 @@
       <div class="drawer-header">
         <h3>Browse Fonts</h3>
         <input type="text" id="font-search" placeholder="Filter fonts..." />
+        <button id="font-samples-btn" class="drawer-action-btn" type="button" title="Font Samples">
+          <svg viewBox="0 0 24 24" width="20" height="20">
+            <path fill="currentColor" d="M9.93 13.5h4.14L12 7.98 9.93 13.5zM20 2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-4.05 16.5l-1.14-3H9.17l-1.12 3H5.96l5.11-13h1.86l5.11 13h-2.09z"/>
+          </svg>
+        </button>
         <button id="font-drawer-close" class="drawer-close" type="button" aria-label="Close">
           <svg viewBox="0 0 24 24" width="24" height="24">
             <path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
@@ -558,6 +567,26 @@
               <path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
             </svg>
           </button>
+        </div>
+        <div class="mockup-modal-filters">
+          <div id="mockup-modal-collection-tabs" class="mockup-modal-collection-tabs"></div>
+          <div class="mockup-aspect-filter-wrap">
+            <label>Aspect:</label>
+            <select id="mockup-aspect-filter" class="mockup-aspect-filter">
+              <option value="">All</option>
+              <option value="2:3">2:3</option>
+              <option value="3:4">3:4</option>
+              <option value="4:5">4:5</option>
+              <option value="5:7">5:7</option>
+              <option value="11:14">11:14</option>
+              <option value="1:1">1:1</option>
+              <option value="A4">A4</option>
+              <option value="A3">A3</option>
+              <option value="3:2">3:2</option>
+              <option value="16:9">16:9</option>
+              <option value="9:16">9:16</option>
+            </select>
+          </div>
         </div>
         <div class="mockup-grid" id="mockup-grid">
           <div class="mockup-placeholder">Loading mockup templates...</div>
@@ -696,6 +725,16 @@
                 <span>Snap to guides</span>
               </label>
             </div>
+
+            <!-- Library Section -->
+            <div class="mockup-library-section">
+              <div class="library-header">
+                <span>Library</span>
+              </div>
+              <div id="mockup-library-grid" class="mockup-library-grid">
+                <!-- Library items loaded dynamically -->
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -727,6 +766,26 @@
                 </svg>
                 Add Template
               </button>
+            </div>
+            <div class="mockup-studio-filters">
+              <div id="mockup-studio-collection-tabs" class="mockup-studio-collection-tabs"></div>
+              <div class="mockup-aspect-filter-wrap">
+                <label>Aspect:</label>
+                <select id="mockup-studio-aspect-filter" class="mockup-aspect-filter">
+                  <option value="">All</option>
+                  <option value="2:3">2:3</option>
+                  <option value="3:4">3:4</option>
+                  <option value="4:5">4:5</option>
+                  <option value="5:7">5:7</option>
+                  <option value="11:14">11:14</option>
+                  <option value="1:1">1:1</option>
+                  <option value="A4">A4</option>
+                  <option value="A3">A3</option>
+                  <option value="3:2">3:2</option>
+                  <option value="16:9">16:9</option>
+                  <option value="9:16">9:16</option>
+                </select>
+              </div>
             </div>
             <div class="mockup-studio-grid" id="mockup-studio-template-grid">
               <!-- Templates rendered here -->
@@ -791,12 +850,79 @@
       </div>
     </div>
 
+    <!-- MOCKUP IMAGE EDITOR -->
+    <div class="mockup-image-editor" id="mockup-image-editor" aria-hidden="true">
+      <div class="mockup-image-editor-backdrop"></div>
+      <div class="mockup-image-editor-panel" role="dialog" aria-modal="true">
+        <div class="mockup-image-editor-header">
+          <h3>Edit Mockup</h3>
+          <button class="mockup-image-editor-close" id="mockup-image-editor-close" type="button">
+            <svg viewBox="0 0 24 24" width="24" height="24">
+              <path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+            </svg>
+          </button>
+        </div>
+        <div class="mockup-image-editor-body">
+          <div class="mockup-image-editor-sidebar">
+            <div class="editor-field">
+              <label>Output Size</label>
+              <div class="editor-size-inputs">
+                <div class="editor-size-input">
+                  <label>W</label>
+                  <input type="number" id="editor-crop-width" value="1080" min="100" max="4000">
+                </div>
+                <span class="editor-size-link" id="editor-size-link" title="Link dimensions">
+                  <svg viewBox="0 0 24 24" width="16" height="16">
+                    <path fill="currentColor" d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/>
+                  </svg>
+                </span>
+                <div class="editor-size-input">
+                  <label>H</label>
+                  <input type="number" id="editor-crop-height" value="1080" min="100" max="4000">
+                </div>
+              </div>
+              <div class="editor-presets">
+                <button type="button" class="editor-preset-btn" data-w="1080" data-h="1080">1:1</button>
+                <button type="button" class="editor-preset-btn" data-w="1080" data-h="1350">4:5</button>
+                <button type="button" class="editor-preset-btn" data-w="1080" data-h="1920">9:16</button>
+                <button type="button" class="editor-preset-btn" data-w="1920" data-h="1080">16:9</button>
+              </div>
+            </div>
+            <div class="editor-field">
+              <label>Zoom</label>
+              <div class="editor-zoom-row">
+                <button type="button" class="editor-zoom-btn" id="editor-zoom-out">−</button>
+                <input type="range" id="editor-zoom-slider" min="10" max="200" value="100">
+                <button type="button" class="editor-zoom-btn" id="editor-zoom-in">+</button>
+                <span class="editor-zoom-value" id="editor-zoom-value">100%</span>
+              </div>
+            </div>
+            <div class="editor-field">
+              <label>Position</label>
+              <p class="field-hint">Drag the image to reposition within the crop area.</p>
+            </div>
+            <button type="button" class="primary-btn" id="editor-save-btn">Save as New Mockup</button>
+          </div>
+          <div class="mockup-image-editor-canvas-area">
+            <div class="mockup-image-editor-canvas-wrap" id="editor-canvas-wrap">
+              <canvas id="mockup-image-editor-canvas"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- MOCKUP TEMPLATE CREATOR -->
     <div class="mockup-creator" id="mockup-creator" aria-hidden="true">
       <div class="mockup-creator-backdrop"></div>
       <div class="mockup-creator-panel" role="dialog" aria-modal="true">
         <div class="mockup-creator-header">
-          <h3>Create Mockup Template</h3>
+          <button type="button" class="mockup-creator-back" id="mockup-creator-back" style="display: none;" title="Back to templates">
+            <svg viewBox="0 0 24 24" width="20" height="20">
+              <path fill="currentColor" d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+            </svg>
+          </button>
+          <h3 id="mockup-creator-title">Create Mockup Template</h3>
           <button class="mockup-creator-close" id="mockup-creator-close" type="button">
             <svg viewBox="0 0 24 24" width="24" height="24">
               <path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
@@ -809,14 +935,82 @@
               <label>Template Name</label>
               <input type="text" id="mockup-template-name" placeholder="e.g., White Frame on Wall">
             </div>
-            <div class="mockup-creator-field">
+            <div class="mockup-creator-field" id="mockup-upload-field">
               <label>Upload Image</label>
               <input type="file" id="mockup-template-file" accept="image/png,image/jpeg">
               <p class="field-hint">Upload your mockup image (PNG or JPG)</p>
             </div>
             <div class="mockup-creator-field">
+              <label>Collection (optional)</label>
+              <select id="mockup-template-collection" class="mockup-creator-select">
+                <option value="">None</option>
+              </select>
+            </div>
+            <div class="mockup-creator-field">
+              <label>Quick Formats</label>
+              <p class="field-hint">Select a format and place it on the image, or draw manually.</p>
+              <div class="format-selector-grid" id="format-selector-grid">
+                <button type="button" class="format-btn" data-ratio="2:3" title="2:3 Poster">
+                  <div class="format-btn-shape"><span style="width:16px;height:24px"></span></div>
+                  <span class="format-btn-label">2:3</span>
+                </button>
+                <button type="button" class="format-btn" data-ratio="3:4" title="3:4 Photo">
+                  <div class="format-btn-shape"><span style="width:18px;height:24px"></span></div>
+                  <span class="format-btn-label">3:4</span>
+                </button>
+                <button type="button" class="format-btn" data-ratio="4:5" title="4:5 Frame">
+                  <div class="format-btn-shape"><span style="width:19px;height:24px"></span></div>
+                  <span class="format-btn-label">4:5</span>
+                </button>
+                <button type="button" class="format-btn" data-ratio="5:7" title="5:7 Frame">
+                  <div class="format-btn-shape"><span style="width:17px;height:24px"></span></div>
+                  <span class="format-btn-label">5:7</span>
+                </button>
+                <button type="button" class="format-btn" data-ratio="11:14" title="11:14 Frame">
+                  <div class="format-btn-shape"><span style="width:19px;height:24px"></span></div>
+                  <span class="format-btn-label">11:14</span>
+                </button>
+                <button type="button" class="format-btn" data-ratio="1:1" title="Square">
+                  <div class="format-btn-shape"><span style="width:24px;height:24px"></span></div>
+                  <span class="format-btn-label">1:1</span>
+                </button>
+                <button type="button" class="format-btn" data-ratio="A4" title="A4 ISO">
+                  <div class="format-btn-shape"><span style="width:17px;height:24px"></span></div>
+                  <span class="format-btn-label">A4</span>
+                </button>
+                <button type="button" class="format-btn" data-ratio="A3" title="A3 ISO">
+                  <div class="format-btn-shape"><span style="width:17px;height:24px"></span></div>
+                  <span class="format-btn-label">A3</span>
+                </button>
+                <button type="button" class="format-btn" data-ratio="3:2" title="3:2 Landscape">
+                  <div class="format-btn-shape"><span style="width:24px;height:16px"></span></div>
+                  <span class="format-btn-label">3:2</span>
+                </button>
+                <button type="button" class="format-btn" data-ratio="16:9" title="16:9 Wide">
+                  <div class="format-btn-shape"><span style="width:24px;height:14px"></span></div>
+                  <span class="format-btn-label">16:9</span>
+                </button>
+                <button type="button" class="format-btn" data-ratio="9:16" title="9:16 Tall">
+                  <div class="format-btn-shape"><span style="width:14px;height:24px"></span></div>
+                  <span class="format-btn-label">9:16</span>
+                </button>
+              </div>
+              <div class="format-scale-row">
+                <label>Scale</label>
+                <button type="button" class="scale-arrow-btn" id="format-scale-down" title="Decrease size">−</button>
+                <input type="range" id="format-scale-slider" class="format-scale-slider" min="5" max="100" value="30">
+                <button type="button" class="scale-arrow-btn" id="format-scale-up" title="Increase size">+</button>
+                <input type="text" id="format-scale-value" class="format-scale-value" value="30%">
+              </div>
+              <div class="format-actions">
+                <button type="button" class="format-clear-btn" id="format-clear-btn">Clear</button>
+              </div>
+              <button type="button" class="format-place-btn" id="format-place-btn" disabled>Place on Image</button>
+            </div>
+
+            <div class="mockup-creator-field">
               <label>Poster Area</label>
-              <p class="field-hint">Click and drag on the image to draw the rectangle where posters will be placed.</p>
+              <p class="field-hint">Or click and drag on the image to draw manually.</p>
               <div class="mockup-rect-info" id="mockup-rect-info">
                 <span>X: <b id="rect-x">0</b></span>
                 <span>Y: <b id="rect-y">0</b></span>
@@ -824,21 +1018,23 @@
                 <span>H: <b id="rect-h">0</b></span>
               </div>
             </div>
-            <button type="button" class="primary-btn" id="mockup-save-btn" disabled>
-              Save Template
-            </button>
           </div>
-          <div class="mockup-creator-canvas-wrap">
+          <div class="mockup-creator-canvas-outer">
             <div class="canvas-zoom-controls" id="creator-zoom-controls">
               <button type="button" class="zoom-btn" id="creator-zoom-out" title="Zoom out">-</button>
               <span class="zoom-level" id="creator-zoom-level">100%</span>
               <button type="button" class="zoom-btn" id="creator-zoom-in" title="Zoom in">+</button>
               <button type="button" class="zoom-btn zoom-fit" id="creator-zoom-fit" title="Fit to view">Fit</button>
             </div>
-            <div class="mockup-creator-placeholder" id="mockup-canvas-placeholder">
-              Upload an image to get started
+            <button type="button" class="canvas-save-btn" id="mockup-save-btn" disabled>Save Template</button>
+            <div class="mockup-creator-canvas-wrap">
+              <div class="mockup-creator-placeholder" id="mockup-canvas-placeholder">
+                Upload an image to get started
+              </div>
+              <div class="canvas-scroll-content">
+                <canvas id="mockup-creator-canvas" style="display: none;"></canvas>
+              </div>
             </div>
-            <canvas id="mockup-creator-canvas" style="display: none;"></canvas>
           </div>
         </div>
       </div>
@@ -907,6 +1103,6 @@
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-    <script src="/static/app.js"></script>
+    <script src="/static/app.js?v=41"></script>
   </body>
 </html>

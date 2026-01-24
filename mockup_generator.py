@@ -44,6 +44,7 @@ def list_mockups():
                     "thumbnail": f"/mockups/{image_file.name}",
                     "guides": metadata.get("guides", []),
                     "labels": metadata.get("labels", []),
+                    "recommended_aspect": metadata.get("recommended_aspect"),
                     "mtime": mtime
                 })
         except (json.JSONDecodeError, IOError) as e:

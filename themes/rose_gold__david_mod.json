@@ -1,0 +1,16 @@
+{
+  "name": "Rose Gold - David MOD",
+  "description": "Elegant metallic pink - luxurious and feminine sophistication",
+  "category": "luxury",
+  "bg": "#FFF5F5",
+  "text": "#B76E79",
+  "gradient_color": "#FFF5F5",
+  "water": "#D6EDF0",
+  "parks": "#F4FBF6",
+  "road_motorway": "#B76E79",
+  "road_primary": "#C9878F",
+  "road_secondary": "#DBA0A6",
+  "road_tertiary": "#C7C7C7",
+  "road_residential": "#F5F5F5",
+  "road_default": "#FCD4D4"
+}

@@ -1,10 +1,10 @@
 {
   "name": "darkwood",
   "poster_rect": {
-    "x": 362,
-    "y": 222,
-    "width": 463,
-    "height": 667
+    "x": 358,
+    "y": 218,
+    "width": 475,
+    "height": 672
   },
   "poster_rotation": 0,
   "output_size": [
@@ -33,5 +33,6 @@
       "width": 26,
       "opacity": 0.8
     }
-  ]
+  ],
+  "recommended_aspect": "A4"
 }

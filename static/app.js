@@ -56,6 +56,12 @@ let fontCollectionItems = {}; // Map of collectionId -> [fontNames]
 let fontDrawerCollectionFilter = null;  // Current collection filter in font drawer
 let currentFontCollectionFilter = null;  // Collection filter for main picker
 
+// ===== MOCKUP COLLECTIONS =====
+let mockupCollectionList = [];  // Array of {id, name, color, created_at}
+let mockupCollectionItems = {}; // Map of collectionId -> [mockupIds]
+let mockupStudioCollectionFilter = null;  // Current collection filter in mockup studio
+let mockupModalCollectionFilter = null;   // Current collection filter in mockup modal
+
 // ===== PRESETS =====
 let presetList = [];
 
@@ -72,6 +78,7 @@ let selectedThemes = [];
 
 // ===== MOCKUPS =====
 let mockupList = [];
+let libraryItems = [];  // Pre-set visual elements from library folder
 let selectedPosterForMockup = null;
 
 // Mockup Creator State
@@ -81,6 +88,13 @@ let mockupCreatorClickState = 0;  // 0 = no clicks, 1 = first corner set, 2 = co
 let mockupCreatorCorner1 = { x: 0, y: 0 };
 let mockupCreatorCorner2 = { x: 0, y: 0 };
 let mockupCreatorZoom = 1.0;  // Zoom level (1.0 = fit to container)
+let mockupCreatorSelectedFormat = null;  // Selected format ratio (e.g., "2:3", "A4")
+let mockupCreatorFormatScale = 30;  // Scale percentage for placed format
+let mockupCreatorFormatDragging = false;  // Whether dragging a placed format
+let mockupCreatorDragStart = { x: 0, y: 0 };  // Drag start position
+let mockupCreatorDragMoved = false;  // Whether a drag actually moved (to distinguish from click)
+let mockupCreatorEditingId = null;  // ID of mockup being edited (null = creating new)
+let mockupCreatorFromStudio = false;  // Whether opened from mockup studio (for back navigation)
 
 // Mockup Preview State
 let mockupPreviewTemplate = null;  // { id, poster_rect, ... }
@@ -102,6 +116,7 @@ let mockupSelectedLayer = "poster";  // "poster" or label id number or "asset-N"
 let mockupLabelDragging = false;
 let mockupLabelDragStartX = 0;
 let mockupLabelDragStartY = 0;
+let mockupDragTarget = null;  // Stores the actual element being dragged (label or asset)
 
 // Mockup Assets State
 let mockupAssets = [];  // Array of { id, src, filename, x, y, width, opacity, image }
@@ -112,6 +127,11 @@ let mockupAssetDragging = false;
 let mockupGuides = [];  // Array of { id, type: 'h'|'v', position: 0-100 }
 let mockupGuideIdCounter = 0;
 const SNAP_THRESHOLD = 8;  // Pixels to snap within
+
+// Mockup Editor Undo/Redo History
+let mockupEditorHistory = [];  // Stack of state snapshots
+let mockupEditorRedoStack = [];  // Stack for redo
+const MOCKUP_HISTORY_LIMIT = 50;  // Max history entries
 
 // Mockup Studio State
 let mockupStudioSelectedTemplate = null;
@@ -207,8 +227,8 @@ const elements = {
   previewThemeName: document.getElementById("preview-theme-name"),
 
   // Header action buttons
-  headerFontBtn: document.getElementById("header-font-btn"),
-  headerThemeBtn: document.getElementById("header-theme-btn"),
+  fontSamplesBtn: document.getElementById("font-samples-btn"),
+  themeSamplesBtn: document.getElementById("theme-samples-btn"),
   headerGalleryBtn: document.getElementById("header-gallery-btn"),
 
   // Theme elements
@@ -298,6 +318,7 @@ const elements = {
   // Mockup Creator
   mockupCreator: document.getElementById("mockup-creator"),
   mockupCreatorClose: document.getElementById("mockup-creator-close"),
+  mockupCreatorBack: document.getElementById("mockup-creator-back"),
   mockupTemplateName: document.getElementById("mockup-template-name"),
   mockupTemplateFile: document.getElementById("mockup-template-file"),
   mockupCreatorCanvas: document.getElementById("mockup-creator-canvas"),
@@ -312,6 +333,14 @@ const elements = {
   creatorZoomOut: document.getElementById("creator-zoom-out"),
   creatorZoomFit: document.getElementById("creator-zoom-fit"),
   creatorZoomLevel: document.getElementById("creator-zoom-level"),
+  // Format selector
+  formatSelectorGrid: document.getElementById("format-selector-grid"),
+  formatScaleSlider: document.getElementById("format-scale-slider"),
+  formatScaleValue: document.getElementById("format-scale-value"),
+  formatScaleUp: document.getElementById("format-scale-up"),
+  formatScaleDown: document.getElementById("format-scale-down"),
+  formatPlaceBtn: document.getElementById("format-place-btn"),
+  formatClearBtn: document.getElementById("format-clear-btn"),
 
   // Mockup Preview
   mockupPreview: document.getElementById("mockup-preview"),
@@ -436,11 +465,13 @@ async function initApp() {
   await loadStarred();
   await loadThemeCollections();
   await loadFontCollections();
+  await loadMockupCollections();
   loadThemes();
   loadFonts();
   await loadPresets();
   await loadCollections();
   await loadMockups();
+  await loadLibrary();
   await loadGallery();
   startGalleryStream();
   refreshQueueDisplay();
@@ -524,6 +555,19 @@ async function loadFontCollections() {
     console.error("Failed to load font collections:", err);
     fontCollectionList = [];
     fontCollectionItems = {};
+  }
+}
+
+async function loadMockupCollections() {
+  try {
+    const response = await fetch("/api/mockup-collections");
+    const data = await response.json();
+    mockupCollectionList = data.collections || [];
+    mockupCollectionItems = data.items || {};
+  } catch (err) {
+    console.error("Failed to load mockup collections:", err);
+    mockupCollectionList = [];
+    mockupCollectionItems = {};
   }
 }
 
@@ -771,6 +815,128 @@ function filterFontsByCollection(collId) {
   fontDrawerCollectionFilter = collId;
   renderFontCollectionTabs();
   renderFontDrawer();
+}
+
+// ===== MOCKUP COLLECTIONS =====
+async function createMockupCollection() {
+  const name = prompt("Enter collection name:");
+  if (!name || !name.trim()) return null;
+
+  try {
+    const response = await fetch("/api/mockup-collections", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: name.trim() }),
+    });
+
+    if (response.ok) {
+      const newCollection = await response.json();
+      mockupCollectionList.push(newCollection);
+      mockupCollectionItems[newCollection.id] = [];
+      renderMockupStudioCollectionTabs();
+      renderMockupStudioTemplates();
+      return newCollection;
+    }
+  } catch (err) {
+    console.error("Failed to create mockup collection:", err);
+  }
+  return null;
+}
+
+async function renameMockupCollection(collId) {
+  const coll = mockupCollectionList.find(c => c.id === collId);
+  if (!coll) return;
+
+  const newName = prompt("Enter new name:", coll.name);
+  if (!newName || !newName.trim() || newName.trim() === coll.name) return;
+
+  try {
+    const response = await fetch(`/api/mockup-collections/${collId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: newName.trim() }),
+    });
+
+    if (response.ok) {
+      coll.name = newName.trim();
+      renderMockupStudioCollectionTabs();
+    }
+  } catch (err) {
+    console.error("Failed to rename mockup collection:", err);
+  }
+}
+
+async function deleteMockupCollection(collId) {
+  if (!confirm("Delete this collection? Mockup templates will not be deleted.")) return;
+
+  try {
+    const response = await fetch(`/api/mockup-collections/${collId}`, {
+      method: "DELETE",
+    });
+
+    if (response.ok) {
+      mockupCollectionList = mockupCollectionList.filter(c => c.id !== collId);
+      delete mockupCollectionItems[collId];
+      if (mockupStudioCollectionFilter === collId) {
+        mockupStudioCollectionFilter = null;
+      }
+      renderMockupStudioCollectionTabs();
+      renderMockupStudioTemplates();
+    }
+  } catch (err) {
+    console.error("Failed to delete mockup collection:", err);
+  }
+}
+
+async function addMockupToCollection(mockupId, collId) {
+  try {
+    await fetch(`/api/mockup-collections/${collId}/mockups/${encodeURIComponent(mockupId)}`, {
+      method: "POST",
+    });
+
+    if (!mockupCollectionItems[collId]) {
+      mockupCollectionItems[collId] = [];
+    }
+    if (!mockupCollectionItems[collId].includes(mockupId)) {
+      mockupCollectionItems[collId].push(mockupId);
+    }
+    renderMockupStudioCollectionTabs();
+    renderMockupStudioTemplates();
+  } catch (err) {
+    console.error("Failed to add mockup to collection:", err);
+  }
+}
+
+async function removeMockupFromCollection(mockupId, collId) {
+  try {
+    await fetch(`/api/mockup-collections/${collId}/mockups/${encodeURIComponent(mockupId)}`, {
+      method: "DELETE",
+    });
+
+    if (mockupCollectionItems[collId]) {
+      mockupCollectionItems[collId] = mockupCollectionItems[collId].filter(id => id !== mockupId);
+    }
+    renderMockupStudioCollectionTabs();
+    renderMockupStudioTemplates();
+  } catch (err) {
+    console.error("Failed to remove mockup from collection:", err);
+  }
+}
+
+function getMockupCollections(mockupId) {
+  const collections = [];
+  for (const [collId, mockups] of Object.entries(mockupCollectionItems)) {
+    if (mockups.includes(mockupId)) {
+      collections.push(collId);
+    }
+  }
+  return collections;
+}
+
+function filterMockupsByCollection(collId) {
+  mockupStudioCollectionFilter = collId;
+  renderMockupStudioCollectionTabs();
+  renderMockupStudioTemplates();
 }
 
 function renderThemeCollectionTabs() {
@@ -1140,9 +1306,11 @@ async function openCollectionModal() {
   document.getElementById("coords-widget")?.classList.add("hidden-by-modal");
   document.getElementById("style-widget")?.classList.add("hidden-by-modal");
 
-  // Load gallery data if not already loaded
-  if (!galleryLoadedForModal || !window.galleryItems?.length) {
-    await loadGallery();
+  // Always load fresh gallery data to ensure we have the latest posters
+  await loadGallery(true);
+
+  // Start stream if not already running
+  if (!galleryLoadedForModal) {
     startGalleryStream();
     galleryLoadedForModal = true;
   }
@@ -1281,8 +1449,8 @@ function renderCollectionModalGrid() {
         </div>
       </div>
       <div class="collection-poster-actions ${galleryMultiselectMode ? 'hidden' : ''}">
-        <button class="poster-action-btn poster-view-btn" title="View full size">
-          <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+        <button class="poster-action-btn poster-view-btn" title="Load this poster in editor">
+         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M3 4H21" stroke="#33363F" stroke-width="2" stroke-linecap="round"></path> <path d="M5 4H19V15.8C19 16.9201 19 17.4802 18.782 17.908C18.5903 18.2843 18.2843 18.5903 17.908 18.782C17.4802 19 16.9201 19 15.8 19H8.2C7.07989 19 6.51984 19 6.09202 18.782C5.71569 18.5903 5.40973 18.2843 5.21799 17.908C5 17.4802 5 16.9201 5 15.8V4Z" stroke="#33363F" stroke-width="2" stroke-linecap="round"></path> <path d="M12 15V9" stroke="#33363F" stroke-width="2" stroke-linecap="round"></path> <path d="M9 12L11.8939 9.10607C11.9525 9.04749 12.0475 9.04749 12.1061 9.10607L15 12" stroke="#33363F" stroke-width="2" stroke-linecap="round"></path> </g></svg>
         </button>
         <a class="poster-action-btn poster-download-btn" href="${item.url}" download="${item.filename}" title="Download">
           <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
@@ -1309,7 +1477,7 @@ function renderCollectionModalGrid() {
     });
 
     // Click on image loads settings (only in normal mode)
-    card.querySelector('.collection-poster-image').addEventListener("click", (e) => {
+    card.querySelector('.poster-view-btn').addEventListener("click", (e) => {
       if (galleryMultiselectMode) return; // Handled by card click
       closeCollectionModal();
       if (item.config) {
@@ -1318,7 +1486,7 @@ function renderCollectionModalGrid() {
     });
 
     // View button - open in lightbox
-    card.querySelector('.poster-view-btn').addEventListener("click", (e) => {
+    card.querySelector('.collection-poster-image ').addEventListener("click", (e) => {
       e.stopPropagation();
       // Find index in galleryItems array
       const index = (window.galleryItems || []).findIndex(gi => gi.filename === item.filename);
@@ -1759,6 +1927,9 @@ function toggleVariationMode() {
 
   // Update generate button
   updateVariationButton();
+
+  // Update selected themes list in preview widget
+  renderSelectedThemesList();
 }
 
 function toggleThemeSelection(themeId) {
@@ -1789,6 +1960,50 @@ function updateThemeSelectionUI() {
   });
   // Update category select all buttons
   updateCategorySelectButtons();
+  // Update selected themes list in preview widget
+  renderSelectedThemesList();
+}
+
+function renderSelectedThemesList() {
+  const section = document.getElementById("selected-themes-section");
+  const list = document.getElementById("selected-themes-list");
+  const count = document.getElementById("selected-themes-count");
+
+  if (!section || !list) return;
+
+  // Only show when in variation mode with selected themes
+  if (!variationMode || selectedThemes.length === 0) {
+    section.style.display = "none";
+    return;
+  }
+
+  section.style.display = "block";
+  if (count) count.textContent = selectedThemes.length;
+
+  list.innerHTML = "";
+
+  selectedThemes.forEach(themeId => {
+    const theme = themeList.find(t => t.id === themeId);
+    if (!theme) return;
+
+    const item = document.createElement("div");
+    item.className = "selected-theme-item";
+    item.innerHTML = `
+      <span class="theme-name">${theme.name}</span>
+      <button class="theme-remove" type="button" title="Remove from selection">
+        <svg viewBox="0 0 24 24" width="12" height="12">
+          <path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+        </svg>
+      </button>
+    `;
+
+    item.querySelector(".theme-remove").addEventListener("click", (e) => {
+      e.stopPropagation();
+      toggleThemeSelection(themeId);
+    });
+
+    list.appendChild(item);
+  });
 }
 
 function toggleCategorySelection(category) {
@@ -4008,9 +4223,12 @@ function createThemeCardForDrawer(theme) {
   const preview = document.createElement("div");
   preview.className = "theme-card-preview";
 
-  ["bg", "road_motorway", "road_primary", "water", "parks", "road_secondary"].forEach((key) => {
+  // Show all color values from the theme (skip metadata keys)
+  const skipKeys = ["name", "description", "category", "id"];
+  const colorKeys = Object.keys(theme.colors || {}).filter(k => !skipKeys.includes(k));
+  colorKeys.forEach((key) => {
     const swatch = document.createElement("span");
-    swatch.style.background = theme.colors?.[key] || "#eee";
+    swatch.style.background = theme.colors[key];
     preview.appendChild(swatch);
   });
 
@@ -4795,11 +5013,11 @@ function initEventListeners() {
 
   // Font picker is initialized in loadFonts()
 
-  // Header action buttons - open in new tabs
-  elements.headerFontBtn?.addEventListener("click", () => {
+  // Drawer action buttons - open samples in new tabs
+  elements.fontSamplesBtn?.addEventListener("click", () => {
     window.open("/font-samples", "_blank");
   });
-  elements.headerThemeBtn?.addEventListener("click", () => {
+  elements.themeSamplesBtn?.addEventListener("click", () => {
     window.open("/theme-samples", "_blank");
   });
   elements.headerGalleryBtn?.addEventListener("click", openCollectionModal);
@@ -4810,10 +5028,11 @@ function initEventListeners() {
   elements.mockupStudio?.querySelector(".mockup-studio-backdrop")?.addEventListener("click", closeMockupStudio);
   elements.mockupStudioAddTemplate?.addEventListener("click", () => {
     closeMockupStudio();
-    openMockupCreator();
+    openMockupCreator(true);
   });
   elements.mockupStudioBack?.addEventListener("click", mockupStudioGoBack);
   elements.mockupStudioCollectionFilter?.addEventListener("change", renderMockupStudioPosters);
+  document.getElementById("mockup-studio-aspect-filter")?.addEventListener("change", renderMockupStudioTemplates);
 
   // Mockup Output Gallery
   elements.headerMockupGalleryBtn?.addEventListener("click", openMockupGallery);
@@ -4893,9 +5112,16 @@ function initEventListeners() {
     }
   });
   elements.mockupCreateBtn?.addEventListener("click", openMockupCreator);
+  document.getElementById("mockup-aspect-filter")?.addEventListener("change", renderMockupGrid);
 
   // Mockup creator
   elements.mockupCreatorClose?.addEventListener("click", closeMockupCreator);
+  elements.mockupCreatorBack?.addEventListener("click", () => {
+    closeMockupCreator();
+    if (mockupCreatorFromStudio) {
+      openMockupStudio();
+    }
+  });
   elements.mockupCreator?.addEventListener("click", (e) => {
     if (e.target.classList.contains("mockup-creator-backdrop")) {
       closeMockupCreator();
@@ -4914,6 +5140,21 @@ function initEventListeners() {
   elements.creatorZoomIn?.addEventListener("click", zoomCreatorIn);
   elements.creatorZoomOut?.addEventListener("click", zoomCreatorOut);
   elements.creatorZoomFit?.addEventListener("click", zoomCreatorFit);
+
+  // Format selector
+  elements.formatSelectorGrid?.addEventListener("click", handleFormatSelect);
+  elements.formatScaleSlider?.addEventListener("input", handleFormatScaleChange);
+  elements.formatScaleValue?.addEventListener("change", handleFormatScaleInput);
+  elements.formatScaleUp?.addEventListener("click", () => adjustFormatScale(2));
+  elements.formatScaleDown?.addEventListener("click", () => adjustFormatScale(-2));
+  elements.formatPlaceBtn?.addEventListener("click", placeFormatOnCanvas);
+  elements.formatClearBtn?.addEventListener("click", clearFormatRect);
+
+  // Canvas drag for placed format
+  elements.mockupCreatorCanvas?.addEventListener("mousedown", handleCreatorCanvasMouseDown);
+  elements.mockupCreatorCanvas?.addEventListener("mousemove", handleCreatorCanvasMouseMove);
+  elements.mockupCreatorCanvas?.addEventListener("mouseup", handleCreatorCanvasMouseUp);
+  elements.mockupCreatorCanvas?.addEventListener("mouseleave", handleCreatorCanvasMouseUp);
 
   // Mockup preview
   elements.mockupPreviewClose?.addEventListener("click", closeMockupPreview);
@@ -5027,7 +5268,23 @@ function initEventListeners() {
       // Highlight selected swatch
       elements.mockupColorSwatches.querySelectorAll(".swatch").forEach(s => s.classList.remove("selected"));
       swatch.classList.add("selected");
+      // Update selected label color in real-time
+      updateSelectedLabelProperty("color", swatch.dataset.color);
     }
+  });
+
+  // Real-time label property updates
+  elements.mockupLabelFont?.addEventListener("change", (e) => {
+    updateSelectedLabelProperty("font", e.target.value);
+  });
+  elements.mockupLabelSize?.addEventListener("input", (e) => {
+    updateSelectedLabelProperty("size", parseInt(e.target.value, 10));
+  });
+  elements.mockupLabelColor?.addEventListener("input", (e) => {
+    updateSelectedLabelProperty("color", e.target.value);
+  });
+  elements.mockupLabelShadow?.addEventListener("change", (e) => {
+    updateSelectedLabelProperty("shadow", e.target.checked);
   });
 
   // Guides buttons
@@ -5081,6 +5338,64 @@ async function loadMockups() {
   }
 }
 
+async function loadLibrary() {
+  try {
+    const response = await fetch("/api/library");
+    const data = await response.json();
+    libraryItems = data.items || [];
+  } catch (err) {
+    console.error("Failed to load library:", err);
+    libraryItems = [];
+  }
+}
+
+function renderLibraryGrid() {
+  const grid = document.getElementById("mockup-library-grid");
+  if (!grid) return;
+
+  grid.innerHTML = "";
+
+  if (!libraryItems.length) {
+    grid.innerHTML = '<div class="library-empty">Drop images in the library/ folder</div>';
+    return;
+  }
+
+  libraryItems.forEach(item => {
+    const div = document.createElement("div");
+    div.className = "library-item";
+    div.title = item.name;
+    div.innerHTML = `<img src="${item.url}" alt="${item.name}">`;
+    div.addEventListener("click", () => addLibraryItemAsAsset(item));
+    grid.appendChild(div);
+  });
+}
+
+async function addLibraryItemAsAsset(item) {
+  // Load the image and add it as an asset layer
+  const img = new Image();
+  img.crossOrigin = "anonymous";
+  img.onload = () => {
+    pushMockupEditorHistory();
+    const asset = {
+      id: ++mockupAssetIdCounter,
+      name: item.name,
+      image: img,
+      x: 50,  // Center position
+      y: 50,
+      width: 20,  // Default width percentage
+      opacity: 1.0,
+    };
+    mockupAssets.push(asset);
+    renderMockupLabelsListUI();
+    renderMockupPreview();
+    selectMockupLayer("asset-" + asset.id);
+  };
+  img.onerror = () => {
+    console.error("Failed to load library item:", item.url);
+  };
+  img.src = item.url;
+}
+
 function openMockupModal(posterItem) {
   selectedPosterForMockup = posterItem;
 
@@ -5089,6 +5404,16 @@ function openMockupModal(posterItem) {
     return;
   }
 
+  mockupModalCollectionFilter = null; // Reset filter when opening
+
+  // Set aspect ratio filter to match poster's aspect ratio
+  const aspectFilter = document.getElementById("mockup-aspect-filter");
+  if (aspectFilter) {
+    const posterAspect = posterItem?.config?.aspect_ratio || "";
+    aspectFilter.value = posterAspect;
+  }
+
+  renderMockupModalCollectionTabs();
   renderMockupGrid();
   elements.mockupModal?.classList.add("open");
 }
@@ -5098,26 +5423,99 @@ function closeMockupModal() {
   selectedPosterForMockup = null;
 }
 
+function renderMockupModalCollectionTabs() {
+  const container = document.getElementById("mockup-modal-collection-tabs");
+  if (!container) return;
+  container.innerHTML = "";
+
+  // "All" tab
+  const allTab = document.createElement("button");
+  allTab.className = "collection-tab" + (mockupModalCollectionFilter === null ? " active" : "");
+  allTab.textContent = "All";
+  allTab.addEventListener("click", () => {
+    mockupModalCollectionFilter = null;
+    renderMockupModalCollectionTabs();
+    renderMockupGrid();
+  });
+  container.appendChild(allTab);
+
+  // Collection tabs
+  mockupCollectionList.forEach(coll => {
+    const tab = document.createElement("button");
+    tab.className = "collection-tab" + (mockupModalCollectionFilter === coll.id ? " active" : "");
+    tab.textContent = coll.name;
+    tab.addEventListener("click", () => {
+      mockupModalCollectionFilter = coll.id;
+      renderMockupModalCollectionTabs();
+      renderMockupGrid();
+    });
+    container.appendChild(tab);
+  });
+}
+
 function renderMockupGrid() {
   if (!elements.mockupGrid) return;
   elements.mockupGrid.innerHTML = "";
 
-  if (!mockupList.length) {
-    elements.mockupGrid.innerHTML = '<div class="mockup-placeholder">No mockup templates found. Click "New Template" to create one.</div>';
+  // Filter mockups by collection
+  let filteredMockups = mockupList;
+  if (mockupModalCollectionFilter && mockupCollectionItems[mockupModalCollectionFilter]) {
+    filteredMockups = mockupList.filter(m => mockupCollectionItems[mockupModalCollectionFilter].includes(m.id));
+  }
+
+  if (!filteredMockups.length) {
+    const msg = mockupModalCollectionFilter
+      ? "No mockups in this collection."
+      : 'No mockup templates found. Click "New Template" to create one.';
+    elements.mockupGrid.innerHTML = `<div class="mockup-placeholder">${msg}</div>`;
+    return;
+  }
+
+  // Get poster aspect ratio for highlighting
+  const posterAspect = selectedPosterForMockup?.config?.aspect_ratio || null;
+
+  // Get aspect ratio filter
+  const aspectFilter = document.getElementById("mockup-aspect-filter")?.value || "";
+
+  // Apply aspect ratio filter if set
+  if (aspectFilter) {
+    filteredMockups = filteredMockups.filter(m => m.recommended_aspect === aspectFilter);
+  }
+
+  if (!filteredMockups.length) {
+    const msg = aspectFilter
+      ? `No mockups with ${aspectFilter} aspect ratio.`
+      : mockupModalCollectionFilter
+        ? "No mockups in this collection."
+        : 'No mockup templates found. Click "New Template" to create one.';
+    elements.mockupGrid.innerHTML = `<div class="mockup-placeholder">${msg}</div>`;
     return;
   }
 
   const fragment = document.createDocumentFragment();
 
-  mockupList.forEach((mockup) => {
+  filteredMockups.forEach((mockup) => {
     const card = document.createElement("div");
     card.className = "mockup-card";
     card.dataset.mockupId = mockup.id;
+
+    // Highlight if aspect ratio matches the poster
+    if (posterAspect && mockup.recommended_aspect === posterAspect) {
+      card.classList.add("aspect-match");
+    }
 
     const img = document.createElement("img");
     img.src = mockup.thumbnail;
     img.alt = mockup.name;
     card.appendChild(img);
+
+    // Add aspect ratio badge if set
+    if (mockup.recommended_aspect) {
+      const badge = document.createElement("span");
+      badge.className = "mockup-aspect-badge";
+      badge.textContent = mockup.recommended_aspect;
+      card.appendChild(badge);
+    }
 
     const footer = document.createElement("div");
     footer.className = "mockup-card-footer";
@@ -5126,6 +5524,17 @@ function renderMockupGrid() {
     name.className = "mockup-card-name";
     name.textContent = mockup.name;
     footer.appendChild(name);
+
+    const editBtn = document.createElement("button");
+    editBtn.className = "mockup-edit-btn";
+    editBtn.type = "button";
+    editBtn.title = "Edit template";
+    editBtn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>';
+    editBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      openMockupCreatorForEdit(mockup);
+    });
+    footer.appendChild(editBtn);
 
     const deleteBtn = document.createElement("button");
     deleteBtn.className = "mockup-delete-btn";
@@ -5218,6 +5627,9 @@ async function openMockupPreview(mockup, poster = null) {
   mockupLabelDragging = false;
   mockupAssetDragging = false;
 
+  // Clear undo/redo history for new session
+  clearMockupEditorHistory();
+
   // Reset sliders
   if (elements.mockupScaleSlider) {
     elements.mockupScaleSlider.value = 1;
@@ -5244,32 +5656,18 @@ async function openMockupPreview(mockup, poster = null) {
   closeMockupModal();
   elements.mockupPreview?.classList.add("open");
 
+  // Render library grid
+  renderLibraryGrid();
+
   // Load images
   try {
     console.log("Mockup object:", mockup);
     console.log("Poster object:", mockupPreviewPoster);
 
-    const templateUrl = mockup?.thumbnail;
     const posterUrl = mockupPreviewPoster?.url;
 
-    console.log("Template URL:", templateUrl);
-    console.log("Poster URL:", posterUrl);
-
-    if (!templateUrl) {
-      throw new Error("Mockup template URL is missing");
-    }
     if (!posterUrl) {
       throw new Error("Poster URL is missing");
-    }
-
-    // Load template image
-    let templateImg;
-    try {
-      templateImg = await loadImage(templateUrl);
-      console.log("Template loaded successfully");
-    } catch (e) {
-      console.error("Failed to load template image:", templateUrl, e);
-      throw new Error("Failed to load mockup template image");
     }
 
     // Load poster image
@@ -5281,9 +5679,50 @@ async function openMockupPreview(mockup, poster = null) {
       console.error("Failed to load poster image:", posterUrl, e);
       throw new Error("Failed to load poster image");
     }
-
-    mockupPreviewTemplateImg = templateImg;
     mockupPreviewPosterImg = posterImg;
+
+    // Handle blank canvas vs regular template
+    if (mockup.isBlankCanvas) {
+      // Create a blank canvas matching the poster's exact dimensions
+      const blankCanvas = document.createElement("canvas");
+      blankCanvas.width = posterImg.width;
+      blankCanvas.height = posterImg.height;
+      const ctx = blankCanvas.getContext("2d");
+      ctx.fillStyle = mockup.backgroundColor || "#ffffff";
+      ctx.fillRect(0, 0, blankCanvas.width, blankCanvas.height);
+
+      // Convert canvas to image
+      const blankImg = new Image();
+      blankImg.src = blankCanvas.toDataURL("image/png");
+      await new Promise(resolve => { blankImg.onload = resolve; });
+
+      mockupPreviewTemplateImg = blankImg;
+
+      // Update the template rect to cover the full canvas with actual pixel dimensions
+      mockupPreviewTemplate.poster_rect = { x: 0, y: 0, width: posterImg.width, height: posterImg.height };
+      mockupPreviewTemplate.canvasWidth = posterImg.width;
+      mockupPreviewTemplate.canvasHeight = posterImg.height;
+
+      console.log("Blank canvas template created with poster dimensions:", posterImg.width, "x", posterImg.height);
+    } else {
+      // Load regular template image
+      const templateUrl = mockup?.thumbnail;
+      console.log("Template URL:", templateUrl);
+
+      if (!templateUrl) {
+        throw new Error("Mockup template URL is missing");
+      }
+
+      let templateImg;
+      try {
+        templateImg = await loadImage(templateUrl);
+        console.log("Template loaded successfully");
+      } catch (e) {
+        console.error("Failed to load template image:", templateUrl, e);
+        throw new Error("Failed to load mockup template image");
+      }
+      mockupPreviewTemplateImg = templateImg;
+    }
 
     renderMockupPreview();
   } catch (err) {
@@ -5503,16 +5942,19 @@ function handleMockupPreviewOffsetY(e) {
 
 // Drag to reposition poster or labels
 function handlePreviewCanvasMouseDown(e) {
-  // First check if clicking on a label (this auto-selects that label)
+  // First check if clicking on a label/asset (this auto-selects that layer)
   if (handleLabelCanvasMouseDown(e)) {
-    return;  // Label handling took over
+    return;  // Label/asset handling took over
   }
 
-  // Only allow poster dragging if poster layer is selected
+  // Only allow poster dragging if poster layer is already selected
+  // Do NOT auto-select poster layer - only layer tree should change selection
   if (mockupSelectedLayer !== "poster") {
-    // Select the poster layer when clicking on empty area
-    selectMockupLayer("poster");
+    return;
   }
+
+  // Save state before drag starts
+  pushMockupEditorHistory();
 
   // Handle poster dragging
   mockupPreviewDragging = true;
@@ -5557,6 +5999,7 @@ function handlePreviewCanvasMouseUp() {
   mockupPreviewDragging = false;
   mockupLabelDragging = false;
   mockupAssetDragging = false;
+  mockupDragTarget = null;  // Clear drag target
   if (elements.mockupPreviewCanvas) {
     elements.mockupPreviewCanvas.style.cursor = "grab";
   }
@@ -5565,6 +6008,8 @@ function handlePreviewCanvasMouseUp() {
 // ===== MOCKUP LABELS =====
 
 function addMockupLabel(text, type = "custom") {
+  pushMockupEditorHistory();
+
   const font = elements.mockupLabelFont?.value || "Arial";
   const size = parseInt(elements.mockupLabelSize?.value, 10) || 24;
   const color = elements.mockupLabelColor?.value || "#ffffff";
@@ -5588,7 +6033,8 @@ function addMockupLabel(text, type = "custom") {
   selectMockupLayer(label.id);
 }
 
-function removeMockupLabel(labelId) {
+function removeMockupLabel(labelId, skipHistory = false) {
+  if (!skipHistory) pushMockupEditorHistory();
   mockupLabels = mockupLabels.filter(l => l.id !== labelId);
   if (mockupSelectedLayer === labelId) {
     mockupSelectedLayer = "poster";
@@ -5599,8 +6045,34 @@ function removeMockupLabel(labelId) {
 
 function selectMockupLayer(layerId) {
   mockupSelectedLayer = layerId;
+
+  // Populate label controls with selected label's properties
+  const label = mockupLabels.find(l => l.id === layerId);
+  if (label) {
+    if (elements.mockupLabelFont) elements.mockupLabelFont.value = label.font || "Arial";
+    if (elements.mockupLabelSize) elements.mockupLabelSize.value = label.size || 24;
+    if (elements.mockupLabelColor) elements.mockupLabelColor.value = label.color || "#ffffff";
+    if (elements.mockupLabelShadow) elements.mockupLabelShadow.checked = label.shadow !== false;
+  }
+
   renderMockupLabelsListUI();
   renderMockupPreview();
+}
+
+function updateSelectedLabelProperty(property, value) {
+  // Only update if a label layer is selected (labels have numeric IDs)
+  if (mockupSelectedLayer === "poster") {
+    return;
+  }
+  if (typeof mockupSelectedLayer === "string" && mockupSelectedLayer.startsWith("asset-")) {
+    return;
+  }
+
+  const label = mockupLabels.find(l => l.id === mockupSelectedLayer);
+  if (label) {
+    label[property] = value;
+    renderMockupPreview();
+  }
 }
 
 function clearMockupLabels() {
@@ -5721,6 +6193,7 @@ function addMockupAsset(file) {
   reader.onload = (e) => {
     const img = new Image();
     img.onload = () => {
+      pushMockupEditorHistory();
       const asset = {
         id: ++mockupAssetIdCounter,
         type: "asset",
@@ -5746,6 +6219,7 @@ function addMockupAsset(file) {
 }
 
 function removeMockupAsset(assetId) {
+  pushMockupEditorHistory();
   mockupAssets = mockupAssets.filter(a => a.id !== assetId);
   if (mockupSelectedLayer === "asset-" + assetId) {
     mockupSelectedLayer = "poster";
@@ -5842,15 +6316,20 @@ function handleLabelCanvasMouseDown(e) {
   if (!canvas) return false;
 
   const rect = canvas.getBoundingClientRect();
-  const canvasX = e.clientX - rect.left;
-  const canvasY = e.clientY - rect.top;
+  // Convert screen coordinates to canvas pixel coordinates (accounting for CSS scaling)
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const canvasX = (e.clientX - rect.left) * scaleX;
+  const canvasY = (e.clientY - rect.top) * scaleY;
 
   // Check assets first (they're drawn first, so labels are on top)
   const asset = getAssetAtPosition(canvasX, canvasY);
   if (asset) {
     e.stopPropagation();
+    pushMockupEditorHistory();  // Save state before drag
     selectMockupLayer("asset-" + asset.id);
     mockupAssetDragging = true;
+    mockupDragTarget = asset;  // Store the actual asset being dragged
     mockupLabelDragStartX = e.clientX;
     mockupLabelDragStartY = e.clientY;
     canvas.style.cursor = "move";
@@ -5861,13 +6340,18 @@ function handleLabelCanvasMouseDown(e) {
   const label = getLabelAtPosition(canvasX, canvasY);
   if (label) {
     e.stopPropagation();
+    pushMockupEditorHistory();  // Save state before drag
     selectMockupLayer(label.id);
     mockupLabelDragging = true;
+    mockupDragTarget = label;  // Store the actual label being dragged
     mockupLabelDragStartX = e.clientX;
     mockupLabelDragStartY = e.clientY;
     canvas.style.cursor = "move";
     return true;  // Indicate we handled the event
   }
+
+  // Clicked on empty space - clear drag target
+  mockupDragTarget = null;
   return false;  // Let poster dragging handle it
 }
 
@@ -5875,81 +6359,112 @@ function handleLabelCanvasMouseMove(e) {
   const canvas = elements.mockupPreviewCanvas;
   if (!canvas) return false;
 
-  // Handle asset dragging
-  if (mockupAssetDragging && mockupSelectedLayer.startsWith("asset-")) {
-    const assetId = parseInt(mockupSelectedLayer.replace("asset-", ""), 10);
-    const asset = mockupAssets.find(a => a.id === assetId);
+  // Only drag if we have an explicit drag target (set on mousedown)
+  if (!mockupDragTarget) return false;
 
-    if (asset) {
-      const dx = e.clientX - mockupLabelDragStartX;
-      const dy = e.clientY - mockupLabelDragStartY;
+  // Handle asset dragging - use the actual drag target, not selected layer
+  if (mockupAssetDragging && mockupDragTarget.type === undefined) {
+    // mockupDragTarget is an asset (assets don't have 'type' property like labels do)
+    const asset = mockupDragTarget;
 
-      asset.x += (dx / canvas.width) * 100;
-      asset.y += (dy / canvas.height) * 100;
+    const dx = e.clientX - mockupLabelDragStartX;
+    const dy = e.clientY - mockupLabelDragStartY;
 
-      asset.x = Math.max(0, Math.min(100, asset.x));
-      asset.y = Math.max(0, Math.min(100, asset.y));
+    // Get the CSS display scale for proper movement calculation
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
 
-      mockupLabelDragStartX = e.clientX;
-      mockupLabelDragStartY = e.clientY;
+    asset.x += (dx * scaleX / canvas.width) * 100;
+    asset.y += (dy * scaleX / canvas.height) * 100;
 
-      renderMockupPreview();
-    }
-    return true;
-  }
-
-  // Handle label dragging
-  if (!mockupLabelDragging || mockupSelectedLayer === "poster") return false;
-
-  const dx = e.clientX - mockupLabelDragStartX;
-  const dy = e.clientY - mockupLabelDragStartY;
-
-  const label = mockupLabels.find(l => l.id === mockupSelectedLayer);
-  if (label) {
-    // Convert pixel delta to percentage
-    label.x += (dx / canvas.width) * 100;
-    label.y += (dy / canvas.height) * 100;
-
-    // Clamp to canvas bounds
-    label.x = Math.max(0, Math.min(100, label.x));
-    label.y = Math.max(0, Math.min(100, label.y));
-
-    // Snap to guides if enabled
-    if (elements.mockupSnapEnabled?.checked) {
-      const snapThresholdPercent = (SNAP_THRESHOLD / canvas.width) * 100;
-
-      mockupGuides.forEach(guide => {
-        if (guide.type === "v") {
-          // Snap left edge of label to vertical guide
-          if (Math.abs(label.x - guide.position) < snapThresholdPercent) {
-            label.x = guide.position;
-          }
-        } else {
-          // Snap baseline of label to horizontal guide
-          if (Math.abs(label.y - guide.position) < snapThresholdPercent) {
-            label.y = guide.position;
-          }
-        }
-      });
-    }
+    asset.x = Math.max(0, Math.min(100, asset.x));
+    asset.y = Math.max(0, Math.min(100, asset.y));
 
     mockupLabelDragStartX = e.clientX;
     mockupLabelDragStartY = e.clientY;
 
     renderMockupPreview();
+    return true;
   }
+
+  // Handle label dragging - use the actual drag target
+  if (!mockupLabelDragging) return false;
+
+  const label = mockupDragTarget;
+  if (!label || label.id === undefined) return false;
+
+  const dx = e.clientX - mockupLabelDragStartX;
+  const dy = e.clientY - mockupLabelDragStartY;
+
+  // Get the CSS display scale for proper movement calculation
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+
+  // Convert pixel delta to percentage (accounting for scale)
+  label.x += (dx * scaleX / canvas.width) * 100;
+  label.y += (dy * scaleX / canvas.height) * 100;
+
+  // Clamp to canvas bounds
+  label.x = Math.max(0, Math.min(100, label.x));
+  label.y = Math.max(0, Math.min(100, label.y));
+
+  // Snap to guides if enabled
+  if (elements.mockupSnapEnabled?.checked) {
+    const snapThresholdPercent = (SNAP_THRESHOLD / canvas.width) * 100;
+
+    mockupGuides.forEach(guide => {
+      if (guide.type === "v") {
+        // Snap left edge of label to vertical guide
+        if (Math.abs(label.x - guide.position) < snapThresholdPercent) {
+          label.x = guide.position;
+        }
+      } else {
+        // Snap baseline of label to horizontal guide
+        if (Math.abs(label.y - guide.position) < snapThresholdPercent) {
+          label.y = guide.position;
+        }
+      }
+    });
+  }
+
+  mockupLabelDragStartX = e.clientX;
+  mockupLabelDragStartY = e.clientY;
+
+  renderMockupPreview();
   return true;
 }
 
 function handleLabelKeyDown(e) {
+  // Only handle keys when mockup preview is open
+  if (!elements.mockupPreview?.classList.contains("open")) return;
+
+  // Handle Ctrl+Z (Undo) and Ctrl+Y / Ctrl+Shift+Z (Redo)
+  if ((e.ctrlKey || e.metaKey) && !e.altKey) {
+    if (e.key === "z" || e.key === "Z") {
+      e.preventDefault();
+      if (e.shiftKey) {
+        redoMockupEditor();
+      } else {
+        undoMockupEditor();
+      }
+      return;
+    }
+    if (e.key === "y" || e.key === "Y") {
+      e.preventDefault();
+      redoMockupEditor();
+      return;
+    }
+  }
+
+  // Handle Delete/Backspace for deleting selected layer
   if (e.key === "Delete" || e.key === "Backspace") {
     // Only delete label/asset layers, not the poster
-    if (mockupSelectedLayer && mockupSelectedLayer !== "poster" && elements.mockupPreview?.classList.contains("open")) {
+    if (mockupSelectedLayer && mockupSelectedLayer !== "poster") {
       // Don't delete if user is typing in an input
       if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
       e.preventDefault();
 
-      if (mockupSelectedLayer.startsWith("asset-")) {
+      if (typeof mockupSelectedLayer === "string" && mockupSelectedLayer.startsWith("asset-")) {
         const assetId = parseInt(mockupSelectedLayer.replace("asset-", ""), 10);
         removeMockupAsset(assetId);
       } else {
@@ -5962,6 +6477,7 @@ function handleLabelKeyDown(e) {
 // ===== MOCKUP GUIDES =====
 
 function addMockupGuide(type) {
+  pushMockupEditorHistory();
   const guide = {
     id: ++mockupGuideIdCounter,
     type,  // 'h' or 'v'
@@ -5973,6 +6489,7 @@ function addMockupGuide(type) {
 }
 
 function removeMockupGuide(guideId) {
+  pushMockupEditorHistory();
   mockupGuides = mockupGuides.filter(g => g.id !== guideId);
   renderMockupGuidesListUI();
   renderMockupPreview();
@@ -5983,6 +6500,148 @@ function clearMockupGuides() {
   mockupGuideIdCounter = 0;
   renderMockupGuidesListUI();
   renderMockupPreview();
+}
+
+// ===== MOCKUP EDITOR UNDO/REDO =====
+
+function saveMockupEditorState() {
+  // Deep clone labels (without circular refs)
+  const labelsCopy = mockupLabels.map(l => ({
+    id: l.id,
+    text: l.text,
+    x: l.x,
+    y: l.y,
+    font: l.font,
+    size: l.size,
+    color: l.color,
+    shadow: l.shadow
+  }));
+
+  // Clone assets (store image src, not object)
+  const assetsCopy = mockupAssets.map(a => ({
+    id: a.id,
+    src: a.src,
+    filename: a.filename,
+    x: a.x,
+    y: a.y,
+    width: a.width,
+    opacity: a.opacity
+  }));
+
+  // Clone guides
+  const guidesCopy = mockupGuides.map(g => ({
+    id: g.id,
+    type: g.type,
+    position: g.position
+  }));
+
+  return {
+    labels: labelsCopy,
+    assets: assetsCopy,
+    guides: guidesCopy,
+    scale: mockupPreviewScale,
+    offsetX: mockupPreviewOffsetX,
+    offsetY: mockupPreviewOffsetY,
+    selectedLayer: mockupSelectedLayer,
+    labelIdCounter: mockupLabelIdCounter,
+    assetIdCounter: mockupAssetIdCounter,
+    guideIdCounter: mockupGuideIdCounter
+  };
+}
+
+function pushMockupEditorHistory() {
+  const state = saveMockupEditorState();
+  mockupEditorHistory.push(state);
+
+  // Limit history size
+  if (mockupEditorHistory.length > MOCKUP_HISTORY_LIMIT) {
+    mockupEditorHistory.shift();
+  }
+
+  // Clear redo stack when new action is performed
+  mockupEditorRedoStack = [];
+}
+
+function restoreMockupEditorState(state) {
+  // Restore labels
+  mockupLabels = state.labels.map(l => ({ ...l }));
+  mockupLabelIdCounter = state.labelIdCounter;
+
+  // Restore assets (need to reload images)
+  const oldAssetImages = {};
+  mockupAssets.forEach(a => {
+    if (a.image) oldAssetImages[a.src] = a.image;
+  });
+
+  mockupAssets = state.assets.map(a => {
+    const asset = { ...a };
+    // Try to reuse existing image object
+    if (oldAssetImages[a.src]) {
+      asset.image = oldAssetImages[a.src];
+    } else {
+      // Need to reload image
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.src = a.src;
+      img.onload = () => {
+        asset.image = img;
+        renderMockupPreview();
+      };
+    }
+    return asset;
+  });
+  mockupAssetIdCounter = state.assetIdCounter;
+
+  // Restore guides
+  mockupGuides = state.guides.map(g => ({ ...g }));
+  mockupGuideIdCounter = state.guideIdCounter;
+
+  // Restore poster position
+  mockupPreviewScale = state.scale;
+  mockupPreviewOffsetX = state.offsetX;
+  mockupPreviewOffsetY = state.offsetY;
+  mockupSelectedLayer = state.selectedLayer;
+
+  // Update UI
+  if (elements.mockupScaleSlider) elements.mockupScaleSlider.value = mockupPreviewScale;
+  if (elements.mockupScaleValue) elements.mockupScaleValue.value = Math.round(mockupPreviewScale * 100) + "%";
+  if (elements.mockupXSlider) elements.mockupXSlider.value = mockupPreviewOffsetX;
+  if (elements.mockupXValue) elements.mockupXValue.value = mockupPreviewOffsetX + "px";
+  if (elements.mockupYSlider) elements.mockupYSlider.value = mockupPreviewOffsetY;
+  if (elements.mockupYValue) elements.mockupYValue.value = mockupPreviewOffsetY + "px";
+
+  renderMockupLabelsListUI();
+  renderMockupGuidesListUI();
+  renderMockupPreview();
+}
+
+function undoMockupEditor() {
+  if (mockupEditorHistory.length === 0) return;
+
+  // Save current state for redo
+  const currentState = saveMockupEditorState();
+  mockupEditorRedoStack.push(currentState);
+
+  // Restore previous state
+  const previousState = mockupEditorHistory.pop();
+  restoreMockupEditorState(previousState);
+}
+
+function redoMockupEditor() {
+  if (mockupEditorRedoStack.length === 0) return;
+
+  // Save current state for undo
+  const currentState = saveMockupEditorState();
+  mockupEditorHistory.push(currentState);
+
+  // Restore redo state
+  const redoState = mockupEditorRedoStack.pop();
+  restoreMockupEditorState(redoState);
+}
+
+function clearMockupEditorHistory() {
+  mockupEditorHistory = [];
+  mockupEditorRedoStack = [];
 }
 
 function loadMockupGuides(guides) {
@@ -6364,10 +7023,99 @@ async function generateMockupFromPreview() {
 
 // ===== MOCKUP TEMPLATE CREATOR =====
 
-function openMockupCreator() {
+function openMockupCreator(fromStudio = false) {
   closeMockupModal();
   closeCollectionModal();
   resetMockupCreator();
+
+  // Track where we came from
+  mockupCreatorFromStudio = fromStudio;
+
+  // Set create mode UI
+  const titleEl = document.getElementById("mockup-creator-title");
+  if (titleEl) titleEl.textContent = "Create Mockup Template";
+  const uploadField = document.getElementById("mockup-upload-field");
+  if (uploadField) uploadField.style.display = "";
+
+  // Show/hide back button
+  if (elements.mockupCreatorBack) {
+    elements.mockupCreatorBack.style.display = fromStudio ? "" : "none";
+  }
+
+  elements.mockupCreator?.classList.add("open");
+}
+
+function openMockupCreatorForEdit(mockup, fromStudio = false) {
+  closeMockupModal();
+  closeCollectionModal();
+  resetMockupCreator();
+
+  // Track where we came from
+  mockupCreatorFromStudio = fromStudio;
+
+  // Set editing mode
+  mockupCreatorEditingId = mockup.id;
+
+  // Set edit mode UI
+  const titleEl = document.getElementById("mockup-creator-title");
+  if (titleEl) titleEl.textContent = "Edit Mockup Template";
+  const uploadField = document.getElementById("mockup-upload-field");
+  if (uploadField) uploadField.style.display = "none";
+
+  // Show/hide back button
+  if (elements.mockupCreatorBack) {
+    elements.mockupCreatorBack.style.display = fromStudio ? "" : "none";
+  }
+
+  // Populate name field
+  if (elements.mockupTemplateName) {
+    elements.mockupTemplateName.value = mockup.name || mockup.id;
+  }
+
+  // Set recommended aspect if exists
+  if (mockup.recommended_aspect) {
+    mockupCreatorSelectedFormat = mockup.recommended_aspect;
+    elements.formatSelectorGrid?.querySelectorAll(".format-btn").forEach(btn => {
+      if (btn.dataset.ratio === mockup.recommended_aspect) {
+        btn.classList.add("active");
+      }
+    });
+  }
+
+  // Load the mockup image
+  const imgUrl = mockup.thumbnail || `/mockups/${mockup.id}.png`;
+  const img = new Image();
+  img.crossOrigin = "anonymous";
+  img.onload = () => {
+    mockupCreatorImage = img;
+
+    // Set the rect from mockup data
+    const rect = mockup.poster_rect || {};
+    if (rect.x !== undefined && rect.y !== undefined) {
+      mockupCreatorRect = {
+        x: rect.x || 0,
+        y: rect.y || 0,
+        width: rect.width || 0,
+        height: rect.height || 0
+      };
+      mockupCreatorClickState = 2; // Mark as complete
+      mockupCreatorCorner1 = { x: mockupCreatorRect.x, y: mockupCreatorRect.y };
+      mockupCreatorCorner2 = {
+        x: mockupCreatorRect.x + mockupCreatorRect.width,
+        y: mockupCreatorRect.y + mockupCreatorRect.height
+      };
+    }
+
+    setupMockupCanvas();
+    updateMockupRectDisplay();
+    updateMockupSaveBtn();
+  };
+  img.onerror = () => {
+    // Try jpg fallback
+    img.src = `/mockups/${mockup.id}.jpg`;
+  };
+  img.src = imgUrl;
+
   elements.mockupCreator?.classList.add("open");
 }
 
@@ -6379,14 +7127,39 @@ function closeMockupCreator() {
 function resetMockupCreator() {
   mockupCreatorImage = null;
   mockupCreatorRect = { x: 0, y: 0, width: 0, height: 0 };
-  mockupCreatorDrawing = false;
+  mockupCreatorClickState = 0;
+  mockupCreatorCorner1 = { x: 0, y: 0 };
+  mockupCreatorCorner2 = { x: 0, y: 0 };
+  mockupCreatorSelectedFormat = null;
+  mockupCreatorFormatDragging = false;
+  mockupCreatorEditingId = null;
+
+  // Reset format selector UI
+  elements.formatSelectorGrid?.querySelectorAll(".format-btn").forEach(b => b.classList.remove("active"));
+  if (elements.formatScaleSlider) elements.formatScaleSlider.value = 30;
+  if (elements.formatScaleValue) elements.formatScaleValue.value = "30%";
+  mockupCreatorFormatScale = 30;
+  updateFormatPlaceBtn();
 
   if (elements.mockupTemplateName) elements.mockupTemplateName.value = "";
   if (elements.mockupTemplateFile) elements.mockupTemplateFile.value = "";
   if (elements.mockupSaveBtn) elements.mockupSaveBtn.disabled = true;
 
+  // Populate collection dropdown
+  const collectionSelect = document.getElementById("mockup-template-collection");
+  if (collectionSelect) {
+    collectionSelect.innerHTML = '<option value="">None</option>';
+    mockupCollectionList.forEach(coll => {
+      const option = document.createElement("option");
+      option.value = coll.id;
+      option.textContent = coll.name;
+      collectionSelect.appendChild(option);
+    });
+  }
+
   if (elements.mockupCreatorCanvas) {
     elements.mockupCreatorCanvas.style.display = "none";
+    elements.mockupCreatorCanvas.parentElement?.classList.remove("visible");
     const ctx = elements.mockupCreatorCanvas.getContext("2d");
     ctx.clearRect(0, 0, elements.mockupCreatorCanvas.width, elements.mockupCreatorCanvas.height);
   }
@@ -6400,6 +7173,11 @@ function resetMockupCreator() {
 function handleMockupFileUpload(e) {
   const file = e.target.files[0];
   if (!file) return;
+  loadMockupImageFile(file);
+}
+
+function loadMockupImageFile(file) {
+  if (!file || !file.type.startsWith("image/")) return;
 
   const reader = new FileReader();
   reader.onload = (event) => {
@@ -6411,6 +7189,32 @@ function handleMockupFileUpload(e) {
     img.src = event.target.result;
   };
   reader.readAsDataURL(file);
+}
+
+function handleCreatorDragOver(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  const wrap = e.currentTarget;
+  wrap.classList.add("drag-over");
+}
+
+function handleCreatorDragLeave(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  const wrap = e.currentTarget;
+  wrap.classList.remove("drag-over");
+}
+
+function handleCreatorDrop(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  const wrap = e.currentTarget;
+  wrap.classList.remove("drag-over");
+
+  const files = e.dataTransfer?.files;
+  if (files && files.length > 0) {
+    loadMockupImageFile(files[0]);
+  }
 }
 
 function setupMockupCanvas() {
@@ -6431,12 +7235,15 @@ function setupMockupCanvas() {
 
   // Show canvas, hide placeholder
   canvas.style.display = "block";
+  canvas.parentElement?.classList.add("visible");
   if (elements.mockupCanvasPlaceholder) {
     elements.mockupCanvasPlaceholder.style.display = "none";
   }
 
   drawMockupCanvas();
+  centerCreatorScroll();
   updateMockupSaveBtn();
+  updateFormatPlaceBtn();
 }
 
 function drawMockupCanvas() {
@@ -6460,18 +7267,18 @@ function drawMockupCanvas() {
     const h = mockupCreatorRect.height * scale;
 
     // Semi-transparent overlay
-    ctx.fillStyle = "rgba(102, 126, 234, 0.3)";
+    ctx.fillStyle = "rgba(255, 0, 82, 0.3)";
     ctx.fillRect(x, y, w, h);
 
     // Border
-    ctx.strokeStyle = "#667eea";
+    ctx.strokeStyle = "#ff0052";
     ctx.lineWidth = 2;
     ctx.setLineDash([5, 5]);
     ctx.strokeRect(x, y, w, h);
     ctx.setLineDash([]);
 
     // Label
-    ctx.fillStyle = "#667eea";
+    ctx.fillStyle = "#ff0052";
     ctx.font = "bold 14px sans-serif";
     ctx.fillText("Poster Area", x + 8, y + 20);
   }
@@ -6529,6 +7336,12 @@ function drawMockupCanvas() {
 
 function handleMockupCanvasClick(e) {
   if (!mockupCreatorImage) return;
+
+  // Skip if we just finished dragging a rect (don't trigger new draw)
+  if (mockupCreatorDragMoved) {
+    mockupCreatorDragMoved = false;
+    return;
+  }
 
   const canvas = elements.mockupCreatorCanvas;
   const rect = canvas.getBoundingClientRect();
@@ -6625,10 +7438,273 @@ function resetMockupCreatorRect() {
   updateMockupSaveBtn();
 }
 
+// ===== FORMAT SELECTOR FUNCTIONS =====
+
+// Get aspect ratio as decimal from format string
+function getFormatRatio(format) {
+  const ratios = {
+    "2:3": 2/3,
+    "3:4": 3/4,
+    "4:5": 4/5,
+    "5:7": 5/7,
+    "1:1": 1,
+    "3:2": 3/2,
+    "16:9": 16/9,
+    "9:16": 9/16,
+    "A4": 210/297,  // ~0.707
+    "A3": 297/420,  // ~0.707
+    "11:14": 11/14
+  };
+  return ratios[format] || 1;
+}
+
+function handleFormatSelect(e) {
+  const btn = e.target.closest(".format-btn");
+  if (!btn) return;
+
+  const ratio = btn.dataset.ratio;
+
+  // Toggle selection
+  if (mockupCreatorSelectedFormat === ratio) {
+    mockupCreatorSelectedFormat = null;
+    btn.classList.remove("active");
+  } else {
+    // Deselect all
+    elements.formatSelectorGrid.querySelectorAll(".format-btn").forEach(b => b.classList.remove("active"));
+    // Select this one
+    btn.classList.add("active");
+    mockupCreatorSelectedFormat = ratio;
+  }
+
+  // Enable/disable place button
+  updateFormatPlaceBtn();
+}
+
+function handleFormatScaleChange(e) {
+  mockupCreatorFormatScale = parseFloat(e.target.value);
+  if (elements.formatScaleValue) {
+    elements.formatScaleValue.value = mockupCreatorFormatScale + "%";
+  }
+
+  // If we have a placed rect with this format, update its size
+  if (mockupCreatorRect.width > 0 && mockupCreatorRect.height > 0 && mockupCreatorSelectedFormat) {
+    updatePlacedFormatSize();
+  }
+}
+
+function handleFormatScaleInput(e) {
+  // Parse value, stripping % sign if present
+  let val = e.target.value.replace(/%/g, "").trim();
+  let numVal = parseFloat(val);
+
+  if (isNaN(numVal)) return;
+
+  // Clamp to valid range
+  numVal = Math.max(5, Math.min(100, numVal));
+  mockupCreatorFormatScale = numVal;
+
+  // Update slider (rounds to integer for the slider)
+  if (elements.formatScaleSlider) {
+    elements.formatScaleSlider.value = Math.round(numVal);
+  }
+
+  // Update display with proper formatting
+  e.target.value = numVal + "%";
+
+  // If we have a placed rect with this format, update its size
+  if (mockupCreatorRect.width > 0 && mockupCreatorRect.height > 0 && mockupCreatorSelectedFormat) {
+    updatePlacedFormatSize();
+  }
+}
+
+function adjustFormatScale(delta) {
+  const newScale = Math.max(5, Math.min(100, mockupCreatorFormatScale + delta));
+  if (newScale !== mockupCreatorFormatScale) {
+    mockupCreatorFormatScale = newScale;
+    if (elements.formatScaleSlider) {
+      elements.formatScaleSlider.value = Math.round(newScale);
+    }
+    if (elements.formatScaleValue) {
+      elements.formatScaleValue.value = newScale + "%";
+    }
+    // If we have a placed rect, update its size
+    if (mockupCreatorRect.width > 0 && mockupCreatorRect.height > 0 && mockupCreatorSelectedFormat) {
+      updatePlacedFormatSize();
+    }
+  }
+}
+
+function updateFormatPlaceBtn() {
+  if (elements.formatPlaceBtn) {
+    elements.formatPlaceBtn.disabled = !mockupCreatorSelectedFormat || !mockupCreatorImage;
+  }
+}
+
+function placeFormatOnCanvas() {
+  if (!mockupCreatorSelectedFormat || !mockupCreatorImage) return;
+
+  const ratio = getFormatRatio(mockupCreatorSelectedFormat);
+  const imgW = mockupCreatorImage.width;
+  const imgH = mockupCreatorImage.height;
+
+  // Calculate rect size based on scale percentage
+  const scale = mockupCreatorFormatScale / 100;
+  let rectW, rectH;
+
+  if (ratio <= 1) {
+    // Portrait or square - base on image height
+    rectH = imgH * scale;
+    rectW = rectH * ratio;
+  } else {
+    // Landscape - base on image width
+    rectW = imgW * scale;
+    rectH = rectW / ratio;
+  }
+
+  // Center on canvas
+  const rectX = (imgW - rectW) / 2;
+  const rectY = (imgH - rectH) / 2;
+
+  // Reset click state since we're placing programmatically
+  mockupCreatorClickState = 2;  // Mark as complete
+  mockupCreatorCorner1 = { x: rectX, y: rectY };
+  mockupCreatorCorner2 = { x: rectX + rectW, y: rectY + rectH };
+
+  mockupCreatorRect = {
+    x: Math.round(rectX),
+    y: Math.round(rectY),
+    width: Math.round(rectW),
+    height: Math.round(rectH)
+  };
+
+  drawMockupCanvas();
+  updateMockupRectDisplay();
+  updateMockupSaveBtn();
+}
+
+function updatePlacedFormatSize() {
+  if (!mockupCreatorSelectedFormat || !mockupCreatorImage) return;
+
+  const ratio = getFormatRatio(mockupCreatorSelectedFormat);
+  const imgW = mockupCreatorImage.width;
+  const imgH = mockupCreatorImage.height;
+
+  // Calculate new size based on scale
+  const scale = mockupCreatorFormatScale / 100;
+  let rectW, rectH;
+
+  if (ratio <= 1) {
+    rectH = imgH * scale;
+    rectW = rectH * ratio;
+  } else {
+    rectW = imgW * scale;
+    rectH = rectW / ratio;
+  }
+
+  // Keep top-left corner fixed
+  const rectX = mockupCreatorRect.x;
+  const rectY = mockupCreatorRect.y;
+
+  // Ensure rect doesn't exceed image bounds
+  const clampedW = Math.min(rectW, mockupCreatorImage.width - rectX);
+  const clampedH = Math.min(rectH, mockupCreatorImage.height - rectY);
+
+  mockupCreatorRect = {
+    x: Math.round(rectX),
+    y: Math.round(rectY),
+    width: Math.round(clampedW),
+    height: Math.round(clampedH)
+  };
+
+  // Update corners
+  mockupCreatorCorner1 = { x: mockupCreatorRect.x, y: mockupCreatorRect.y };
+  mockupCreatorCorner2 = { x: mockupCreatorRect.x + mockupCreatorRect.width, y: mockupCreatorRect.y + mockupCreatorRect.height };
+
+  drawMockupCanvas();
+  updateMockupRectDisplay();
+  updateMockupSaveBtn();
+}
+
+function clearFormatRect() {
+  // Clear the rect
+  resetMockupCreatorRect();
+
+  // Deselect format
+  mockupCreatorSelectedFormat = null;
+  elements.formatSelectorGrid?.querySelectorAll(".format-btn").forEach(b => b.classList.remove("active"));
+  updateFormatPlaceBtn();
+}
+
+// Canvas mouse handlers for dragging placed format
+function handleCreatorCanvasMouseDown(e) {
+  if (!mockupCreatorImage || mockupCreatorRect.width <= 0) return;
+
+  const canvas = elements.mockupCreatorCanvas;
+  const rect = canvas.getBoundingClientRect();
+  const baseScale = parseFloat(canvas.dataset.baseScale) || 1;
+
+  const canvasX = e.clientX - rect.left;
+  const canvasY = e.clientY - rect.top;
+  const imgX = canvasX / baseScale / mockupCreatorZoom;
+  const imgY = canvasY / baseScale / mockupCreatorZoom;
+
+  // Check if click is inside the placed rect
+  if (imgX >= mockupCreatorRect.x && imgX <= mockupCreatorRect.x + mockupCreatorRect.width &&
+      imgY >= mockupCreatorRect.y && imgY <= mockupCreatorRect.y + mockupCreatorRect.height) {
+    mockupCreatorFormatDragging = true;
+    mockupCreatorDragMoved = false;  // Track if actually dragged
+    mockupCreatorDragStart = { x: imgX - mockupCreatorRect.x, y: imgY - mockupCreatorRect.y };
+    canvas.style.cursor = "move";
+    e.preventDefault();
+  }
+}
+
+function handleCreatorCanvasMouseMove(e) {
+  if (!mockupCreatorFormatDragging || !mockupCreatorImage) return;
+
+  mockupCreatorDragMoved = true;  // Mark that we actually moved
+
+  const canvas = elements.mockupCreatorCanvas;
+  const rect = canvas.getBoundingClientRect();
+  const baseScale = parseFloat(canvas.dataset.baseScale) || 1;
+
+  const canvasX = e.clientX - rect.left;
+  const canvasY = e.clientY - rect.top;
+  const imgX = canvasX / baseScale / mockupCreatorZoom;
+  const imgY = canvasY / baseScale / mockupCreatorZoom;
+
+  // Calculate new position
+  let newX = imgX - mockupCreatorDragStart.x;
+  let newY = imgY - mockupCreatorDragStart.y;
+
+  // Clamp to image bounds
+  newX = Math.max(0, Math.min(mockupCreatorImage.width - mockupCreatorRect.width, newX));
+  newY = Math.max(0, Math.min(mockupCreatorImage.height - mockupCreatorRect.height, newY));
+
+  mockupCreatorRect.x = Math.round(newX);
+  mockupCreatorRect.y = Math.round(newY);
+
+  // Update corners
+  mockupCreatorCorner1 = { x: mockupCreatorRect.x, y: mockupCreatorRect.y };
+  mockupCreatorCorner2 = { x: mockupCreatorRect.x + mockupCreatorRect.width, y: mockupCreatorRect.y + mockupCreatorRect.height };
+
+  drawMockupCanvas();
+  updateMockupRectDisplay();
+}
+
+function handleCreatorCanvasMouseUp() {
+  if (mockupCreatorFormatDragging) {
+    mockupCreatorFormatDragging = false;
+    if (elements.mockupCreatorCanvas) {
+      elements.mockupCreatorCanvas.style.cursor = "crosshair";
+    }
+  }
+}
+
 // ===== MOCKUP CREATOR ZOOM FUNCTIONS =====
 function setCreatorZoom(newZoom) {
-  const minZoom = 0.25;
-  const maxZoom = 4.0;
+  const minZoom = 0.1;
+  const maxZoom = 10.0;
   mockupCreatorZoom = Math.max(minZoom, Math.min(maxZoom, newZoom));
   updateCreatorCanvasSize();
   drawMockupCanvas();
@@ -6648,6 +7724,7 @@ function zoomCreatorFit() {
   updateCreatorCanvasSize();
   drawMockupCanvas();
   updateCreatorZoomDisplay();
+  centerCreatorScroll();
 }
 
 function updateCreatorZoomDisplay() {
@@ -6656,11 +7733,36 @@ function updateCreatorZoomDisplay() {
   }
 }
 
+function centerCreatorScroll() {
+  const canvas = elements.mockupCreatorCanvas;
+  if (!canvas) return;
+
+  const container = canvas.closest('.mockup-creator-canvas-wrap');
+  if (!container) return;
+
+  // Wait for layout to update
+  requestAnimationFrame(() => {
+    // Center the scroll position - canvas is centered via CSS when smaller than container
+    // When larger, we want to scroll to center
+    const scrollWidth = container.scrollWidth;
+    const scrollHeight = container.scrollHeight;
+    const containerWidth = container.clientWidth;
+    const containerHeight = container.clientHeight;
+
+    if (scrollWidth > containerWidth) {
+      container.scrollLeft = (scrollWidth - containerWidth) / 2;
+    }
+    if (scrollHeight > containerHeight) {
+      container.scrollTop = (scrollHeight - containerHeight) / 2;
+    }
+  });
+}
+
 function updateCreatorCanvasSize() {
   if (!mockupCreatorImage || !elements.mockupCreatorCanvas) return;
 
   const canvas = elements.mockupCreatorCanvas;
-  const container = canvas.parentElement;
+  const container = canvas.closest('.mockup-creator-canvas-wrap');
 
   // Calculate base scale to fit in container at zoom 1.0
   const maxWidth = container.clientWidth - 40;
@@ -6683,8 +7785,62 @@ function updateCreatorCanvasSize() {
 
 function handleCreatorWheel(e) {
   e.preventDefault();
+
+  const canvas = elements.mockupCreatorCanvas;
+  if (!canvas || !mockupCreatorImage) return;
+
+  const container = canvas.closest('.mockup-creator-canvas-wrap');
+  const scrollContent = canvas.closest('.canvas-scroll-content');
+  if (!container || !scrollContent) {
+    const delta = e.deltaY > 0 ? 0.9 : 1.1;
+    setCreatorZoom(mockupCreatorZoom * delta);
+    return;
+  }
+
+  // Get current scale
+  const currentScale = parseFloat(canvas.dataset.scale) || 1;
+
+  // Get mouse position relative to canvas (in canvas pixels)
+  const canvasRect = canvas.getBoundingClientRect();
+  const mouseXInCanvas = e.clientX - canvasRect.left;
+  const mouseYInCanvas = e.clientY - canvasRect.top;
+
+  // Convert to image coordinates (the point we want to keep under cursor)
+  const imageX = mouseXInCanvas / currentScale;
+  const imageY = mouseYInCanvas / currentScale;
+
+  // Store cursor position relative to container viewport
+  const containerRect = container.getBoundingClientRect();
+  const cursorInContainerX = e.clientX - containerRect.left;
+  const cursorInContainerY = e.clientY - containerRect.top;
+
+  // Apply zoom
   const delta = e.deltaY > 0 ? 0.9 : 1.1;
+  const oldZoom = mockupCreatorZoom;
   setCreatorZoom(mockupCreatorZoom * delta);
+
+  // If zoom didn't change (hit limits), do nothing
+  if (mockupCreatorZoom === oldZoom) return;
+
+  // Wait for layout to update, then adjust scroll
+  requestAnimationFrame(() => {
+    const newScale = parseFloat(canvas.dataset.scale) || 1;
+
+    // Calculate where the image point is now in canvas pixels
+    const newCanvasX = imageX * newScale;
+    const newCanvasY = imageY * newScale;
+
+    // The scroll content has 20px padding, canvas is at padding offset
+    const padding = 20;
+
+    // Where the image point is in scroll content coordinates
+    const pointInScrollX = padding + newCanvasX;
+    const pointInScrollY = padding + newCanvasY;
+
+    // Adjust scroll so that point stays under cursor
+    container.scrollLeft = pointInScrollX - cursorInContainerX;
+    container.scrollTop = pointInScrollY - cursorInContainerY;
+  });
 }
 
 // ===== MOCKUP PREVIEW ZOOM FUNCTIONS =====
@@ -6718,8 +7874,67 @@ function updatePreviewZoomDisplay() {
 
 function handlePreviewWheel(e) {
   e.preventDefault();
+
+  const canvas = elements.mockupPreviewCanvas;
+  if (!canvas) return;
+
+  const container = canvas.closest('.mockup-preview-canvas-wrap');
+  if (!container) {
+    // Fallback to simple zoom if no container found
+    const delta = e.deltaY > 0 ? 0.9 : 1.1;
+    setPreviewZoom(mockupPreviewZoom * delta);
+    return;
+  }
+
+  // Get mouse position relative to container
+  const containerRect = container.getBoundingClientRect();
+  const mouseX = e.clientX - containerRect.left + container.scrollLeft;
+  const mouseY = e.clientY - containerRect.top + container.scrollTop;
+
+  // Get canvas position within container (centered with text-align: center)
+  const canvasRect = canvas.getBoundingClientRect();
+  const canvasOffsetX = canvasRect.left - containerRect.left + container.scrollLeft;
+  const canvasOffsetY = canvasRect.top - containerRect.top + container.scrollTop;
+
+  // Mouse position relative to canvas content
+  const canvasMouseX = mouseX - canvasOffsetX;
+  const canvasMouseY = mouseY - canvasOffsetY;
+
+  // Calculate the point in content space (0-1 normalized)
+  const contentX = canvasMouseX / canvas.width;
+  const contentY = canvasMouseY / canvas.height;
+
+  // Apply zoom
   const delta = e.deltaY > 0 ? 0.9 : 1.1;
+  const oldZoom = mockupPreviewZoom;
   setPreviewZoom(mockupPreviewZoom * delta);
+
+  // If zoom didn't change (hit limits), do nothing
+  if (mockupPreviewZoom === oldZoom) return;
+
+  // Calculate new canvas size (after renderMockupPreview in setPreviewZoom)
+  const newWidth = canvas.width;
+  const newHeight = canvas.height;
+
+  // Calculate where the same content point is now
+  const newCanvasMouseX = contentX * newWidth;
+  const newCanvasMouseY = contentY * newHeight;
+
+  // Get new canvas position (may have changed due to centering)
+  const newCanvasRect = canvas.getBoundingClientRect();
+  const newCanvasOffsetX = newCanvasRect.left - containerRect.left + container.scrollLeft;
+  const newCanvasOffsetY = newCanvasRect.top - containerRect.top + container.scrollTop;
+
+  // Calculate where that point is now in container coordinates
+  const newPointX = newCanvasOffsetX + newCanvasMouseX;
+  const newPointY = newCanvasOffsetY + newCanvasMouseY;
+
+  // Adjust scroll so the point stays under the cursor
+  const cursorInContainerX = e.clientX - containerRect.left;
+  const cursorInContainerY = e.clientY - containerRect.top;
+
+  container.scrollLeft = newPointX - cursorInContainerX;
+  container.scrollTop = newPointY - cursorInContainerY;
 }
 
 function updateMockupRectDisplay() {
@@ -6742,35 +7957,67 @@ function updateMockupSaveBtn() {
 async function saveMockupTemplate() {
   const name = elements.mockupTemplateName?.value.trim();
   const file = elements.mockupTemplateFile?.files[0];
+  const collectionId = document.getElementById("mockup-template-collection")?.value || "";
+  const isEditing = mockupCreatorEditingId !== null;
 
-  if (!name || !file || mockupCreatorRect.width <= 0) {
-    alert("Please provide a name, upload an image, and draw the poster area.");
+  // For new templates, require file. For editing, file is optional.
+  if (!name || mockupCreatorRect.width <= 0) {
+    alert("Please provide a name and draw the poster area.");
     return;
   }
-
-  const formData = new FormData();
-  formData.append("name", name);
-  formData.append("image", file);
-  formData.append("rect", JSON.stringify({
-    poster_rect: mockupCreatorRect,
-    output_size: mockupCreatorImage ? [mockupCreatorImage.width, mockupCreatorImage.height] : null,
-  }));
+  if (!isEditing && !file) {
+    alert("Please upload an image.");
+    return;
+  }
 
   elements.mockupSaveBtn.disabled = true;
   elements.mockupSaveBtn.textContent = "Saving...";
 
   try {
-    const response = await fetch("/api/mockups", {
-      method: "POST",
-      body: formData,
-    });
+    let response;
+
+    if (isEditing) {
+      // Update existing mockup template
+      const updateData = {
+        name: name,
+        poster_rect: mockupCreatorRect,
+        output_size: mockupCreatorImage ? [mockupCreatorImage.width, mockupCreatorImage.height] : null,
+        recommended_aspect: mockupCreatorSelectedFormat || null,
+      };
+
+      response = await fetch(`/api/mockups/${mockupCreatorEditingId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updateData),
+      });
+    } else {
+      // Create new mockup template
+      const formData = new FormData();
+      formData.append("name", name);
+      formData.append("image", file);
+      formData.append("rect", JSON.stringify({
+        poster_rect: mockupCreatorRect,
+        output_size: mockupCreatorImage ? [mockupCreatorImage.width, mockupCreatorImage.height] : null,
+        recommended_aspect: mockupCreatorSelectedFormat || null,
+      }));
+
+      response = await fetch("/api/mockups", {
+        method: "POST",
+        body: formData,
+      });
+    }
 
     const result = await response.json();
 
     if (result.ok) {
+      // Add to collection if one was selected (for new templates)
+      if (!isEditing && collectionId && result.id) {
+        await addMockupToCollection(result.id, collectionId);
+      }
+
       closeMockupCreator();
       await loadMockups();
-      // Re-open mockup studio to show the new template
+      // Re-open mockup studio to show the updated/new template
       openMockupStudio();
     } else {
       alert(result.error || "Failed to save template");
@@ -6796,7 +8043,8 @@ function openMockupStudio() {
   document.getElementById("coords-widget")?.classList.add("hidden-by-modal");
   document.getElementById("style-widget")?.classList.add("hidden-by-modal");
 
-  // Render template grid
+  // Render collection tabs and template grid
+  renderMockupStudioCollectionTabs();
   renderMockupStudioTemplates();
 
   // Show templates step, hide posters step
@@ -6821,26 +8069,130 @@ function closeMockupStudio() {
   document.getElementById("style-widget")?.classList.remove("hidden-by-modal");
 }
 
+function renderMockupStudioCollectionTabs() {
+  const container = document.getElementById("mockup-studio-collection-tabs");
+  if (!container) return;
+
+  container.innerHTML = "";
+
+  // "All" tab
+  const allTab = document.createElement("button");
+  allTab.type = "button";
+  allTab.className = "collection-tab" + (mockupStudioCollectionFilter === null ? " active" : "");
+  allTab.innerHTML = `<span>All</span><span class="tab-count">${mockupList.length}</span>`;
+  allTab.addEventListener("click", () => filterMockupsByCollection(null));
+  container.appendChild(allTab);
+
+  // Collection tabs
+  mockupCollectionList.forEach(coll => {
+    const count = (mockupCollectionItems[coll.id] || []).length;
+    const tab = document.createElement("button");
+    tab.type = "button";
+    tab.className = "collection-tab" + (mockupStudioCollectionFilter === coll.id ? " active" : "");
+    tab.innerHTML = `
+      <span>${escapeHtml(coll.name)}</span>
+      <span class="tab-count">${count}</span>
+      <span class="tab-actions">
+        <button type="button" class="tab-action" data-action="rename" title="Rename">
+          <svg viewBox="0 0 24 24" width="12" height="12"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+        </button>
+        <button type="button" class="tab-action" data-action="delete" title="Delete">
+          <svg viewBox="0 0 24 24" width="12" height="12"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </span>
+    `;
+
+    tab.addEventListener("click", (e) => {
+      const action = e.target.closest("[data-action]")?.dataset.action;
+      if (action === "rename") {
+        e.stopPropagation();
+        renameMockupCollection(coll.id);
+      } else if (action === "delete") {
+        e.stopPropagation();
+        deleteMockupCollection(coll.id);
+      } else {
+        filterMockupsByCollection(coll.id);
+      }
+    });
+
+    container.appendChild(tab);
+  });
+
+  // "New Collection" button
+  const newBtn = document.createElement("button");
+  newBtn.type = "button";
+  newBtn.className = "collection-tab new-collection-btn";
+  newBtn.innerHTML = `<span>+ New Collection</span>`;
+  newBtn.addEventListener("click", createMockupCollection);
+  container.appendChild(newBtn);
+}
+
 function renderMockupStudioTemplates() {
   const grid = elements.mockupStudioTemplateGrid;
   if (!grid) return;
 
   grid.innerHTML = "";
 
-  if (!mockupList.length) {
-    grid.innerHTML = '<div class="mockup-studio-empty">No mockup templates yet. Click "Add Template" to create one.</div>';
+  // Filter mockups by collection
+  let filteredMockups = [...mockupList];
+  if (mockupStudioCollectionFilter && mockupCollectionItems[mockupStudioCollectionFilter]) {
+    filteredMockups = mockupList.filter(m => mockupCollectionItems[mockupStudioCollectionFilter].includes(m.id));
+  }
+
+  // Filter by aspect ratio
+  const aspectFilter = document.getElementById("mockup-studio-aspect-filter")?.value || "";
+  if (aspectFilter) {
+    filteredMockups = filteredMockups.filter(m => m.recommended_aspect === aspectFilter);
+  }
+
+  // Add "Blank Canvas" option at the start (only when no collection filter)
+  if (!mockupStudioCollectionFilter && !aspectFilter) {
+    const blankCard = document.createElement("div");
+    blankCard.className = "mockup-studio-card mockup-studio-card-blank";
+    blankCard.innerHTML = `
+      <div class="mockup-studio-card-image blank-canvas-preview">
+        <svg viewBox="0 0 24 24" width="48" height="48">
+          <path fill="currentColor" d="M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-4.86 8.86l-3 3.87L9 13.14 6 17h12l-3.86-5.14z"/>
+        </svg>
+      </div>
+      <div class="mockup-studio-card-info">
+        <span class="mockup-studio-card-name">Blank Canvas</span>
+      </div>
+    `;
+    blankCard.addEventListener("click", () => {
+      selectBlankCanvasTemplate();
+    });
+    grid.appendChild(blankCard);
+  }
+
+  if (!filteredMockups.length && (mockupStudioCollectionFilter || aspectFilter)) {
+    grid.innerHTML += `<div class="mockup-studio-empty">No mockup templates match the current filters.</div>`;
     return;
   }
 
-  mockupList.forEach(mockup => {
+  filteredMockups.forEach(mockup => {
     const card = document.createElement("div");
     card.className = "mockup-studio-card";
+    const hasCollections = getMockupCollections(mockup.id).length > 0;
+
+    const aspectBadge = mockup.recommended_aspect
+      ? `<span class="mockup-aspect-badge">${escapeHtml(mockup.recommended_aspect)}</span>`
+      : '';
     card.innerHTML = `
       <div class="mockup-studio-card-image">
         <img src="${mockup.thumbnail}" alt="${escapeHtml(mockup.name)}" loading="lazy">
+        ${aspectBadge}
       </div>
       <div class="mockup-studio-card-info">
         <span class="mockup-studio-card-name">${escapeHtml(mockup.name)}</span>
+        <div class="mockup-studio-card-actions">
+          <button type="button" class="collection-btn ${hasCollections ? "has-collections" : ""}" title="Add to collection">
+            <svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/></svg>
+          </button>
+          <button type="button" class="mockup-studio-card-edit" title="Edit template">
+            <svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+          </button>
+        </div>
       </div>
       <button type="button" class="mockup-studio-card-delete" title="Delete template">
         <svg viewBox="0 0 24 24" width="14" height="14">
@@ -6855,11 +8207,95 @@ function renderMockupStudioTemplates() {
         deleteMockupStudioTemplate(mockup);
         return;
       }
+      if (e.target.closest(".mockup-studio-card-edit")) {
+        e.stopPropagation();
+        closeMockupStudio();
+        openMockupCreatorForEdit(mockup, true);
+        return;
+      }
+      if (e.target.closest(".collection-btn")) {
+        e.stopPropagation();
+        openMockupCollectionMenu(mockup.id, e.target.closest(".collection-btn"));
+        return;
+      }
       selectMockupStudioTemplate(mockup);
     });
 
     grid.appendChild(card);
   });
+}
+
+function openMockupCollectionMenu(mockupId, buttonEl) {
+  // Close any existing menu
+  document.querySelectorAll(".collection-menu").forEach(m => m.remove());
+
+  const menu = document.createElement("div");
+  menu.className = "collection-menu";
+
+  const mockupCollections = getMockupCollections(mockupId);
+
+  if (mockupCollectionList.length === 0) {
+    menu.innerHTML = `
+      <div style="padding: 12px; color: var(--ink-soft); font-size: 0.85rem;">
+        No collections yet
+      </div>
+    `;
+  } else {
+    mockupCollectionList.forEach(coll => {
+      const isInCollection = mockupCollections.includes(coll.id);
+      const item = document.createElement("label");
+      item.className = "collection-menu-item";
+      item.innerHTML = `
+        <input type="checkbox" ${isInCollection ? "checked" : ""}>
+        <span>${escapeHtml(coll.name)}</span>
+      `;
+
+      item.querySelector("input").addEventListener("change", async (e) => {
+        if (e.target.checked) {
+          await addMockupToCollection(mockupId, coll.id);
+        } else {
+          await removeMockupFromCollection(mockupId, coll.id);
+        }
+        // Update button state
+        const hasCollections = getMockupCollections(mockupId).length > 0;
+        buttonEl.classList.toggle("has-collections", hasCollections);
+      });
+
+      menu.appendChild(item);
+    });
+  }
+
+  // New collection button
+  const newBtn = document.createElement("button");
+  newBtn.type = "button";
+  newBtn.className = "collection-menu-new";
+  newBtn.textContent = "+ New Collection";
+  newBtn.addEventListener("click", async () => {
+    menu.remove();
+    const newColl = await createMockupCollection();
+    if (newColl) {
+      await addMockupToCollection(mockupId, newColl.id);
+    }
+  });
+  menu.appendChild(newBtn);
+
+  // Position menu
+  const rect = buttonEl.getBoundingClientRect();
+  menu.style.position = "fixed";
+  menu.style.top = `${rect.bottom + 4}px`;
+  menu.style.left = `${rect.left}px`;
+  menu.style.zIndex = "1000";
+
+  document.body.appendChild(menu);
+
+  // Close on outside click
+  const closeMenu = (e) => {
+    if (!menu.contains(e.target) && !buttonEl.contains(e.target)) {
+      menu.remove();
+      document.removeEventListener("click", closeMenu);
+    }
+  };
+  setTimeout(() => document.addEventListener("click", closeMenu), 0);
 }
 
 async function deleteMockupStudioTemplate(mockup) {
@@ -6921,6 +8357,50 @@ function mockupStudioGoBack() {
   // Switch views
   elements.mockupStudioTemplates?.classList.remove("hidden");
   elements.mockupStudioPosters?.classList.add("hidden");
+}
+
+function selectBlankCanvasTemplate() {
+  // Create a virtual blank canvas mockup template
+  const blankMockup = {
+    id: "__blank_canvas__",
+    name: "Blank Canvas",
+    isBlankCanvas: true,
+    poster_rect: { x: 0, y: 0, width: 100, height: 100 },  // Full canvas
+    canvasWidth: 1080,  // Default dimensions
+    canvasHeight: 1080,
+    backgroundColor: "#ffffff"
+  };
+
+  mockupStudioSelectedTemplate = blankMockup;
+
+  // Update breadcrumb
+  if (elements.mockupStudioBreadcrumb) {
+    elements.mockupStudioBreadcrumb.textContent = "/ Blank Canvas";
+  }
+
+  // Show selected template preview
+  if (elements.mockupStudioSelectedTemplate) {
+    elements.mockupStudioSelectedTemplate.innerHTML = `
+      <div class="mockup-studio-selected-preview blank-canvas-selected">
+        <div class="blank-canvas-icon">
+          <svg viewBox="0 0 24 24" width="32" height="32">
+            <path fill="currentColor" d="M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/>
+          </svg>
+        </div>
+        <span>Blank Canvas</span>
+      </div>
+    `;
+  }
+
+  // Populate collection filter
+  populateMockupStudioCollectionFilter();
+
+  // Render posters
+  renderMockupStudioPosters();
+
+  // Switch views
+  elements.mockupStudioTemplates?.classList.add("hidden");
+  elements.mockupStudioPosters?.classList.remove("hidden");
 }
 
 function populateMockupStudioCollectionFilter() {
@@ -7075,6 +8555,11 @@ function renderMockupGallery() {
         <span class="mockup-gallery-item-date">${dateStr}</span>
       </div>
       <div class="mockup-gallery-item-actions">
+        <button type="button" class="mockup-gallery-item-btn edit" title="Edit / Crop">
+          <svg viewBox="0 0 24 24" width="16" height="16">
+            <path fill="currentColor" d="M17 15h2V7c0-1.1-.9-2-2-2H9v2h8v8zM7 17V1H5v4H1v2h4v10c0 1.1.9 2 2 2h10v4h2v-4h4v-2H7z"/>
+          </svg>
+        </button>
         <button type="button" class="mockup-gallery-item-btn download" title="Download">
           <svg viewBox="0 0 24 24" width="16" height="16">
             <path fill="currentColor" d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
@@ -7087,6 +8572,12 @@ function renderMockupGallery() {
         </button>
       </div>
     `;
+
+    // Edit button
+    card.querySelector(".edit").addEventListener("click", (e) => {
+      e.stopPropagation();
+      openMockupImageEditor(item);
+    });
 
     // Click image to open in new tab
     card.querySelector(".mockup-gallery-item-image").addEventListener("click", () => {
@@ -7132,6 +8623,281 @@ async function openMockupOutputFolder() {
   } catch (err) {
     console.error("Failed to open folder:", err);
   }
+}
+
+// ===== MOCKUP IMAGE EDITOR =====
+let mockupEditorImage = null;  // The source image
+let mockupEditorItem = null;   // The mockup item being edited
+let mockupEditorZoom = 100;    // Zoom percentage
+let mockupEditorOffsetX = 0;   // Pan offset X
+let mockupEditorOffsetY = 0;   // Pan offset Y
+let mockupEditorCropW = 1080;  // Crop width
+let mockupEditorCropH = 1080;  // Crop height
+let mockupEditorDragging = false;
+let mockupEditorDragStartX = 0;
+let mockupEditorDragStartY = 0;
+let mockupEditorSizeLinked = true;
+let mockupEditorOriginalRatio = 1;
+
+function openMockupImageEditor(item) {
+  mockupEditorItem = item;
+  mockupEditorZoom = 100;
+  mockupEditorOffsetX = 0;
+  mockupEditorOffsetY = 0;
+  mockupEditorCropW = 1080;
+  mockupEditorCropH = 1080;
+
+  const editor = document.getElementById("mockup-image-editor");
+  editor?.classList.add("open");
+
+  // Load the image
+  const img = new Image();
+  img.crossOrigin = "anonymous";
+  img.onload = () => {
+    mockupEditorImage = img;
+    mockupEditorOriginalRatio = img.width / img.height;
+
+    // Set crop size to image dimensions if smaller than defaults
+    if (img.width < mockupEditorCropW) mockupEditorCropW = img.width;
+    if (img.height < mockupEditorCropH) mockupEditorCropH = img.height;
+
+    document.getElementById("editor-crop-width").value = mockupEditorCropW;
+    document.getElementById("editor-crop-height").value = mockupEditorCropH;
+
+    renderMockupImageEditor();
+  };
+  img.onerror = () => {
+    alert("Failed to load image");
+    closeMockupImageEditor();
+  };
+  img.src = item.url;
+
+  // Set up event listeners
+  setupMockupEditorListeners();
+}
+
+function closeMockupImageEditor() {
+  const editor = document.getElementById("mockup-image-editor");
+  editor?.classList.remove("open");
+  mockupEditorImage = null;
+  mockupEditorItem = null;
+}
+
+function setupMockupEditorListeners() {
+  const wrap = document.getElementById("editor-canvas-wrap");
+
+  // Drag to pan
+  wrap?.addEventListener("mousedown", handleEditorMouseDown);
+  document.addEventListener("mousemove", handleEditorMouseMove);
+  document.addEventListener("mouseup", handleEditorMouseUp);
+
+  // Zoom slider
+  const zoomSlider = document.getElementById("editor-zoom-slider");
+  zoomSlider?.addEventListener("input", (e) => {
+    mockupEditorZoom = parseInt(e.target.value, 10);
+    document.getElementById("editor-zoom-value").textContent = mockupEditorZoom + "%";
+    renderMockupImageEditor();
+  });
+
+  // Zoom buttons
+  document.getElementById("editor-zoom-in")?.addEventListener("click", () => {
+    mockupEditorZoom = Math.min(200, mockupEditorZoom + 10);
+    document.getElementById("editor-zoom-slider").value = mockupEditorZoom;
+    document.getElementById("editor-zoom-value").textContent = mockupEditorZoom + "%";
+    renderMockupImageEditor();
+  });
+
+  document.getElementById("editor-zoom-out")?.addEventListener("click", () => {
+    mockupEditorZoom = Math.max(10, mockupEditorZoom - 10);
+    document.getElementById("editor-zoom-slider").value = mockupEditorZoom;
+    document.getElementById("editor-zoom-value").textContent = mockupEditorZoom + "%";
+    renderMockupImageEditor();
+  });
+
+  // Size inputs
+  const widthInput = document.getElementById("editor-crop-width");
+  const heightInput = document.getElementById("editor-crop-height");
+
+  widthInput?.addEventListener("change", (e) => {
+    mockupEditorCropW = Math.max(100, Math.min(4000, parseInt(e.target.value, 10) || 1080));
+    e.target.value = mockupEditorCropW;
+    if (mockupEditorSizeLinked) {
+      mockupEditorCropH = Math.round(mockupEditorCropW / mockupEditorOriginalRatio);
+      heightInput.value = mockupEditorCropH;
+    }
+    renderMockupImageEditor();
+  });
+
+  heightInput?.addEventListener("change", (e) => {
+    mockupEditorCropH = Math.max(100, Math.min(4000, parseInt(e.target.value, 10) || 1080));
+    e.target.value = mockupEditorCropH;
+    if (mockupEditorSizeLinked) {
+      mockupEditorCropW = Math.round(mockupEditorCropH * mockupEditorOriginalRatio);
+      widthInput.value = mockupEditorCropW;
+    }
+    renderMockupImageEditor();
+  });
+
+  // Size link toggle
+  document.getElementById("editor-size-link")?.addEventListener("click", (e) => {
+    mockupEditorSizeLinked = !mockupEditorSizeLinked;
+    e.currentTarget.classList.toggle("unlinked", !mockupEditorSizeLinked);
+  });
+
+  // Preset buttons
+  document.querySelectorAll(".editor-preset-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      mockupEditorCropW = parseInt(btn.dataset.w, 10);
+      mockupEditorCropH = parseInt(btn.dataset.h, 10);
+      document.getElementById("editor-crop-width").value = mockupEditorCropW;
+      document.getElementById("editor-crop-height").value = mockupEditorCropH;
+      mockupEditorSizeLinked = false;
+      document.getElementById("editor-size-link")?.classList.add("unlinked");
+      renderMockupImageEditor();
+    });
+  });
+
+  // Close button
+  document.getElementById("mockup-image-editor-close")?.addEventListener("click", closeMockupImageEditor);
+
+  // Backdrop click
+  document.querySelector(".mockup-image-editor-backdrop")?.addEventListener("click", closeMockupImageEditor);
+
+  // Save button
+  document.getElementById("editor-save-btn")?.addEventListener("click", saveCroppedMockup);
+
+  // Mouse wheel zoom
+  wrap?.addEventListener("wheel", (e) => {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? -5 : 5;
+    mockupEditorZoom = Math.max(10, Math.min(200, mockupEditorZoom + delta));
+    document.getElementById("editor-zoom-slider").value = mockupEditorZoom;
+    document.getElementById("editor-zoom-value").textContent = mockupEditorZoom + "%";
+    renderMockupImageEditor();
+  }, { passive: false });
+}
+
+function handleEditorMouseDown(e) {
+  if (e.target.id !== "mockup-image-editor-canvas" && !e.target.closest("#editor-canvas-wrap")) return;
+  mockupEditorDragging = true;
+  mockupEditorDragStartX = e.clientX - mockupEditorOffsetX;
+  mockupEditorDragStartY = e.clientY - mockupEditorOffsetY;
+  e.target.style.cursor = "grabbing";
+}
+
+function handleEditorMouseMove(e) {
+  if (!mockupEditorDragging) return;
+  mockupEditorOffsetX = e.clientX - mockupEditorDragStartX;
+  mockupEditorOffsetY = e.clientY - mockupEditorDragStartY;
+  renderMockupImageEditor();
+}
+
+function handleEditorMouseUp() {
+  mockupEditorDragging = false;
+  const wrap = document.getElementById("editor-canvas-wrap");
+  if (wrap) wrap.style.cursor = "grab";
+}
+
+function renderMockupImageEditor() {
+  const canvas = document.getElementById("mockup-image-editor-canvas");
+  if (!canvas || !mockupEditorImage) return;
+
+  const ctx = canvas.getContext("2d");
+
+  // Set canvas to crop size for preview
+  const displayScale = Math.min(1, 500 / Math.max(mockupEditorCropW, mockupEditorCropH));
+  canvas.width = mockupEditorCropW * displayScale;
+  canvas.height = mockupEditorCropH * displayScale;
+
+  // Clear canvas
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Calculate scaled image dimensions
+  const scale = mockupEditorZoom / 100;
+  const imgW = mockupEditorImage.width * scale * displayScale;
+  const imgH = mockupEditorImage.height * scale * displayScale;
+
+  // Center image with offset
+  const centerX = canvas.width / 2 + mockupEditorOffsetX * displayScale;
+  const centerY = canvas.height / 2 + mockupEditorOffsetY * displayScale;
+
+  // Draw image
+  ctx.drawImage(
+    mockupEditorImage,
+    centerX - imgW / 2,
+    centerY - imgH / 2,
+    imgW,
+    imgH
+  );
+
+  // Draw crop boundary
+  ctx.strokeStyle = "rgba(102, 126, 234, 0.5)";
+  ctx.lineWidth = 2;
+  ctx.setLineDash([5, 5]);
+  ctx.strokeRect(0, 0, canvas.width, canvas.height);
+  ctx.setLineDash([]);
+}
+
+async function saveCroppedMockup() {
+  if (!mockupEditorImage) return;
+
+  // Create output canvas at full resolution
+  const outputCanvas = document.createElement("canvas");
+  outputCanvas.width = mockupEditorCropW;
+  outputCanvas.height = mockupEditorCropH;
+  const ctx = outputCanvas.getContext("2d");
+
+  // Clear with white
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, outputCanvas.width, outputCanvas.height);
+
+  // Calculate image position at full resolution
+  const scale = mockupEditorZoom / 100;
+  const imgW = mockupEditorImage.width * scale;
+  const imgH = mockupEditorImage.height * scale;
+  const centerX = outputCanvas.width / 2 + mockupEditorOffsetX;
+  const centerY = outputCanvas.height / 2 + mockupEditorOffsetY;
+
+  // Draw image
+  ctx.drawImage(
+    mockupEditorImage,
+    centerX - imgW / 2,
+    centerY - imgH / 2,
+    imgW,
+    imgH
+  );
+
+  // Convert to blob and upload
+  outputCanvas.toBlob(async (blob) => {
+    if (!blob) {
+      alert("Failed to create image");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("image", blob, "edited_mockup.png");
+
+    try {
+      const response = await fetch("/api/mockup_output/save_edited", {
+        method: "POST",
+        body: formData
+      });
+
+      const result = await response.json();
+      if (result.ok) {
+        alert("Mockup saved successfully!");
+        closeMockupImageEditor();
+        await loadMockupOutputs();
+        renderMockupGallery();
+      } else {
+        alert(result.error || "Failed to save mockup");
+      }
+    } catch (err) {
+      console.error("Failed to save edited mockup:", err);
+      alert("Failed to save mockup");
+    }
+  }, "image/png");
 }
 
 // ===== INITIALIZE =====

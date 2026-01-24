@@ -1,10 +1,10 @@
 {
   "name": "Lifestyle - Plant and wood",
   "poster_rect": {
-    "x": 731,
-    "y": 194,
-    "width": 599,
-    "height": 871
+    "x": 718,
+    "y": 193,
+    "width": 619,
+    "height": 875
   },
   "poster_rotation": 0,
   "output_size": [
@@ -33,5 +33,6 @@
       "width": 20,
       "opacity": 0.85
     }
-  ]
+  ],
+  "recommended_aspect": "A4"
 }

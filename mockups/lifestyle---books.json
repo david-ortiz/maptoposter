@@ -1,0 +1,15 @@
+{
+  "name": "Lifestyle - Books",
+  "poster_rect": {
+    "x": 1234,
+    "y": 160,
+    "width": 204,
+    "height": 363
+  },
+  "poster_rotation": 0,
+  "output_size": [
+    2592,
+    864
+  ],
+  "recommended_aspect": "9:16"
+}

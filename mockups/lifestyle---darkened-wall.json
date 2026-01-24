@@ -1,10 +1,10 @@
 {
   "name": "Lifestyle - Darkened wall",
   "poster_rect": {
-    "x": 455,
+    "x": 452,
     "y": 355,
-    "width": 732,
-    "height": 939
+    "width": 737,
+    "height": 938
   },
   "poster_rotation": 0,
   "output_size": [
@@ -33,5 +33,6 @@
       "width": 30,
       "opacity": 0.85
     }
-  ]
+  ],
+  "recommended_aspect": "11:14"
 }

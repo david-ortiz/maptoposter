@@ -1,10 +1,10 @@
 {
   "name": "Cushions",
   "poster_rect": {
-    "x": 552,
-    "y": 713,
-    "width": 1078,
-    "height": 1560
+    "x": 524,
+    "y": 691,
+    "width": 1127,
+    "height": 1594
   },
   "poster_rotation": 0,
   "output_size": [
@@ -42,5 +42,6 @@
       "width": 33,
       "opacity": 0.8
     }
-  ]
+  ],
+  "recommended_aspect": "A4"
 }

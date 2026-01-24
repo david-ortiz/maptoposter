@@ -1,10 +1,10 @@
 {
   "name": "Lifestyle - Bright",
   "poster_rect": {
-    "x": 458,
-    "y": 321,
-    "width": 704,
-    "height": 995
+    "x": 455,
+    "y": 317,
+    "width": 710,
+    "height": 1004
   },
   "poster_rotation": 0,
   "output_size": [
@@ -33,5 +33,6 @@
       "width": 29,
       "opacity": 0.8
     }
-  ]
+  ],
+  "recommended_aspect": "A4"
 }

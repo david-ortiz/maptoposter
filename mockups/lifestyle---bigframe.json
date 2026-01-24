@@ -1,10 +1,10 @@
 {
   "name": "Lifestyle - Bigframe",
   "poster_rect": {
-    "x": 330,
-    "y": 827,
-    "width": 937,
-    "height": 1234
+    "x": 329,
+    "y": 825,
+    "width": 935,
+    "height": 1247
   },
   "poster_rotation": 0,
   "output_size": [
@@ -33,5 +33,6 @@
       "width": 36,
       "opacity": 0.75
     }
-  ]
+  ],
+  "recommended_aspect": "3:4"
 }

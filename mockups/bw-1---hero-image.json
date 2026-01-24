@@ -1,10 +1,10 @@
 {
   "name": "B&W 1 - Hero Image",
   "poster_rect": {
-    "x": 487,
+    "x": 485,
     "y": 458,
     "width": 689,
-    "height": 1029
+    "height": 1033
   },
   "poster_rotation": 0,
   "output_size": [
@@ -22,5 +22,6 @@
       "width": 30,
       "opacity": 1
     }
-  ]
+  ],
+  "recommended_aspect": "2:3"
 }
