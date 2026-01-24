@@ -1,5 +1,6 @@
 cache/*
 posters/
+mockup_output/
 env/
 .env/
 .venv/
