@@ -3000,6 +3000,15 @@ select:focus {
   display: none;
   align-items: center;
   justify-content: center;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+  max-width: 95vw;
+  max-height: 90vh;
+  width: 1400px;
+  flex-direction: column;
+  overflow: hidden;
+  margin: 0 auto; 
+  
 }
 
 .mockup-modal.open {
@@ -3078,7 +3087,6 @@ select:focus {
 .mockup-card {
   background: var(--paper);
   border-radius: var(--radius-md);
-  overflow: hidden;
   cursor: pointer;
   border: 2px solid transparent;
   transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
@@ -3097,7 +3105,7 @@ select:focus {
 
 .mockup-card img {
   width: 100%;
-  height: 140px;
+  height: 220px;
   object-fit: cover;
   background: var(--paper-dark);
 }

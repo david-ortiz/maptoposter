@@ -1,0 +1,16 @@
+{
+  "name": "Antique Atlas - Jessica",
+  "description": "Victorian era cartography style",
+  "category": "vintage",
+  "bg": "#C5D9B5",
+  "text": "#5D4E37",
+  "gradient_color": "#F8F0E0",
+  "water": "#B8D4E3",
+  "parks": "#C5D9B5",
+  "road_motorway": "#5D4E37",
+  "road_primary": "#7A6B52",
+  "road_secondary": "#9A8B70",
+  "road_tertiary": "#B8AA90",
+  "road_residential": "#D5CAAF",
+  "road_default": "#9A8B70"
+}
